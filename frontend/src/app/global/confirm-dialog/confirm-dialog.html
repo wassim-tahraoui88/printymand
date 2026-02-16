@@ -1,0 +1,15 @@
+@if (confirm(); as dialog) {
+    <div class="fixed inset-0 flex items-center justify-center z-1000" animate.leave="container-out">
+        <div (click)="dialog.resolve(false)" class="fixed w-full h-full  bg-black/50" animate.enter="backdrop-in"></div>
+        <div class="fixed min-w-xs md:min-w-md flex flex-col rounded-lg bg-zinc-300 dark:bg-zinc-800 shadow-xl gap-2 p-2" animate.enter="dialog-in">
+            <h2 class="p-2">{{ dialog.title }}</h2>
+            <div class="border-b border-b-zinc-500/50"></div>
+            <p class="p-2">{{ dialog.message }}</p>
+            <div class="border-b border-b-zinc-500/50"></div>
+            <div class="flex justify-end gap-2">
+                <button class="bg-primary-600 hover:bg-primary-500 dark:bg-primary-700 dark:hover:bg-primary-800 text-sm rounded w-1/2 md:w-1/4 px-4 py-2" (click)="dialog.resolve(true)">OK</button>
+                <button class="bg-primary-600 hover:bg-primary-500 dark:bg-primary-700 dark:hover:bg-primary-800 text-sm rounded w-1/2 md:w-1/4 px-4 py-2" (click)="dialog.resolve(false)">Cancel</button>
+            </div>
+        </div>
+    </div>
+}

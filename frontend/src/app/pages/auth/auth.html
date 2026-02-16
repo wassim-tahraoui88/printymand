@@ -1,0 +1,31 @@
+<main class="page center">
+    <div class="w-full max-w-md bg-white dark:bg-zinc-900 rounded-xl shadow-lg p-8 space-y-6">
+        @let _isLogin = isLogin();
+        <div class="mb-6 text-center">
+            <h1 class="text-2xl font-semibold tracking-tight">
+                Printymand
+            </h1>
+            <p class="text-sm text-gray-500">
+                Print-on-demand platform for artists and customers
+            </p>
+        </div>
+        <div class="flex mb-6 rounded-lg overflow-hidden border text-primary-500 border-primary-500 dark:text-primary-700 dark:border-primary-700">
+            <button class="flex-1 py-2 text-sm" (click)="toggleForm(true)"
+                    [class.bg-primary-500]="_isLogin" [class.dark:bg-primary-700]="_isLogin"
+                    [class.text-white]="_isLogin" [class.font-bold]="_isLogin">
+                Login
+            </button>
+            <button class="flex-1 py-2 text-sm" (click)="toggleForm(false)"
+                    [class.bg-primary-500]="!_isLogin" [class.dark:bg-primary-700]="!_isLogin"
+                    [class.text-white]="!_isLogin" [class.font-bold]="!_isLogin">
+                Register
+            </button>
+        </div>
+        @if (_isLogin) {
+            <auth-login-form (toggle)="toggleForm(false)"/>
+        }
+        @else {
+            <auth-register-form (toggle)="toggleForm(true)"/>
+        }
+    </div>
+</main>

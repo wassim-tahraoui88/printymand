@@ -1,0 +1,21 @@
+<div class="toast-container">
+    @for (toast of toasts(); track toast.id) {
+        <div class="toast" [class]="toast.type" animate.enter="toast-enter" animate.leave="toast-leave">
+            <svg class="h-5 w-5 text-white" viewBox="0 0 24 24" stroke="none" fill="currentColor">
+                @if (toast.type == 'success') {
+                    <path d="M9 16.2l-3.5-3.5L4 14l5 5 12-12-1.5-1.5L9 16.2z"/>
+                }
+                @else if (toast.type == 'error') {
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
+                }
+                @else {
+                    <path d="M12 4C7.03 4 3 8.03 3 13s4.03 9 9 9 9-4.03 9-9-4.03-9-9-9zm0 16c-3.86 0-7-3.14-7-7s3.14-7 7-7 7 3.14 7 7-3.14 7-7 7zm-.5-11h1v5h-1zm0 6h1v1h-1z"/>
+                }
+            </svg>
+            <span>{{ toast.message }}</span>
+            <svg class="inline-block h-5 w-5 text-white cursor-pointer" viewBox="0 0 24 24" stroke="none" fill="currentColor" (click)="toast.dismiss()">
+                <path d="M18.3 5.71a1 1 0 0 0-1.41 0L12 10.59 7.11 5.7a1 1 0 0 0-1.41 1.41L10.59 12l-4.89 4.89a1 1 0 1 0 1.41 1.41L12 13.41l4.89 4.89a1 1 0 0 0 1.41-1.41L13.41 12l4.89-4.89a1 1 0 0 0 0-1.4z"/>
+            </svg>
+        </div>
+    }
+</div>
