@@ -1,24 +1,24 @@
-import { ClassSerializerInterceptor, Module, ExecutionContext } from '@nestjs/common';
-import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { ClassSerializerInterceptor, Module, ExecutionContext, ValidationPipe } from '@nestjs/common';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard, ThrottlerLimitDetail } from '@nestjs/throttler';
 import { CacheModule } from '@nestjs/cache-manager';
 import { EventEmitterModule } from '@nestjs/event-emitter';
-import { ScheduleModule } from '@nestjs/schedule';
-import { HttpExceptionFilter, InternalExceptionFilter, ThrottlerExceptionFilter } from './common/filters';
-import { LoggerInterceptor } from './common/interceptors';
-import { HealthModule } from './health/health.module';
+import { ScheduleModule as NestScheduleModule } from '@nestjs/schedule';
+import { GlobalExceptionFilter, AppExceptionFilter, ThrottlerExceptionFilter } from './api/filters';
+import { LoggerInterceptor } from './api/interceptors';
+import { AuthModule } from './infrastructure/auth/auth.module';
+import { DatabaseModule } from './infrastructure/database/database.module';
+import { RealtimeModule } from './infrastructure/realtime/realtime.module';
+import { HealthModule, /*SettingsModule,*/ UsersModule } from './modules';
+import { AppException } from './shared/exceptions/app.exception';
 
 @Module({
     imports: [
-        ConfigModule.forRoot({
-            isGlobal: true,
-            envFilePath: [
-                process.env.NODE_ENV === 'production'
-                    ? '.env.production'
-                    : '.env.development'
-            ],
-        }),
+	    ConfigModule.forRoot({
+		    isGlobal: true,
+		    envFilePath: [`.env.${process.env.NODE_ENV?.trim() || 'development'}`],
+	    }),
         CacheModule.register({ isGlobal: true }),
         EventEmitterModule.forRoot(),
         ThrottlerModule.forRootAsync({
@@ -48,34 +48,52 @@ import { HealthModule } from './health/health.module';
                 errorMessage: (ctx : ExecutionContext, details : ThrottlerLimitDetail) => `Too many requests - Please try again later in ${ details.timeToBlockExpire } seconds.`,
             }),
         }),
-        ScheduleModule.forRoot(),
-        HealthModule,
+	    NestScheduleModule.forRoot(),
+	    DatabaseModule,
+	    RealtimeModule,
+	    HealthModule,
+	    // SettingsModule,
+	    AuthModule,
+	    UsersModule
     ],
-    providers: [
-        {
-            provide: APP_GUARD,
-            useClass: ThrottlerGuard,
-        },
-        {
-            provide: APP_INTERCEPTOR,
-            useClass: ClassSerializerInterceptor
-        },
-        {
-            provide: APP_INTERCEPTOR,
-            useClass: LoggerInterceptor
-        },
-        {
-            provide: APP_FILTER,
-            useClass: ThrottlerExceptionFilter
-        },
-        {
-            provide: APP_FILTER,
-            useClass: HttpExceptionFilter
-        },
-        {
-            provide: APP_FILTER,
-            useClass: InternalExceptionFilter
-        }
-    ],
+	providers: [
+		{
+			provide: APP_PIPE,
+			useFactory: () => new ValidationPipe({
+				whitelist: true,
+				forbidNonWhitelisted: true,
+				transform: true,
+				exceptionFactory: (errors) => new AppException(400, 'BAD_REQUEST', {
+					errors: errors
+						.map(err =>  Object.values(err.constraints || {}).join(', '))
+						.join('; '),
+				})
+			})
+		},
+		{
+			provide: APP_GUARD,
+			useClass: ThrottlerGuard,
+		},
+		{
+			provide: APP_INTERCEPTOR,
+			useClass: ClassSerializerInterceptor
+		},
+		{
+			provide: APP_INTERCEPTOR,
+			useClass: LoggerInterceptor
+		},
+		{
+			provide: APP_FILTER,
+			useClass: GlobalExceptionFilter
+		},
+		{
+			provide: APP_FILTER,
+			useClass: AppExceptionFilter
+		},
+		{
+			provide: APP_FILTER,
+			useClass: ThrottlerExceptionFilter
+		},
+	],
 })
 export class AppModule {}
