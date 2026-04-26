@@ -1,16 +1,18 @@
+# See https://docs.github.com/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
+
 # Compiled output
-/node_modules
 /dist
 /tmp
 /out-tsc
 /bazel-out
+
+# Node
+/node_modules
 npm-debug.log
 yarn-error.log
-package-lock.json
 
 # IDEs and editors
-*.iml
-.idea
+.idea/
 .project
 .classpath
 .c9/
@@ -18,15 +20,13 @@ package-lock.json
 .settings/
 *.sublime-workspace
 
-# Angular
-.angular/
-
 # Visual Studio Code
-.vscode
+.vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+!.vscode/mcp.json
 .history/*
 
 # Miscellaneous

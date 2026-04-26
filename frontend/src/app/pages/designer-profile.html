@@ -1,0 +1,33 @@
+<app-dashboard-shell eyebrow="Designer" title="Designer profile" description="Keep your public creative profile ready for marketplace exposure and future backend profile APIs.">
+  <div class="grid gap-6 lg:grid-cols-2">
+    <section class="pm-panel space-y-4">
+      <label class="pm-field">
+        <span class="pm-label">Name</span>
+        <input class="pm-input" [ngModel]="user()?.name" (ngModelChange)="auth.updateProfile({ name: $event })" />
+      </label>
+      <label class="pm-field">
+        <span class="pm-label">Avatar</span>
+        <input class="pm-input" [ngModel]="user()?.avatar" (ngModelChange)="auth.updateProfile({ avatar: $event })" />
+      </label>
+      <label class="pm-field">
+        <span class="pm-label">Profile picture</span>
+        <input class="pm-input" [ngModel]="user()?.designerProfile?.profilePicture" (ngModelChange)="auth.updateDesignerProfile({ profilePicture: $event })" />
+      </label>
+    </section>
+
+    <section class="pm-panel space-y-4">
+      <label class="pm-field">
+        <span class="pm-label">Banner</span>
+        <input class="pm-input" [ngModel]="user()?.designerProfile?.banner" (ngModelChange)="auth.updateDesignerProfile({ banner: $event })" />
+      </label>
+      <label class="pm-field">
+        <span class="pm-label">Bio</span>
+        <textarea class="pm-textarea" [ngModel]="user()?.designerProfile?.bio" (ngModelChange)="auth.updateDesignerProfile({ bio: $event })"></textarea>
+      </label>
+      <label class="pm-field">
+        <span class="pm-label">Payout account</span>
+        <input class="pm-input" [ngModel]="user()?.designerProfile?.payoutAccount" (ngModelChange)="auth.updateDesignerProfile({ payoutAccount: $event })" />
+      </label>
+    </section>
+  </div>
+</app-dashboard-shell>

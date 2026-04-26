@@ -1,0 +1,64 @@
+@if (order(); as trackedOrder) {
+  <section class="pm-page">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <p class="text-sm font-semibold uppercase tracking-[0.16em] text-indigo-600">Tracking</p>
+        <h1 class="text-3xl font-semibold text-slate-950">Order {{ trackedOrder.id }}</h1>
+        <p class="mt-1 text-sm text-slate-500">Tracking code {{ trackedOrder.trackingCode }} · Payment {{ trackedOrder.paymentStatus }}</p>
+      </div>
+      <a class="pm-btn pm-btn-secondary" routerLink="/dashboard">Back to dashboard</a>
+    </div>
+
+    <div class="pm-panel">
+      <div class="grid gap-3 md:grid-cols-5">
+        @for (step of timeline(); track step.label) {
+          <div class="rounded-2xl border p-4" [class]="step.done ? 'border-indigo-200 bg-indigo-50' : 'border-slate-200 bg-white'">
+            <div class="text-sm font-semibold" [class]="step.done ? 'text-indigo-700' : 'text-slate-500'">{{ step.label }}</div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <div class="grid gap-6 lg:grid-cols-[1fr_0.9fr]">
+      <article class="pm-panel">
+        <h2 class="text-xl font-semibold text-slate-950">Line items</h2>
+        <div class="mt-4 grid gap-4">
+          @for (line of trackedOrder.lines; track line.id) {
+            <div class="rounded-2xl border border-slate-200 p-4">
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p class="text-lg font-semibold text-slate-950">{{ line.designTitle }}</p>
+                  <p class="text-sm text-slate-500">{{ line.productName }} · {{ line.color }} · {{ line.size }}</p>
+                  <p class="text-sm text-slate-500">{{ line.printerName }}</p>
+                </div>
+                <span [class]="statusClass(line.status)">{{ line.status }}</span>
+              </div>
+            </div>
+          }
+        </div>
+      </article>
+
+      <aside class="pm-panel space-y-4">
+        <h2 class="text-xl font-semibold text-slate-950">Shipping and payment</h2>
+        <div class="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
+          <p class="font-semibold text-slate-950">Shipping address</p>
+          <p class="mt-2">{{ trackedOrder.shippingAddress }}</p>
+        </div>
+        <div class="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
+          <p class="font-semibold text-slate-950">Payment method</p>
+          <p class="mt-2 uppercase">{{ trackedOrder.paymentMethod }}</p>
+        </div>
+        <div class="rounded-2xl bg-slate-50 p-4">
+          <div class="flex items-center justify-between text-sm text-slate-500">
+            <span>Total</span>
+            <span class="text-2xl font-semibold text-slate-950">{{ trackedOrder.total }} TND</span>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </section>
+} @else {
+  <section class="pm-page">
+    <div class="pm-empty">This order could not be found.</div>
+  </section>
+}

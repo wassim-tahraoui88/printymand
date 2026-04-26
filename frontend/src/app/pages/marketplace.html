@@ -1,0 +1,60 @@
+<section class="pm-page">
+  <div class="pm-panel">
+    <div class="grid gap-4 lg:grid-cols-[1.4fr_1fr_1fr_auto]">
+      <label class="pm-field">
+        <span class="pm-label">Search designs or designers</span>
+        <input class="pm-input" [ngModel]="search()" (ngModelChange)="search.set($event)" placeholder="e.g. typography, Amira, culture" />
+      </label>
+      <label class="pm-field">
+        <span class="pm-label">Category</span>
+        <select class="pm-select" [ngModel]="category()" (ngModelChange)="category.set($event)">
+          @for (entry of categories(); track entry) {
+            <option [value]="entry">{{ entry }}</option>
+          }
+        </select>
+      </label>
+      <label class="pm-field">
+        <span class="pm-label">Locked product</span>
+        <select class="pm-select" [ngModel]="selectedProductId()" (ngModelChange)="selectedProductId.set($event ? +$event : null)">
+          <option [ngValue]="null">All products</option>
+          @for (product of workflow.products(); track product.id) {
+            <option [ngValue]="product.id">{{ product.name }} · {{ product.printerName }}</option>
+          }
+        </select>
+      </label>
+      <div class="flex items-end gap-2">
+        <button type="button" class="pm-btn pm-btn-primary" (click)="applyFilters()">Apply</button>
+        <button type="button" class="pm-btn pm-btn-secondary" (click)="clearFilters()">Reset</button>
+      </div>
+    </div>
+  </div>
+
+  @if (selectedProduct()) {
+    <div class="pm-panel flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <p class="text-sm font-semibold text-slate-950">Browsing designs for {{ selectedProduct()!.name }}</p>
+        <p class="text-sm text-slate-500">{{ selectedProduct()!.colors.join(', ') }} · {{ selectedProduct()!.sizes.join(', ') }}</p>
+      </div>
+      <a class="pm-btn pm-btn-secondary" routerLink="/products">Back to products</a>
+    </div>
+  }
+
+  <div class="flex items-center justify-between gap-4">
+    <div>
+      <h1 class="text-3xl font-semibold text-slate-950">Design marketplace</h1>
+      <p class="mt-1 text-sm text-slate-500">{{ designs().length }} results ready for product customization.</p>
+    </div>
+  </div>
+
+  @if (designs().length) {
+    <div class="pm-grid-3">
+      @for (design of designs(); track design.id) {
+        <app-design-card [design]="design" [preferredProductId]="selectedProductId()" />
+      }
+    </div>
+  } @else {
+    <div class="pm-empty">
+      No designs match the current filters. Try another category or remove the product lock.
+    </div>
+  }
+</section>

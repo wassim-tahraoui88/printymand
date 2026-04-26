@@ -1,0 +1,34 @@
+<app-dashboard-shell eyebrow="Customer" title="Profile settings" description="Focused profile editing for customer identity, address summary, and delivery notes.">
+  <div class="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+    <section class="pm-panel space-y-4">
+      <h2 class="text-xl font-semibold text-slate-950">Identity</h2>
+      <label class="pm-field">
+        <span class="pm-label">Avatar URL</span>
+        <input class="pm-input" [ngModel]="user()?.avatar" (ngModelChange)="update('avatar', $event)" />
+      </label>
+      <label class="pm-field">
+        <span class="pm-label">Full name</span>
+        <input class="pm-input" [ngModel]="user()?.name" (ngModelChange)="update('name', $event)" />
+      </label>
+      <label class="pm-field">
+        <span class="pm-label">Email</span>
+        <input class="pm-input" [ngModel]="user()?.email" (ngModelChange)="update('email', $event)" />
+      </label>
+      <label class="pm-field">
+        <span class="pm-label">Primary address</span>
+        <input class="pm-input" [ngModel]="user()?.address" (ngModelChange)="update('address', $event)" />
+      </label>
+    </section>
+
+    <section class="pm-panel space-y-4">
+      <h2 class="text-xl font-semibold text-slate-950">Delivery notes</h2>
+      <label class="pm-field">
+        <span class="pm-label">Customer notes</span>
+        <textarea class="pm-textarea" [ngModel]="user()?.customerProfile?.notes" (ngModelChange)="updateNotes($event)"></textarea>
+      </label>
+      <div class="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
+        These notes are frontend-managed today and already shaped as profile state so they can move to a profile endpoint later without a UI rewrite.
+      </div>
+    </section>
+  </div>
+</app-dashboard-shell>

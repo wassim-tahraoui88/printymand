@@ -1,12 +1,1 @@
-<div class="min-h-screen flex flex-col">
-    <app-toast-container/>
-    <app-confirm-dialog/>
-
-    @if (loading) {
-        <div class="fixed inset-0 flex items-center justify-center bg-black/30 z-50">
-            <div class="animate-spin h-8 w-8 border-2 border-primary-500 border-t-transparent rounded-full"></div>
-        </div>
-    }
-
-    <router-outlet/>
-</div>
+<router-outlet />

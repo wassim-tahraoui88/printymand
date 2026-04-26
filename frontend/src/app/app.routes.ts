@@ -1,19 +1,51 @@
 import { Routes } from '@angular/router';
-import { AuthPage } from './pages/auth/auth.page';
-import { MainPage } from './pages/main/main.page';
-import { authChildGuard } from './core/auth/auth.guard';
+import { LayoutComponent } from './components/layout.component';
+import { HomePageComponent } from './pages/home.page';
+import { MarketplacePageComponent } from './pages/marketplace.page';
+import { ProductsPageComponent } from './pages/products.page';
+import { DesignDetailPageComponent } from './pages/design-detail.page';
+import { LoginPageComponent } from './pages/login.page';
+import { RegisterPageComponent } from './pages/register.page';
+import { CustomizePageComponent } from './pages/customize.page';
+import { PrinterSelectionPageComponent } from './pages/printer-selection.page';
+import { CheckoutPageComponent } from './pages/checkout.page';
+import { OrderTrackingPageComponent } from './pages/order-tracking.page';
+import { CustomerDashboardPageComponent } from './pages/customer-dashboard.page';
+import { CustomerProfilePageComponent } from './pages/customer-profile.page';
+import { DesignerDashboardPageComponent } from './pages/designer-dashboard.page';
+import { DesignerProfilePageComponent } from './pages/designer-profile.page';
+import { PrinterDashboardPageComponent } from './pages/printer-dashboard.page';
+import { PrinterProfilePageComponent } from './pages/printer-profile.page';
+import { AdminDashboardPageComponent } from './pages/admin-dashboard.page';
+import { AdminProfilePageComponent } from './pages/admin-profile.page';
+import { NotFoundPageComponent } from './pages/not-found.page';
+import { authRoleGuard } from './guards/auth-role.guard';
 
 export const routes: Routes = [
-	{
-        path: 'auth',
-        component: AuthPage,
-    },
-	{
-        path: '',
-        component: MainPage,
-        canActivateChild: [authChildGuard],
-        children: [
-            // Insert child routes here
-        ]
-    }
+  {
+    path: '',
+    component: LayoutComponent,
+    children: [
+      { path: '', component: HomePageComponent },
+      { path: 'marketplace', component: MarketplacePageComponent },
+      { path: 'products', component: ProductsPageComponent },
+      { path: 'design/:id', component: DesignDetailPageComponent },
+      { path: 'login', component: LoginPageComponent },
+      { path: 'register', component: RegisterPageComponent },
+      { path: 'customize/:id', component: CustomizePageComponent, canActivate: [authRoleGuard()] },
+      { path: 'printers/:id', component: PrinterSelectionPageComponent, canActivate: [authRoleGuard()] },
+      { path: 'checkout', component: CheckoutPageComponent, canActivate: [authRoleGuard()] },
+      { path: 'cart', component: CheckoutPageComponent, canActivate: [authRoleGuard()] },
+      { path: 'tracking/:orderId', component: OrderTrackingPageComponent, canActivate: [authRoleGuard()] },
+      { path: 'dashboard', component: CustomerDashboardPageComponent, canActivate: [authRoleGuard()] },
+      { path: 'profile', component: CustomerProfilePageComponent, canActivate: [authRoleGuard()] },
+      { path: 'designer-dashboard', component: DesignerDashboardPageComponent, canActivate: [authRoleGuard(['designer'])] },
+      { path: 'designer-profile', component: DesignerProfilePageComponent, canActivate: [authRoleGuard(['designer'])] },
+      { path: 'printer-dashboard', component: PrinterDashboardPageComponent, canActivate: [authRoleGuard(['printer'])] },
+      { path: 'printer-profile', component: PrinterProfilePageComponent, canActivate: [authRoleGuard(['printer'])] },
+      { path: 'admin', component: AdminDashboardPageComponent, canActivate: [authRoleGuard(['admin'])] },
+      { path: 'admin-profile', component: AdminProfilePageComponent, canActivate: [authRoleGuard(['admin'])] },
+      { path: '**', component: NotFoundPageComponent },
+    ],
+  },
 ];

@@ -1,0 +1,36 @@
+@if (design(); as activeDesign) {
+  <section class="pm-page">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <h1 class="text-3xl font-semibold text-slate-950">Choose a printer</h1>
+        <p class="mt-1 text-sm text-slate-500">
+          Printer selection is intentionally kept in frontend state today so the UI is ready before the backend contract lands.
+        </p>
+      </div>
+      <div class="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
+        {{ activeDesign.title }} · {{ product()?.name }} · {{ draft()?.selectedColor }} · {{ draft()?.selectedSize }}
+      </div>
+    </div>
+
+    <div class="pm-grid-3">
+      @for (printer of compatiblePrinters(); track printer.id) {
+        <app-printer-card [printer]="printer" (selected)="selectPrinter($event)" />
+      }
+    </div>
+
+    <div class="pm-panel flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <p class="text-sm font-semibold text-slate-950">Selected printer</p>
+        <p class="text-sm text-slate-500">{{ selectedPrinterId() ? workflow.getPrinterById(selectedPrinterId()!)?.businessName : 'None selected yet' }}</p>
+      </div>
+      <div class="flex flex-wrap gap-3">
+        <a class="pm-btn pm-btn-secondary" [routerLink]="['/customize', activeDesign.id]" [queryParams]="{ product: product()?.id }">Back to customization</a>
+        <button type="button" class="pm-btn pm-btn-primary" (click)="addToCart()">Add to cart</button>
+      </div>
+    </div>
+
+    @if (error()) {
+      <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ error() }}</div>
+    }
+  </section>
+}

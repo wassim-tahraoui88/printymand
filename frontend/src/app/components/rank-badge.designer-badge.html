@@ -1,0 +1,22 @@
+<span [class]="'inline-flex items-center gap-1 px-2 py-0.5 rounded-full border ' + config().bg + ' ' + config().color + ' ' + config().border + ' ' + config().glow">
+  <span class="w-3 h-3 inline-flex items-center justify-center">
+    @switch (config().icon) {
+      @case ('star') {
+        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 2.9 6 6.6 1-4.8 4.7 1.1 6.7-5.8-3.1-5.8 3.1 1.1-6.7L2.5 9l6.6-1L12 2Z" /></svg>
+      }
+      @case ('bolt') {
+        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m13 2-9 11h6l-1 9 9-11h-6l1-9Z" /></svg>
+      }
+      @case ('trophy') {
+        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8" /><path d="M12 17v4" /><path d="M7 4h10v4a5 5 0 0 1-10 0V4Z" /><path d="M7 6H5a2 2 0 0 0 0 4h2" /><path d="M17 6h2a2 2 0 0 1 0 4h-2" /></svg>
+      }
+      @case ('crown') {
+        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 8 4.5 4 4.5-7 4.5 7L21 8l-2 10H5L3 8Z" /></svg>
+      }
+      @default {
+        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 14.9 9.1 22 12l-7.1 2.9L12 22l-2.9-7.1L2 12l7.1-2.9L12 2Z" /></svg>
+      }
+    }
+  </span>
+  <span class="text-[10px]" style="font-weight: 500">{{ rank() }}</span>
+</span>
