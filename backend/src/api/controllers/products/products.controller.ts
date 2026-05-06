@@ -16,12 +16,12 @@ export class ProductsController {
 	@UseGuards(RbacGuard)
 	@Roles('PRINTER')
 	onAddProduct(@PrincipalUser() { id }: IPrincipal, @Body() body: AddProductDto) {
-		this.addProduct.execute( { userId: id, ...body })
+		return this.addProduct.execute( { userId: id, ...body })
 	}
 
 	@Get()
 	onViewProducts(@Query() query: CursorQuery) {
-		return this.viewProducts.execute({ query });
+		return this.viewProducts.execute({ ...query });
 	}
 
 	@Get(':id')
