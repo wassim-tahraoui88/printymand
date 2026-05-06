@@ -18,19 +18,19 @@ export class DesignsController {
 	@UseGuards(RbacGuard)
 	@Roles('DESIGNER')
 	onGetUploadConfig() {
-		this.getUploadConfig.execute();
+		return this.getUploadConfig.execute({});
 	}
 
 	@Post()
 	@UseGuards(RbacGuard)
 	@Roles('DESIGNER')
 	onUploadDesign(@PrincipalUser() { id }: IPrincipal, @Body() body: UploadDesignDto) {
-		this.uploadDesign.execute( { userId: id, ...body })
+		return this.uploadDesign.execute( { userId: id, ...body })
 	}
 
 	@Get()
 	onGetDesigns(@Query() query: CursorQuery) {
-		return this.viewDesigns.execute({ query });
+		return this.viewDesigns.execute({ ...query });
 	}
 
 	@Get(':id')

@@ -1,32 +1,44 @@
 interface CreateDesignDto {
     id: UUID;
-    username: string;
-    passwordHash: string;
-    firstName: string;
-    lastName: string;
-    phoneNumber: string;
+    inventoryId?: UUID;
+    albumId?: UUID;
+	name: string;
+	description?: string;
+	assetUrl: string;
+	displayUrl: string;
+	nsfw: boolean;
 }
 
+interface DesignInventoryDto {
+	id: UUID;
+	ownerId: UUID;
+	createdAt: Date;
+}
+
+interface DesignAlbumDto {
+	id: UUID;
+	ownerId: UUID;
+	title: string;
+	description: string;
+}
 interface DesignDto {
     id: UUID;
-    username: string;
-    firstName: string;
-    lastName: string;
-    phoneNumber: string;
-    avatarUrl: string;
-    role: 'ADMIN' | 'PRINTER' | 'DESIGNER' | 'CLIENT';
-    // status: 'PENDING' | 'ACTIVE' | 'SUSPENDED';
+    inventoryId: UUID;
+    albumId?: UUID;
+	name: string;
+	description: string;
+	displayUrl: string;
+	assetUrl: string;
+	nsfw: boolean;
     createdAt: Date;
 }
 
 interface DesignSummaryDto {
     id: UUID;
-    username: string;
-    firstName: string;
-    lastName: string;
-    phoneNumber: string;
-    avatarUrl: string;
-    role: 'ADMIN' | 'PRINTER' | 'DESIGNER' | 'CLIENT';
-    // status: 'PENDING' | 'ACTIVE' | 'SUSPENDED';
+	inventoryId: UUID;
+	albumId: UUID;
+    name: string;
+    displayUrl: string;
+	nsfw: boolean;
     createdAt: Date;
 }

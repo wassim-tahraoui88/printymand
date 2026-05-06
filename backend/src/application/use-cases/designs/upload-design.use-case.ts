@@ -1,23 +1,21 @@
 import { Injectable } from '@nestjs/common';
 import { UseCase } from '../use-case';
-import { UsersRepository } from '../../../domain/repositories';
+import { DesignsRepository } from '../../../domain/repositories';
 import { AppException } from '../../../shared/exceptions/app.exception';
+import { EntityId } from "../../../domain/value-objects/domain.id";
 
 interface UploadDesignInput {
-    id: UUID;
+    userId: UUID;
 }
-export interface UploadDesignOutput {
-    user: UserDto;
-}
+export type UploadDesignOutput = void;
 
 @Injectable()
 export class UploadDesignUseCase implements UseCase<UploadDesignInput, UploadDesignOutput> {
 
-    constructor(private readonly repository: UsersRepository) {}
+    constructor(private readonly repository: DesignsRepository) {}
 
     async execute(input: UploadDesignInput) {
-        const user = await this.repository.findDtoById(input.id);
-        if (!user) throw new AppException(404, 'NOT_FOUND');
-        return { user };
+		const id = EntityId.generate().value;
+        // await this.repository.create({ id, ...input });
     }
 }

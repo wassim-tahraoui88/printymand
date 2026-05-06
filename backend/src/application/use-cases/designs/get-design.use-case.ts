@@ -1,23 +1,21 @@
 import { Injectable } from '@nestjs/common';
 import { UseCase } from '../use-case';
-import { UsersRepository } from '../../../domain/repositories';
+import { DesignsRepository } from '../../../domain/repositories';
 import { AppException } from '../../../shared/exceptions/app.exception';
 
 interface GetDesignInput {
     id: UUID;
 }
-export interface GetDesignOutput {
-    user: UserDto;
-}
+export type GetDesignOutput = DesignDto;
 
 @Injectable()
 export class GetDesignUseCase implements UseCase<GetDesignInput, GetDesignOutput> {
 
-    constructor(private readonly repository: UsersRepository) {}
+    constructor(private readonly repository: DesignsRepository) {}
 
     async execute(input: GetDesignInput) {
-        const user = await this.repository.findDtoById(input.id);
-        if (!user) throw new AppException(404, 'NOT_FOUND');
-        return { user };
+        const design = await this.repository.findDtoById(input.id);
+        if (!design) throw new AppException(404, 'NOT_FOUND');
+        return design;
     }
 }

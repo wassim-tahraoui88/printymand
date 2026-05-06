@@ -1,23 +1,23 @@
 import { Injectable } from '@nestjs/common';
 import { UseCase } from '../use-case';
-import { UsersRepository } from '../../../domain/repositories';
+import { DesignsRepository } from '../../../domain/repositories';
 import { AppException } from '../../../shared/exceptions/app.exception';
 
 interface ViewDesignsInput {
-    id: UUID;
+    cursor?: UUID;
+    limit?: number;
 }
-export interface ViewDesignsOutput {
-    user: UserDto;
-}
+export type ViewDesignsOutput = DesignSummaryDto[];
 
 @Injectable()
 export class ViewDesignsUseCase implements UseCase<ViewDesignsInput, ViewDesignsOutput> {
 
-    constructor(private readonly repository: UsersRepository) {}
+    constructor(private readonly repository: DesignsRepository) {}
 
-    async execute(input: ViewDesignsInput) {
-        const user = await this.repository.findDtoById(input.id);
-        if (!user) throw new AppException(404, 'NOT_FOUND');
-        return { user };
+	// by: 'all' | 'inventory' | 'album',
+    async execute({ cursor, limit }: ViewDesignsInput) {
+        const designs = await this.repository.findAll({ cursor, limit });
+        if (!designs) throw new AppException(404, 'NOT_FOUND');
+        return designs;
     }
 }
