@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { DesignsRepository } from '../domain/repositories';
 import { PostgresDesignsRepository } from '../infrastructure/persistence/repositories';
-import { } from '../application/use-cases/designs';
+import { ViewDesignsUseCase, GetDesignUseCase, GetUploadConfigUseCase, UploadDesignUseCase } from '../application/use-cases/designs';
 import { DesignsController } from '../api/controllers/designs/designs.controller';
 
 @Module({
@@ -11,6 +11,10 @@ import { DesignsController } from '../api/controllers/designs/designs.controller
 			provide: DesignsRepository,
 			useClass: PostgresDesignsRepository
 		},
+		ViewDesignsUseCase,
+		GetDesignUseCase,
+		GetUploadConfigUseCase,
+		UploadDesignUseCase
 	]
 })
 export class DesignsModule {}

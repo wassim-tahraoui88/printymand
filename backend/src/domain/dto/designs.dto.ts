@@ -18,3 +18,15 @@ interface DesignDto {
     // status: 'PENDING' | 'ACTIVE' | 'SUSPENDED';
     createdAt: Date;
 }
+
+interface DesignSummaryDto {
+    id: UUID;
+    username: string;
+    firstName: string;
+    lastName: string;
+    phoneNumber: string;
+    avatarUrl: string;
+    role: 'ADMIN' | 'PRINTER' | 'DESIGNER' | 'CLIENT';
+    // status: 'PENDING' | 'ACTIVE' | 'SUSPENDED';
+    createdAt: Date;
+}
