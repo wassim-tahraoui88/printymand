@@ -1,9 +1,9 @@
 import { Type } from 'class-transformer';
-import { IsInt } from 'class-validator';
+import { IsInt, IsUUID } from 'class-validator';
 
 export class CursorQuery {
-    @Type(() => Number) @IsInt()
-    cursor: number;
+    @Type(() => Number) @IsUUID(7)
+    cursor: UUID;
 
     @Type(() => Number) @IsInt()
     limit: number;
