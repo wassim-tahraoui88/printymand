@@ -1,0 +1,143 @@
+<div class="min-h-screen bg-transparent">
+  <header class="sticky top-0 z-40 border-b border-slate-200/80 bg-white/88 backdrop-blur-xl">
+    <div class="grid w-full gap-0">
+      <div class="flex w-full items-center justify-between gap-4 px-4 py-3 md:px-6 lg:px-8">
+        <div class="flex min-w-0 items-center gap-4 md:gap-6">
+          <a routerLink="/" class="flex min-w-0 items-center gap-3">
+            <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-indigo-600 text-lg font-bold text-white shadow-sm shadow-indigo-600/25">P</div>
+            <div class="min-w-0">
+              <p class="truncate text-lg font-semibold text-slate-950">Printymand</p>
+              <p class="truncate text-xs font-medium uppercase tracking-[0.14em] text-slate-500">Print on demand Tunisia</p>
+            </div>
+          </a>
+        </div>
+
+        <div class="hidden min-w-0 flex-1 items-center justify-center xl:flex">
+          <form class="flex w-full gap-3 px-8" (ngSubmit)="handleSearch()">
+            <input class="pm-input pm-input-compact" [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" name="globalSearch" placeholder="Search designs, products, designers" />
+            <button type="submit" class="pm-btn pm-btn-secondary">Search</button>
+          </form>
+        </div>
+
+        <div class="flex shrink-0 items-center gap-2">
+          @if (auth.isAuthenticated()) {
+            <span class="hidden rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 md:inline-flex">
+              {{ auth.backendMode() === 'api' ? 'API connected' : 'Mock-ready mode' }}
+            </span>
+            <a routerLink="/cart" class="pm-btn pm-btn-secondary">
+              Cart
+              @if (cartCount()) {
+                <span class="rounded-full bg-indigo-600 px-2 py-0.5 text-xs text-white">{{ cartCount() }}</span>
+              }
+            </a>
+            <div class="relative hidden md:block">
+              <button type="button" class="pm-btn pm-btn-secondary" (click)="userMenu.set(!userMenu())">
+                <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700">{{ userInitials() }}</span>
+                <span class="max-w-36 truncate">{{ auth.user()?.name }}</span>
+              </button>
+
+              @if (userMenu()) {
+                <div class="pm-flyout absolute right-0 mt-2 w-72">
+                  <div class="border-b border-slate-200 pb-3">
+                    <p class="font-semibold text-slate-950">{{ auth.user()?.name }}</p>
+                    <p class="text-sm text-slate-500">{{ auth.user()?.email }}</p>
+                  </div>
+                  <div class="grid gap-2 py-3">
+                    <a class="pm-btn pm-btn-secondary justify-start" [routerLink]="auth.dashboardPath(auth.user()!.role)">Dashboard</a>
+                    <a class="pm-btn pm-btn-secondary justify-start" [routerLink]="profilePath(auth.user()!.role)">Profile</a>
+                  </div>
+                  <button type="button" class="pm-btn pm-btn-danger w-full" (click)="logout()">Sign out</button>
+                </div>
+              }
+            </div>
+          } @else {
+            <a class="pm-btn pm-btn-secondary hidden sm:inline-flex" routerLink="/register">Create account</a>
+            <a class="pm-btn pm-btn-primary" routerLink="/login">Sign in</a>
+          }
+
+          <button type="button" class="pm-btn pm-btn-secondary" (click)="toggleSiteMenu()">
+            {{ siteMenu() ? 'Close' : 'Menu' }}
+          </button>
+        </div>
+      </div>
+
+      <div class="hidden w-full items-center justify-between gap-6 border-t border-slate-200/70 px-4 py-3 lg:flex md:px-6 lg:px-8">
+        <nav class="flex min-w-0 flex-1 items-center gap-2">
+          @for (link of navLinks; track link.to) {
+            <a class="pm-btn pm-btn-ghost" [class.pm-btn-secondary]="isActive(link.to)" [routerLink]="link.to">{{ link.label }}</a>
+          }
+        </nav>
+
+        <div class="hidden min-w-0 flex-[1.1] xl:block">
+          <form class="flex w-full gap-3" (ngSubmit)="handleSearch()">
+            <input class="pm-input pm-input-compact" [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" name="desktopNavSearch" placeholder="Search the marketplace" />
+            <button type="submit" class="pm-btn pm-btn-secondary">Search</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    @if (siteMenu()) {
+      <div class="border-t border-slate-200 bg-white/95 px-4 py-4 shadow-sm backdrop-blur-xl">
+        <div class="grid w-full gap-4 lg:grid-cols-[1.2fr_1fr_1fr] lg:px-4">
+          <section class="pm-subpanel grid gap-3">
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Navigate</p>
+              <p class="mt-1 text-sm text-slate-600">Jump between discovery, account workspaces, and checkout.</p>
+            </div>
+            <form class="grid gap-3 xl:hidden" (ngSubmit)="handleSearch()">
+              <input class="pm-input pm-input-compact" [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" name="menuSearch" placeholder="Search marketplace" />
+              <button type="submit" class="pm-btn pm-btn-secondary">Search</button>
+            </form>
+            <div class="grid gap-2 sm:grid-cols-2">
+              @for (link of navLinks; track link.to) {
+                <a class="pm-btn pm-btn-secondary justify-start" [routerLink]="link.to">{{ link.label }}</a>
+              }
+              <a class="pm-btn pm-btn-secondary justify-start" routerLink="/">Home</a>
+              @if (auth.isAuthenticated()) {
+                <a class="pm-btn pm-btn-secondary justify-start" [routerLink]="auth.dashboardPath(auth.user()!.role)">Dashboard</a>
+              }
+            </div>
+          </section>
+
+          <section class="pm-subpanel grid gap-3">
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Workspace</p>
+              <p class="mt-1 text-sm text-slate-600">The same actions stay available on both desktop and smaller screens.</p>
+            </div>
+            @if (auth.isAuthenticated()) {
+              <a class="pm-btn pm-btn-secondary justify-start" [routerLink]="profilePath(auth.user()!.role)">Profile settings</a>
+              <a class="pm-btn pm-btn-secondary justify-start" routerLink="/cart">Cart and checkout</a>
+              <a class="pm-btn pm-btn-secondary justify-start" [routerLink]="auth.dashboardPath(auth.user()!.role)">Role dashboard</a>
+              <button type="button" class="pm-btn pm-btn-danger justify-start" (click)="logout()">Sign out</button>
+            } @else {
+              <a class="pm-btn pm-btn-primary justify-start" routerLink="/login">Sign in</a>
+              <a class="pm-btn pm-btn-secondary justify-start" routerLink="/register">Create account</a>
+            }
+          </section>
+
+          <section class="pm-subpanel grid gap-3">
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Platform status</p>
+              <p class="mt-1 text-sm text-slate-600">A quick read on the current app session and cart state.</p>
+            </div>
+            <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
+              <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Mode</p>
+                <p class="mt-1 text-sm font-semibold text-slate-900">{{ auth.backendMode() === 'api' ? 'API connected' : 'Mock-ready mode' }}</p>
+              </div>
+              <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Cart</p>
+                <p class="mt-1 text-sm font-semibold text-slate-900">{{ cartCount() }} configured {{ cartCount() === 1 ? 'item' : 'items' }}</p>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    }
+  </header>
+
+  <main class="pb-16">
+    <router-outlet />
+  </main>
+</div>

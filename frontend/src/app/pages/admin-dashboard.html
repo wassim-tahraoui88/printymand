@@ -1,0 +1,99 @@
+<app-dashboard-shell
+  eyebrow="Admin"
+  title="Platform control center"
+  description="Manage users across roles, assign designer and printer ranks manually, moderate designs, and keep an eye on platform-wide health."
+>
+  <div class="pm-grid-4">
+    <app-stat-card label="Users" [value]="overview().users.toString()" hint="all roles" />
+    <app-stat-card label="Orders" [value]="overview().orders.toString()" hint="tracked" />
+    <app-stat-card label="Revenue" [value]="overview().revenue.toFixed(0) + ' TND'" hint="GMV" />
+    <app-stat-card label="Active designs" [value]="overview().activeDesigns.toString()" hint="moderated" />
+  </div>
+
+  <div class="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+    <section class="pm-panel">
+      <div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+        <div>
+          <h2 class="text-xl font-semibold text-slate-950">User management</h2>
+          <p class="text-sm text-slate-500">Roles and ranks can be adjusted directly to match platform operations.</p>
+        </div>
+        <label class="pm-field max-w-sm">
+          <span class="pm-label">Search users</span>
+          <input class="pm-input" [ngModel]="search()" (ngModelChange)="search.set($event)" />
+        </label>
+      </div>
+
+      <div class="mt-4 overflow-auto">
+        <table class="pm-table">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Role</th>
+              <th>Designer rank</th>
+              <th>Printer rank</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (user of users(); track user.id) {
+              <tr>
+                <td>
+                  <div class="font-semibold text-slate-950">{{ user.name }}</div>
+                  <div class="text-sm text-slate-500">{{ user.email }}</div>
+                </td>
+                <td>
+                  <select class="pm-select max-w-44" [ngModel]="user.role" (ngModelChange)="auth.updateUserRole(user.id, $event)">
+                    @for (role of ['customer', 'designer', 'printer', 'admin']; track role) {
+                      <option [value]="role">{{ role }}</option>
+                    }
+                  </select>
+                </td>
+                <td>
+                  <select class="pm-select max-w-44" [ngModel]="user.designerRank ?? 'Novice'" (ngModelChange)="auth.updateDesignerRank(user.id, $event)" [disabled]="user.role !== 'designer'">
+                    @for (rank of ['Novice', 'Rising', 'Artisan', 'Elite']; track rank) {
+                      <option [value]="rank">{{ rank }}</option>
+                    }
+                  </select>
+                </td>
+                <td>
+                  <select class="pm-select max-w-44" [ngModel]="user.printerRank ?? 'Verified'" (ngModelChange)="auth.updatePrinterRank(user.id, $event)" [disabled]="user.role !== 'printer'">
+                    @for (rank of ['Verified', 'Gold', 'Premium']; track rank) {
+                      <option [value]="rank">{{ rank }}</option>
+                    }
+                  </select>
+                </td>
+                <td>
+                  <button type="button" class="pm-btn" [class.pm-btn-danger]="!user.suspended" [class.pm-btn-secondary]="user.suspended" (click)="auth.toggleUserSuspended(user.id)">
+                    {{ user.suspended ? 'Unsuspend' : 'Suspend' }}
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="pm-panel">
+      <h2 class="text-xl font-semibold text-slate-950">Design moderation</h2>
+      <div class="mt-4 grid gap-4">
+        @for (design of designs(); track design.id) {
+          <article class="rounded-2xl border border-slate-200 p-4">
+            <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+              <div>
+                <p class="text-lg font-semibold text-slate-950">{{ design.title }}</p>
+                <p class="text-sm text-slate-500">{{ design.designer }} · {{ design.category }} · {{ design.status }}</p>
+                <p class="mt-2 text-sm text-slate-600">{{ design.description }}</p>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                <button type="button" class="pm-btn pm-btn-secondary" (click)="workflow.setDesignStatus(design.id, 'ACTIVE')">Activate</button>
+                <button type="button" class="pm-btn pm-btn-secondary" (click)="workflow.setDesignStatus(design.id, 'ARCHIVED')">Archive</button>
+                <button type="button" class="pm-btn pm-btn-danger" (click)="workflow.setDesignStatus(design.id, 'REMOVED')">Remove</button>
+              </div>
+            </div>
+          </article>
+        }
+      </div>
+    </section>
+  </div>
+</app-dashboard-shell>

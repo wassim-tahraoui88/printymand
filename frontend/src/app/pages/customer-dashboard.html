@@ -1,0 +1,220 @@
+<app-dashboard-shell
+  eyebrow="Customer"
+  title="Customer workspace"
+  description="Track every order, keep delivery details ready, manage payment preferences, and leave structured reviews without leaving the dashboard."
+>
+  <div dashboard-actions>
+    <a class="pm-btn pm-btn-primary" routerLink="/marketplace">Shop more designs</a>
+  </div>
+
+  <div class="pm-grid-4">
+    <app-stat-card label="Orders" [value]="stats().orders.toString()" hint="all time" />
+    <app-stat-card label="Delivered" [value]="stats().delivered.toString()" hint="completed" />
+    <app-stat-card label="In progress" [value]="stats().inFlight.toString()" hint="active" />
+    <app-stat-card label="Total spend" [value]="stats().spend + ' TND'" hint="GMV" />
+  </div>
+
+  <div class="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+    <section class="pm-panel">
+      <div class="flex items-center justify-between">
+        <h2 class="text-xl font-semibold text-slate-950">Order history</h2>
+      </div>
+      @if (orders().length) {
+        <div class="mt-4 overflow-auto">
+          <table class="pm-table">
+            <thead>
+              <tr>
+                <th>Order</th>
+                <th>Status</th>
+                <th>Total</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (order of orders(); track order.id) {
+                <tr>
+                  <td>
+                    <div class="font-semibold text-slate-950">{{ order.id }}</div>
+                    <div class="text-sm text-slate-500">{{ order.lines.length }} line items · {{ order.createdAt }}</div>
+                  </td>
+                  <td><span [class]="statusClass(workflow.getOrderStatus(order))">{{ workflow.getOrderStatus(order) }}</span></td>
+                  <td>{{ order.total }} TND</td>
+                  <td class="flex flex-wrap gap-2">
+                    <a class="pm-btn pm-btn-secondary" [routerLink]="['/tracking', order.id]">Track</a>
+                    <button type="button" class="pm-btn pm-btn-secondary" (click)="openReviewModal(order.id)">Review</button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <div class="pm-empty mt-4">No orders yet. Your future purchases will appear here with live tracking states.</div>
+      }
+    </section>
+
+    <section class="pm-panel space-y-4">
+      <h2 class="text-xl font-semibold text-slate-950">Profile management</h2>
+      <label class="pm-field">
+        <span class="pm-label">Full name</span>
+        <input class="pm-input" [ngModel]="user()?.name" (ngModelChange)="updateProfileField('name', $event)" />
+      </label>
+      <label class="pm-field">
+        <span class="pm-label">Email</span>
+        <input class="pm-input" [ngModel]="user()?.email" (ngModelChange)="updateProfileField('email', $event)" />
+      </label>
+      <label class="pm-field">
+        <span class="pm-label">Primary address</span>
+        <input class="pm-input" [ngModel]="user()?.address" (ngModelChange)="updateProfileField('address', $event)" />
+      </label>
+    </section>
+  </div>
+
+  <div class="grid gap-6 lg:grid-cols-2">
+    <section class="pm-panel space-y-4">
+      <div class="flex items-center justify-between">
+        <h2 class="text-xl font-semibold text-slate-950">Saved addresses</h2>
+        <span class="pm-chip">{{ addresses().length }}</span>
+      </div>
+
+      <div class="grid gap-3">
+        @for (address of addresses(); track address.id) {
+          <div class="rounded-2xl border border-slate-200 p-4">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <p class="font-semibold text-slate-950">{{ address.label }}</p>
+                <p class="text-sm text-slate-500">{{ address.recipient }} · {{ address.line1 }}</p>
+                <p class="text-sm text-slate-500">{{ address.city }}, {{ address.governorate }} {{ address.postalCode }}</p>
+              </div>
+              <div class="flex gap-2">
+                <button type="button" class="pm-btn pm-btn-secondary" (click)="editAddress(address.id)">Edit</button>
+                <button type="button" class="pm-btn pm-btn-danger" (click)="removeAddress(address.id)">Delete</button>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+
+      <div class="grid gap-3 border-t border-slate-200 pt-4 md:grid-cols-2">
+        <label class="pm-field">
+          <span class="pm-label">Label</span>
+          <input class="pm-input" [ngModel]="addressForm().label" (ngModelChange)="addressForm.set({ ...addressForm(), label: $event })" />
+        </label>
+        <label class="pm-field">
+          <span class="pm-label">Recipient</span>
+          <input class="pm-input" [ngModel]="addressForm().recipient" (ngModelChange)="addressForm.set({ ...addressForm(), recipient: $event })" />
+        </label>
+        <label class="pm-field md:col-span-2">
+          <span class="pm-label">Address line</span>
+          <input class="pm-input" [ngModel]="addressForm().line1" (ngModelChange)="addressForm.set({ ...addressForm(), line1: $event })" />
+        </label>
+        <label class="pm-field">
+          <span class="pm-label">City</span>
+          <input class="pm-input" [ngModel]="addressForm().city" (ngModelChange)="addressForm.set({ ...addressForm(), city: $event })" />
+        </label>
+        <label class="pm-field">
+          <span class="pm-label">Governorate</span>
+          <input class="pm-input" [ngModel]="addressForm().governorate" (ngModelChange)="addressForm.set({ ...addressForm(), governorate: $event })" />
+        </label>
+        <label class="pm-field">
+          <span class="pm-label">Postal code</span>
+          <input class="pm-input" [ngModel]="addressForm().postalCode" (ngModelChange)="addressForm.set({ ...addressForm(), postalCode: $event })" />
+        </label>
+        <label class="pm-field">
+          <span class="pm-label">Phone</span>
+          <input class="pm-input" [ngModel]="addressForm().phone" (ngModelChange)="addressForm.set({ ...addressForm(), phone: $event })" />
+        </label>
+        <label class="flex items-center gap-2 text-sm text-slate-600 md:col-span-2">
+          <input type="checkbox" [ngModel]="addressForm().isDefault" (ngModelChange)="addressForm.set({ ...addressForm(), isDefault: !!$event })" />
+          Make default
+        </label>
+        <button type="button" class="pm-btn pm-btn-primary md:col-span-2" (click)="saveAddress()">Save address</button>
+      </div>
+    </section>
+
+    <section class="pm-panel space-y-4">
+      <div class="flex items-center justify-between">
+        <h2 class="text-xl font-semibold text-slate-950">Payment preferences and reviews</h2>
+      </div>
+
+      <div class="grid gap-3">
+        @for (payment of paymentPreferences(); track payment.id) {
+          <div class="rounded-2xl border border-slate-200 p-4">
+            <div class="flex items-center justify-between gap-3">
+              <div>
+                <p class="font-semibold text-slate-950">{{ payment.label }}</p>
+                <p class="text-sm text-slate-500">{{ payment.provider | uppercase }} · {{ payment.details }}</p>
+              </div>
+              <span class="pm-chip">{{ payment.isDefault ? 'Default' : 'Optional' }}</span>
+            </div>
+          </div>
+        }
+      </div>
+
+      <div class="grid gap-3 border-t border-slate-200 pt-4">
+        <label class="pm-field">
+          <span class="pm-label">Label</span>
+          <input class="pm-input" [ngModel]="paymentForm().label" (ngModelChange)="paymentForm.set({ ...paymentForm(), label: $event })" />
+        </label>
+        <label class="pm-field">
+          <span class="pm-label">Provider</span>
+          <select class="pm-select" [ngModel]="paymentForm().provider" (ngModelChange)="paymentForm.set({ ...paymentForm(), provider: $event })">
+            <option value="card">Card</option>
+            <option value="d17">D17</option>
+            <option value="cash">Cash</option>
+          </select>
+        </label>
+        <label class="pm-field">
+          <span class="pm-label">Details</span>
+          <input class="pm-input" [ngModel]="paymentForm().details" (ngModelChange)="paymentForm.set({ ...paymentForm(), details: $event })" />
+        </label>
+        <label class="flex items-center gap-2 text-sm text-slate-600">
+          <input type="checkbox" [ngModel]="paymentForm().isDefault" (ngModelChange)="paymentForm.set({ ...paymentForm(), isDefault: !!$event })" />
+          Make default
+        </label>
+        <button type="button" class="pm-btn pm-btn-primary" (click)="savePaymentPreference()">Save payment preference</button>
+      </div>
+
+      <div class="rounded-2xl border border-slate-200 p-4">
+        <p class="font-semibold text-slate-950">Reviews submitted</p>
+        <div class="mt-3 grid gap-3">
+          @for (review of reviews(); track review.id) {
+            <div class="rounded-2xl bg-slate-50 p-4">
+              <p class="font-semibold text-slate-950">{{ review.rating }}/5</p>
+              <p class="mt-1 text-sm text-slate-600">{{ review.comment }}</p>
+            </div>
+          }
+          @if (!reviews().length) {
+            <p class="text-sm text-slate-500">No reviews yet.</p>
+          }
+        </div>
+      </div>
+    </section>
+  </div>
+</app-dashboard-shell>
+
+<app-ui-modal
+  [open]="!!reviewOrderId()"
+  title="Submit review"
+  description="Reviews are stored per order and mirror the backend endpoint structure."
+  (closed)="closeReviewModal()"
+>
+  <div class="grid gap-4">
+    <label class="pm-field">
+      <span class="pm-label">Rating</span>
+      <select class="pm-select" [ngModel]="reviewRating()" (ngModelChange)="reviewRating.set(+$event)">
+        @for (rating of [5, 4, 3, 2, 1]; track rating) {
+          <option [value]="rating">{{ rating }}</option>
+        }
+      </select>
+    </label>
+    <label class="pm-field">
+      <span class="pm-label">Comment</span>
+      <textarea class="pm-textarea" [ngModel]="reviewComment()" (ngModelChange)="reviewComment.set($event)"></textarea>
+    </label>
+    <div class="flex justify-end gap-3">
+      <button type="button" class="pm-btn pm-btn-secondary" (click)="closeReviewModal()">Cancel</button>
+      <button type="button" class="pm-btn pm-btn-primary" (click)="submitReview()">Submit review</button>
+    </div>
+  </div>
+</app-ui-modal>

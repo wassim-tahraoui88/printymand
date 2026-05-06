@@ -1,0 +1,67 @@
+@if (design(); as activeDesign) {
+  <section class="pm-page">
+    <div class="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+      <article class="pm-card">
+        <app-image-with-fallback [src]="activeDesign.image" [alt]="activeDesign.title" [imgClass]="'h-full w-full object-cover'" />
+      </article>
+
+      <div class="grid gap-4">
+        <div class="pm-panel space-y-4">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <p class="text-sm font-semibold uppercase tracking-[0.16em] text-indigo-600">{{ activeDesign.category }}</p>
+              <h1 class="mt-2 text-3xl font-semibold text-slate-950">{{ activeDesign.title }}</h1>
+            </div>
+            <app-designer-badge [rank]="activeDesign.designerRank" />
+          </div>
+
+          <p class="text-base leading-7 text-slate-600">{{ activeDesign.description }}</p>
+
+          <div class="flex flex-wrap gap-2">
+            @for (tag of activeDesign.tags; track tag) {
+              <span class="pm-chip">{{ tag }}</span>
+            }
+          </div>
+
+          <div class="grid gap-3 sm:grid-cols-3">
+            <div class="rounded-2xl bg-slate-50 p-4">
+              <div class="text-2xl font-semibold text-slate-950">{{ activeDesign.views | number }}</div>
+              <div class="text-sm text-slate-500">views</div>
+            </div>
+            <div class="rounded-2xl bg-slate-50 p-4">
+              <div class="text-2xl font-semibold text-slate-950">{{ activeDesign.sales | number }}</div>
+              <div class="text-sm text-slate-500">sales</div>
+            </div>
+            <div class="rounded-2xl bg-slate-50 p-4">
+              <div class="text-2xl font-semibold text-slate-950">{{ activeDesign.price }} TND</div>
+              <div class="text-sm text-slate-500">design fee</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pm-panel flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p class="text-sm font-semibold text-slate-950">{{ activeDesign.designer }}</p>
+            <p class="text-sm text-slate-500">{{ (activeDesign.conversionRate * 100).toFixed(1) }}% conversion · {{ (activeDesign.engagementRate * 100).toFixed(1) }}% engagement</p>
+          </div>
+          <a class="pm-btn pm-btn-primary" [routerLink]="['/customize', activeDesign.id]">Customize design</a>
+        </div>
+      </div>
+    </div>
+
+    <section class="pm-section">
+      <div class="flex items-end justify-between gap-4">
+        <div>
+          <h2 class="text-2xl font-semibold text-slate-950">Supported products</h2>
+          <p class="mt-1 text-sm text-slate-500">Each product can carry a different default placement and available color set.</p>
+        </div>
+      </div>
+
+      <div class="pm-grid-3">
+        @for (product of supportedProducts(); track product.id) {
+          <app-product-card [product]="product" />
+        }
+      </div>
+    </section>
+  </section>
+}

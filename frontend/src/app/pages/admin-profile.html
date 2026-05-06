@@ -1,0 +1,16 @@
+<app-dashboard-shell eyebrow="Admin" title="Admin profile" description="Small settings surface for the platform operator.">
+  <section class="pm-panel space-y-4">
+    <label class="pm-field">
+      <span class="pm-label">Name</span>
+      <input class="pm-input" [ngModel]="user()?.name" (ngModelChange)="auth.updateProfile({ name: $event })" />
+    </label>
+    <label class="pm-field">
+      <span class="pm-label">Email</span>
+      <input class="pm-input" [ngModel]="user()?.email" (ngModelChange)="auth.updateProfile({ email: $event })" />
+    </label>
+    <label class="pm-field">
+      <span class="pm-label">Avatar</span>
+      <input class="pm-input" [ngModel]="user()?.avatar" (ngModelChange)="auth.updateProfile({ avatar: $event })" />
+    </label>
+  </section>
+</app-dashboard-shell>

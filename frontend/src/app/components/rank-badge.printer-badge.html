@@ -1,0 +1,16 @@
+<span [class]="'inline-flex items-center gap-1 px-2 py-0.5 rounded-full border ' + config().bg + ' ' + config().color + ' ' + config().border + ' ' + config().glow">
+  <span class="w-3 h-3 inline-flex items-center justify-center">
+    @switch (config().icon) {
+      @case ('check') {
+        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 12 4 4L19 6" /></svg>
+      }
+      @case ('shield') {
+        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 4 7v6c0 4.4 2.8 7.9 8 9 5.2-1.1 8-4.6 8-9V7l-8-4Z" /></svg>
+      }
+      @default {
+        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 7 10h3l-1 4 5-7h-3l1-4Z" /></svg>
+      }
+    }
+  </span>
+  <span class="text-[10px]" style="font-weight: 500">{{ rank() }}</span>
+</span>

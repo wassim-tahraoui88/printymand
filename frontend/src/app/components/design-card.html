@@ -1,0 +1,57 @@
+<article class="pm-card">
+  <a [routerLink]="['/design', design().id]" class="block overflow-hidden rounded-xl">
+    <app-image-with-fallback
+      [src]="design().image"
+      [alt]="design().title"
+      [imgClass]="'h-64 w-full object-cover transition duration-300 hover:scale-[1.02]'"
+    />
+  </a>
+
+  <div class="space-y-4 p-4">
+    <div class="flex items-start justify-between gap-3">
+      <div class="space-y-1">
+        <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{{ design().category }}</p>
+        <a [routerLink]="['/design', design().id]" class="text-lg font-semibold text-slate-950 hover:text-indigo-600">
+          {{ design().title }}
+        </a>
+      </div>
+      <span class="inline-flex rounded-full border px-2 py-1 text-[11px] font-semibold" [class]="statusTone()">
+        {{ design().status }}
+      </span>
+    </div>
+
+    <p class="line-clamp-2 text-sm text-slate-600">{{ design().description }}</p>
+
+    <div class="flex flex-wrap items-center gap-2">
+      <app-designer-badge [rank]="design().designerRank" />
+      @for (tag of design().tags.slice(0, 2); track tag) {
+        <span class="pm-chip">{{ tag }}</span>
+      }
+    </div>
+
+    <div class="flex items-center justify-between text-sm">
+      <div class="flex items-center gap-3 text-slate-500">
+        <span>{{ design().views | number }} views</span>
+        <span>{{ design().sales | number }} sales</span>
+      </div>
+      <span class="font-semibold text-slate-950">{{ design().price }} TND</span>
+    </div>
+
+    <div class="flex items-center justify-between gap-3 border-t border-slate-200 pt-3">
+      <div class="min-w-0">
+        <p class="truncate text-sm font-medium text-slate-900">{{ design().designer }}</p>
+        <p class="text-xs text-slate-500">{{ (design().conversionRate * 100).toFixed(1) }}% conversion</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <a class="pm-btn pm-btn-secondary" [routerLink]="['/design', design().id]">View</a>
+        <a
+          class="pm-btn pm-btn-primary"
+          [routerLink]="['/customize', design().id]"
+          [queryParams]="preferredProductId() ? { product: preferredProductId() } : null"
+        >
+          Customize
+        </a>
+      </div>
+    </div>
+  </div>
+</article>

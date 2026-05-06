@@ -1,0 +1,33 @@
+<section class="pm-page">
+  <div class="pm-panel">
+    <div class="grid gap-4 lg:grid-cols-[1.5fr_1fr]">
+      <label class="pm-field">
+        <span class="pm-label">Search products or printers</span>
+        <input class="pm-input" [ngModel]="search()" (ngModelChange)="search.set($event)" placeholder="Search products" />
+      </label>
+      <label class="pm-field">
+        <span class="pm-label">Category</span>
+        <select class="pm-select" [ngModel]="category()" (ngModelChange)="category.set($event)">
+          @for (entry of categories(); track entry) {
+            <option [value]="entry">{{ entry }}</option>
+          }
+        </select>
+      </label>
+    </div>
+  </div>
+
+  <div>
+    <h1 class="text-3xl font-semibold text-slate-950">Product catalog</h1>
+    <p class="mt-1 text-sm text-slate-500">{{ products().length }} products ready to be paired with a design.</p>
+  </div>
+
+  @if (products().length) {
+    <div class="pm-grid-3">
+      @for (product of products(); track product.id) {
+        <app-product-card [product]="product" />
+      }
+    </div>
+  } @else {
+    <div class="pm-empty">No products matched that search.</div>
+  }
+</section>
