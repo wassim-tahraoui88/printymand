@@ -36,7 +36,7 @@ export class JwtGuard implements CanActivate {
         try {
             const payload = this.jwtService.verify(token);
             if (!!payload.exp && new Date(payload.exp) > new Date()) throw new AppException(401,'NOT_AUTHENTICATED', { reason: 'TOKEN_EXPIRED' });
-            request.user = { id: parseInt(payload.sub!), role: payload.role, status: payload.status } as IPrincipal;
+            request.user = { id: payload.sub, role: payload.role } as IPrincipal;
             return true;
         }
         catch (error) {

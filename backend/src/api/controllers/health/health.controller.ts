@@ -1,11 +1,11 @@
 import { Controller, Get, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
 import { HealthCheck, HealthCheckService, MemoryHealthIndicator } from '@nestjs/terminus';
 import { PostgresHealthIndicator, MongoHealthIndicator, WebSocketHealthIndicator } from '../../../infrastructure/health';
-import { JwtGuard, RolesGuard } from '../../guards';
+import { JwtGuard, RbacGuard } from '../../guards';
 import { Roles } from '../../decorators';
 
 @Controller('health')
-@UseGuards(JwtGuard, RolesGuard)
+@UseGuards(JwtGuard, RbacGuard)
 @Roles('ADMIN')
 export class HealthController {
 
