@@ -1,23 +1,20 @@
 import { Injectable } from '@nestjs/common';
 import { UseCase } from '../use-case';
-import { UsersRepository } from '../../../domain/repositories';
+import { ProductsRepository } from '../../../domain/repositories';
 import { AppException } from '../../../shared/exceptions/app.exception';
 
 interface ViewProductsInput {
-    id: UUID;
+    cursor?: UUID;
+    limit?: number;
 }
-export interface ViewProductsOutput {
-    user: UserDto;
-}
+export type ViewProductsOutput = any;
 
 @Injectable()
 export class ViewProductsUseCase implements UseCase<ViewProductsInput, ViewProductsOutput> {
 
-    constructor(private readonly repository: UsersRepository) {}
+    constructor(private readonly repository: ProductsRepository) {}
 
     async execute(input: ViewProductsInput) {
-        const user = await this.repository.findDtoById(input.id);
-        if (!user) throw new AppException(404, 'NOT_FOUND');
-        return { user };
+        return {  };
     }
 }
