@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { UsersRepository } from '../domain/repositories';
 import { PostgresUsersRepository } from '../infrastructure/persistence/repositories';
-import { RegisterUseCase, LoginUseCase, LogoutUseCase, RefreshUseCase, ViewSchoolMembershipUseCase, RegisterPushTokenUseCase } from '../application/use-cases/auth';
+import { RegisterUseCase, LoginUseCase, LogoutUseCase, RefreshUseCase } from '../application/use-cases/auth';
 import { AuthController } from '../api/controllers/auth/auth.controller';
 
 @Module({
@@ -14,9 +14,7 @@ import { AuthController } from '../api/controllers/auth/auth.controller';
         RegisterUseCase,
         LoginUseCase,
         LogoutUseCase,
-        RefreshUseCase,
-        ViewSchoolMembershipUseCase,
-        RegisterPushTokenUseCase
+        RefreshUseCase
     ]
 })
 export class AuthModule {}
