@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ProductsRepository } from '../domain/repositories';
 import { PostgresProductsRepository } from '../infrastructure/persistence/repositories';
-import { } from '../application/use-cases/products';
+import { ViewProductsUseCase, GetProductUseCase, AddProductUseCase } from '../application/use-cases/products';
 import { ProductsController } from '../api/controllers/products/products.controller';
 
 @Module({
@@ -11,6 +11,9 @@ import { ProductsController } from '../api/controllers/products/products.control
 			provide: ProductsRepository,
 			useClass: PostgresProductsRepository
 		},
+		ViewProductsUseCase,
+		GetProductUseCase,
+		AddProductUseCase
 	]
 })
 export class ProductsModule {}
