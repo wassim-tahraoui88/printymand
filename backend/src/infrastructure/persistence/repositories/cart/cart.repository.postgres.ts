@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { PostgresService } from '../../postgres.service';
 import { PostgresUtils } from '../../postgres/postgres.utils';
-import { OrdersRepository } from '../../../../domain/repositories';
+import { CartRepository } from '../../../../domain/repositories';
 import { FIND_AUTH_BY_USERNAME, FIND_BY_ID, INSERT_USER } from './queries';
 
 @Injectable()
-export class PostgresOrdersRepository implements OrdersRepository {
+export class PostgresCartRepository implements CartRepository {
 
     constructor(private readonly db: PostgresService) {}
 

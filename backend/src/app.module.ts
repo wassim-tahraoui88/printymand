@@ -8,7 +8,7 @@ import { GlobalExceptionFilter, AppExceptionFilter, ThrottlerExceptionFilter } f
 import { LoggerInterceptor } from './api/interceptors';
 import { AuthModule } from './infrastructure/auth/auth.module';
 import { PersistenceModule } from './infrastructure/persistence/persistence.module';
-import { HealthModule, AuthModule as UserAuthModule, DashboardModule, ProductsModule, DesignsModule, OrdersModule } from './modules';
+import { HealthModule, AuthModule as UserAuthModule, DashboardModule, ProductsModule, DesignsModule, CartModule } from './modules';
 import { GlobalHttpValidationPipe } from './shared/validators/global-validation.pipe';
 
 @Module({
@@ -53,7 +53,7 @@ import { GlobalHttpValidationPipe } from './shared/validators/global-validation.
 	    DashboardModule,
 	    ProductsModule,
 	    DesignsModule,
-	    OrdersModule,
+	    CartModule,
     ],
 	providers: [
 		{
