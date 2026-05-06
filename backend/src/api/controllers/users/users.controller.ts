@@ -1,5 +1,5 @@
 import { Controller } from '@nestjs/common';
-import {  } from '../../../application/users/use-cases';
+import {  } from '../../../application/use-cases/users';
 
 @Controller('users')
 export class UsersController {
