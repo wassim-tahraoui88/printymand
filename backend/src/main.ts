@@ -2,7 +2,6 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import * as cookieParser from 'cookie-parser';
 import * as qs from 'qs';
-import swagger from './swagger';
 import { VersioningType } from "@nestjs/common";
 
 async function bootstrap() {
@@ -21,8 +20,6 @@ async function bootstrap() {
     app.use(cookieParser());
     app.getHttpAdapter().getInstance().set('query parser', (str: string) => qs.parse(str));
 
-    swagger(app);
-
 	// API Versioning
 	app.setGlobalPrefix('api');
 	app.enableVersioning({
@@ -36,7 +33,6 @@ async function bootstrap() {
 ==============================================================
                   Environment: ${process.env.NODE_ENV}
           Server running on: http://${host}:${port}/
-      OpenAPI Specification: http://${host}:${port}/docs
 ==============================================================
 `);
 }
