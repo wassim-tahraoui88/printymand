@@ -1,4 +1,4 @@
 type IPrincipal = {
     id: UUID;
-    role: 'ADMIN' | 'PRINTER' | 'DESIGNER' | 'CLIENT';
+    role: 'ADMIN' | 'PRINTER' | 'DESIGNER' | 'CUSTOMER';
 }

@@ -1,25 +1,28 @@
-import { IsString, MinLength, IsPhoneNumber } from 'class-validator';
+import { IsString, IsEmail, MinLength, IsPhoneNumber, IsIn } from 'class-validator';
 
 export class RegisterDto {
-    @IsString()
-    username: string;
+    @IsEmail()
+    email: string;
 
     @IsString() @MinLength(6)
     password: string;
 
     @IsString()
-    firstName: string;
+    name: string;
 
     @IsString()
-    lastName: string;
+	address: string;
 
     @IsPhoneNumber('TN')
     phoneNumber: string;
+
+	@IsIn(['PRINTER', 'DESIGNER', 'CUSTOMER'])
+	role: 'PRINTER' | 'DESIGNER' | 'CUSTOMER';
 }
 
 export class LoginDto {
-    @IsString()
-    username: string;
+    @IsEmail()
+    email: string;
 
     @IsString()
     password: string;

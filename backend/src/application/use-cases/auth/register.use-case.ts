@@ -6,11 +6,12 @@ import { PasswordPolicy } from '../../../domain/policies/users/password.policy';
 import { EntityId } from '../../../domain/value-objects/domain.id';
 
 interface RegisterInput {
-    username: string,
+    email: string,
     password: string,
-    firstName: string,
-    lastName: string,
+    name: string,
+    address: string,
     phoneNumber: string,
+    role: 'PRINTER' | 'DESIGNER' | 'CUSTOMER',
 }
 export interface RegisterOutput {
     token: string;

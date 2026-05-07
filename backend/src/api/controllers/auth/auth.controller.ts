@@ -1,4 +1,4 @@
-import { Controller, Body, Post, UseGuards, Res, Get, Param, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Body, Post, UseGuards, Res, Get } from '@nestjs/common';
 import { JwtGuard } from '../../guards';
 import { RegisterDto, LoginDto } from './auth.dto';
 import { RegisterUseCase, LoginUseCase, LogoutUseCase, RefreshUseCase } from '../../../application/use-cases/auth';
@@ -15,15 +15,15 @@ export class AuthController {
                 private readonly logout: LogoutUseCase) {}
 
     @Post('register')
-    async onRegister(@Body() dto: RegisterDto, @Res({ passthrough: true }) res: Response) {
-        const response = await this.register.execute(dto);
+    async onRegister(@Body() body: RegisterDto, @Res({ passthrough: true }) res: Response) {
+        const response = await this.register.execute({ ...body });
         JwtUtils.writeToCookie(response.token, res);
         return response;
     }
 
     @Post('login')
-    async onLogin(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
-        const response = await this.login.execute(dto);
+    async onLogin(@Body() body: LoginDto, @Res({ passthrough: true }) res: Response) {
+        const response = await this.login.execute({ ...body });
         JwtUtils.writeToCookie(response.token, res);
         return response;
     }
