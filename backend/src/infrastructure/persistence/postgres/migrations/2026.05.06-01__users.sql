@@ -7,7 +7,7 @@ CREATE TABLE users (
     name VARCHAR(255) NOT NULL,
     address TEXT,
     phone_number VARCHAR(8),
-    data JSONB,
+    data JSONB DEFAULT '{}'::JSONB,
     role user_role NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
