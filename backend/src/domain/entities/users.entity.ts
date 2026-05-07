@@ -1,2 +1,2 @@
-export type Role = 'ADMIN' | 'PRINTER' | 'DESIGNER' | 'CLIENT';
+export type Role = 'ADMIN' | 'PRINTER' | 'DESIGNER' | 'CUSTOMER';
 // export type UserStatus = 'PENDING' | 'ACTIVE' | 'SUSPENDED';
