@@ -1,6 +1,6 @@
 import { Controller, Get, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
 import { HealthCheck, HealthCheckService, MemoryHealthIndicator } from '@nestjs/terminus';
-import { PostgresHealthIndicator, MongoHealthIndicator, WebSocketHealthIndicator } from '../../../infrastructure/health';
+import { PostgresHealthIndicator } from '../../../infrastructure/health';
 import { JwtGuard, RbacGuard } from '../../guards';
 import { Roles } from '../../decorators';
 
@@ -14,17 +14,13 @@ export class HealthController {
 
     constructor(private health: HealthCheckService,
                 private memory: MemoryHealthIndicator,
-                private postgres: PostgresHealthIndicator,
-                private mongo: MongoHealthIndicator,
-                private ws: WebSocketHealthIndicator) {}
+                private postgres: PostgresHealthIndicator) {}
 
     @Get() @HealthCheck() @HttpCode(HttpStatus.OK)
     async healthCheck() {
         const result = await this.health.check([
             () => this.memory.checkHeap('Heap Memory', 150 * 1024 * 1024),
             () => this.postgres.check('Postgres'),
-            () => this.mongo.check('MongoDB'),
-            () => this.ws.check('WebSocket'),
         ]);
         return {
             build: {
