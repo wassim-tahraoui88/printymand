@@ -1,8 +1,8 @@
-export const INSERT_USER = `
+export const INSERT_PRODUCT = `
 `;
 
 export const FIND_BY_ID = `
 `;
 
-export const FIND_AUTH_BY_USERNAME = `
+export const FIND_ALL = `
 `;

@@ -14,6 +14,6 @@ export class AddProductUseCase implements UseCase<AddProductInput, AddProductOut
     constructor(private readonly repository: ProductsRepository) {}
 
     async execute(input: AddProductInput) {
-        return {};
+		return this.repository.create(input);
     }
 }

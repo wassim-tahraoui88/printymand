@@ -15,6 +15,6 @@ export class ViewProductsUseCase implements UseCase<ViewProductsInput, ViewProdu
     constructor(private readonly repository: ProductsRepository) {}
 
     async execute(input: ViewProductsInput) {
-        return {  };
+		return this.repository.findAll();
     }
 }
