@@ -14,7 +14,7 @@ export class JwtService {
 
     constructor(config: ConfigService) {
         this.secret = config.get<string>('JWT_SECRET')!;
-        this.issuer = config.get<string>('JWT_ISSUER') || 'imtiyez-platform';
+        this.issuer = config.get<string>('JWT_ISSUER') || 'printymand';
         this.expiresIn = (config.get<string>('JWT_EXPIRATION') || '14d') as ms.StringValue;
     }
 
