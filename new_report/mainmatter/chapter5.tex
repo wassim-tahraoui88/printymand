@@ -33,17 +33,6 @@ Printer selection is essential because fulfillment depends on the selected print
 \subsection{Payment workflow}
 The payment workflow supports several payment methods, including cash and digital options. We designed it so that order status and payment status are clearly separated, which makes it easier to track both commercial confirmation and production progress.
 
-\section{Design}
-\subsection{Use case diagram}
-The Cycle 2 use case diagram includes customer interactions with customization, printer selection, cart management, checkout, payment, tracking, and review submission.
-
-\reportfigure{cycle2-use-case}{figures/cycle2-use-case-diagram.png}{Cycle 2 use case diagram.}
-
-\subsection{Sequence diagram}
-The Cycle 2 sequence starts when a customer opens a design customization page. The customer selects a product, adjusts the preview, chooses a printer, and adds the customized product to the cart. During checkout, the platform converts cart lines into order lines, assigns a tracking code, calculates the total, records payment information, and displays the tracking page.
-
-\reportfigure{cycle2-sequence}{figures/cycle2-customization-checkout-sequence.png}{Cycle 2 customization and checkout sequence diagram.}
-
 \section{Development}
 \subsection{Customization interface}
 The customization interface allows the customer to select a compatible product, choose color and size, move the design on the product preview, and adjust its scale. The position and scale are saved as a customization draft, which preserves the customer's choices during the transition to printer selection and cart insertion.

@@ -30,17 +30,6 @@ Printymand includes four authenticated roles: customer, designer, printer, and a
 \subsection{Catalog discovery quality}
 Marketplace discovery depends on the clarity of design cards, product cards, categories, and detail pages. We focused on building a clean browsing experience so that customers can understand the offer before starting customization. This choice improves usability and creates a natural transition toward customization.
 
-\section{Design}
-\subsection{Use case diagram}
-The use case diagram for Cycle 1 presents visitor and authenticated user interactions: register, login, browse marketplace, view products, view designs, open details, and access the correct dashboard after authentication.
-
-\reportfigure{cycle1-use-case}{figures/cycle1-use-case-diagram.png}{Cycle 1 use case diagram.}
-
-\subsection{Sequence diagram}
-The sequence diagram for Cycle 1 begins when a user submits login or registration data. The application sends the request to the server, which validates the data, verifies or creates the account, generates a JWT token, and returns the authenticated session. The application then updates the user state and redirects the user to the appropriate dashboard.
-
-\reportfigure{cycle1-sequence}{figures/cycle1-authentication-sequence.png}{Cycle 1 authentication and onboarding sequence diagram.}
-
 \section{Development}
 \subsection{Authentication and registration}
 We implemented authentication around a clear access workflow. During registration, the user provides identity information, address, password, and role. The platform creates the account and initializes the default profile corresponding to the chosen role. During login, the server verifies the credentials, signs a JWT token, and establishes the session.
