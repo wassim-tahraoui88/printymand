@@ -1,0 +1,127 @@
+% --------------------------
+% Document class
+% --------------------------
+\documentclass[
+  A4paper,                % paper size A4
+  openany,                % open chapters on any page
+  chapterprefix=true,     % prefix for chapter marks
+  12pt,                   % font size
+  headings=normal,        % size of headings
+  titlepage=on,           % own page for each title page
+  twoside                 % single-sided printing to avoid blank pages
+]{book}
+
+\setcounter{secnumdepth}{3}
+\renewcommand{\thesubsubsection}{\thesubsection.\arabic{subsubsection}}
+
+% **************************************************
+% THESIS details
+% **************************************************
+
+\newcommand{\University}{\protect{University \ of  \ Monastir}}
+\newcommand{\UNIVERSITY}{\protect{UNIVERSITY \ OF \ MONASTIR}}
+
+
+\input{thesisDetails}
+\usepackage[final]{pdfpages}
+% **************************************************
+% Settings
+% **************************************************
+
+\input{settings}
+
+% **************************************************
+% Begin document
+% **************************************************
+\begin{document}
+
+% --------------------------
+% Cover and front matter
+% --------------------------
+\frontmatter
+\includepdf{mainmatter/PG_IM_ENG_Seif_Amine.pdf}
+\pagestyle{empty}				    % no header nor %footer
+%\input{frontmatter/1_cover}
+%\newpage
+
+%%\input{frontmatter/2_frontpage}
+%\newpage
+
+\pagenumbering{roman}			    % roman page numbering 
+\pagestyle{plain}				    % empty header, just page number in footer
+% \input{frontmatter/3_teseo}
+% \cleardoublepage
+
+\input{frontmatter/4_dedication}   % dedication (optional)
+%\cleardoublepage
+\newpage
+\input{frontmatter/5_acknowledgement}  % acknowledgement (optional)
+\newpage
+
+%\input{frontmatter/6_abstract}		% abstract (in English and Spanish)
+\newpage
+
+\selectlanguage{english}
+
+\setcounter{tocdepth}{3}		% define depth of toc
+\tableofcontents				% display table of contents
+
+
+\addcontentsline{toc}{section}{List of Figures}
+\listoffigures
+
+
+\addcontentsline{toc}{section}{List of Tables}
+\listoftables
+\newpage
+\newpage
+{\setstretch{1.15}
+\input{frontmatter/7_acronyms}
+}
+\cleardoublepage
+\mainmatter
+\pagenumbering{arabic}			    % arabic page numbering
+\setcounter{page}{1}		        %set page counter
+\pagestyle{fancy} 	                % fancy header and footer
+\parskip=7pt                        % space after each paragraph
+\parindent=0pt                      % suppress indentation of paragraphs
+
+% --------------------------
+% Main matter
+% --------------------------
+\mainmatter
+\pagenumbering{arabic}			% arabic page numbering
+\setcounter{page}{1}			% set page counter
+\pagestyle{fancy} 	            % fancy header and footer
+\parskip=7pt                    % space after each paragraph
+\parindent=0pt                  % suppress indentation of paragraphs
+
+
+% Chapters
+\include{mainmatter/general_introdcution} 
+\include{mainmatter/chapter1}
+\include{mainmatter/chapter2}
+\include{mainmatter/chapter3}
+\include{mainmatter/chapter4}
+\include{mainmatter/chapter5}
+\include{mainmatter/chapter6}
+\include{mainmatter/general_conclusion}
+\cleardoublepage
+\backmatter
+
+% --------------------------
+% Back matter
+% --------------------------
+\backmatter
+\printbibliography[title=Webography, heading=bibintoc]
+
+\appendix
+
+  
+
+% **************************************************
+% End of document
+% **************************************************
+\includepdf{mainmatter/Plagiat.pdf}
+\pagestyle{empty}
+\end{document}

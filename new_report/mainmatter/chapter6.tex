@@ -1,0 +1,106 @@
+\chapter{Spiral Cycle 3: Governance, administration, and platform optimization}
+\label{ch::chapter6}
+
+\section{Introduction}
+The third Spiral cycle consolidates the platform around role-specific dashboards, governance, administration, and technical maintainability. At this stage, Printymand must not only allow customers to order products, but also provide designers, printers, and administrators with tools to manage their responsibilities.
+
+\section{Cycle planning and objectives}
+\begin{table}[!htpb]
+\caption{Cycle 3 objectives and deliverables.}
+\centering
+\begin{tabular}{|p{0.28\linewidth}|p{0.48\linewidth}|p{0.16\linewidth}|}
+\hline
+\textbf{Objective} & \textbf{Deliverable} & \textbf{Priority} \\ \hline
+Customer workspace & Profile, saved addresses, payment preferences, orders, reviews, and dashboard indicators. & Medium \\ \hline
+Designer workspace & Design management, product assignment, analytics, profile, and payout records. & High \\ \hline
+Printer workspace & Product management, order-line management, fulfillment status updates, and profile. & High \\ \hline
+Administration & User management, role/rank updates, account suspension, content supervision, and platform overview. & High \\ \hline
+Technical optimization & Health checks, throttling, validation, filters, logging, transactions, and database schema consolidation. & High \\ \hline
+\end{tabular}
+\label{tab:cycle3_objectives}
+\end{table}
+
+\section{Risk analysis}
+\subsection{Governance and moderation}
+Marketplace platforms require governance because users publish content, printers fulfill orders, and customers depend on reliable operations. The current admin dashboard provides a foundation for user suspension, role updates, rank updates, and platform overview. Future work should extend this with content moderation workflows and audit logs.
+
+\subsection{Authorization drift}
+As features grow, protected routes and API endpoints can become inconsistent. Printymand addresses this risk by using route guards on the front end and guards with role decorators on the back end. However, full protection requires every sensitive endpoint to be covered and tested.
+
+\subsection{Operational consistency}
+Designer analytics, printer fulfillment, customer tracking, and administrator metrics all depend on consistent data. In the current implementation, the front-end store computes these values from local state. In future iterations, the server should centralize these calculations to avoid divergence between clients.
+
+\subsection{Maintainability}
+The back end already separates controllers, use cases, repository interfaces, repository implementations, domain DTOs, and infrastructure services. This is a strong maintainability decision. The remaining risk is incomplete repository implementation, which should be addressed by completing SQL queries and adding tests.
+
+\section{Design}
+\subsection{Role-specific use case diagrams}
+The third cycle should include use case diagrams for each role. Customer use cases focus on profile and order history. Designer use cases focus on designs and analytics. Printer use cases focus on products and fulfillment. Admin use cases focus on users, moderation, and platform monitoring.
+
+\placeholderfigure{customer-use-case}{figures/customer-use-case-diagram.png}{Customer use case diagram placeholder.}
+\placeholderfigure{designer-use-case}{figures/designer-use-case-diagram.png}{Designer use case diagram placeholder.}
+\placeholderfigure{printer-use-case}{figures/printer-use-case-diagram.png}{Printer use case diagram placeholder.}
+\placeholderfigure{admin-use-case}{figures/admin-use-case-diagram.png}{Admin use case diagram placeholder.}
+
+\subsection{Administration sequence diagram}
+The administration sequence should show an administrator authenticating, accessing the admin dashboard, consulting platform indicators, changing user roles or ranks, suspending accounts, and reviewing content.
+
+\placeholderfigure{admin-sequence}{figures/admin-sequence-diagram.png}{Administration sequence diagram placeholder.}
+
+\section{Development}
+\subsection{Customer dashboard}
+The customer dashboard allows the user to view order history, cart-related information, profile data, saved addresses, payment preferences, and reviews. The current model includes customer profile fields for phone number, saved addresses, favorite printers, payment preferences, and notes.
+
+\placeholderfigure{customer-dashboard}{figures/customer-dashboard.png}{Customer dashboard interface screenshot placeholder.}
+
+\subsection{Designer dashboard}
+The designer dashboard supports design management and analytics. Designers can create or update designs, set status values such as active, archived, or removed, assign products to designs, and define product-specific design configuration. The platform store calculates designer totals such as earnings, number of designs, order count, and average conversion.
+
+The design model includes title, image, designer information, category, description, tags, rating, sales, views, engagement rate, conversion rate, price, status, assigned products, product configurations, and timestamps.
+
+\placeholderfigure{designer-dashboard}{figures/designer-dashboard.png}{Designer dashboard interface screenshot placeholder.}
+
+\subsection{Printer dashboard}
+The printer dashboard allows printer users to manage products and incoming order lines. Printers can update order-line statuses through values such as pending, accepted, printing, shipped, delivered, and rejected. The workflow service also provides printer totals including products, revenue, fulfillment rate, and rating.
+
+The product model includes printer identity, name, category, description, base price, colors, sizes, images, availability, lead time, rating, total orders, and assigned design identifiers.
+
+\placeholderfigure{printer-dashboard}{figures/printer-dashboard.png}{Printer dashboard interface screenshot placeholder.}
+
+\subsection{Admin dashboard}
+The admin dashboard provides an overview of users, orders, revenue, active designs, and active printers. It also supports account supervision operations such as role updates, rank updates, and account suspension. This corresponds to the platform's governance needs.
+
+On the back end, administrator-only health monitoring is represented by the \texttt{HealthController}. It checks heap memory and PostgreSQL connectivity through NestJS Terminus and a custom PostgreSQL health indicator.
+
+\placeholderfigure{admin-dashboard}{figures/admin-dashboard.png}{Admin dashboard interface screenshot placeholder.}
+
+\subsection{Back-end optimization and technical services}
+Several technical services support platform maintainability:
+
+\begin{itemize}
+    \item \textbf{Validation:} a global validation pipe applies DTO validation rules to incoming requests.
+    \item \textbf{Exception handling:} global, application, and throttler exception filters standardize error responses.
+    \item \textbf{Logging:} a logger interceptor records request/response behavior.
+    \item \textbf{Throttling:} short, medium, and long throttling profiles are configured through environment variables.
+    \item \textbf{Transactions:} the transaction scope manages begin, commit, rollback, and client release behavior.
+    \item \textbf{Realtime foundation:} services for Socket.IO, presence, push, and realtime module organization are present for future interactive features.
+\end{itemize}
+
+\subsection{Database consolidation}
+The database schema gives the back end a realistic foundation. Users are separated from designer and printer inventories. Designs can belong to albums and tags. Products belong to printer inventories. Orders contain order items associated with designs and products. This schema is sufficient to support the main marketplace concepts, although additional tables may be required for payments, reviews, payouts, shipment tracking, and moderation logs.
+
+\section{Validation and evaluation}
+Cycle 3 demonstrates the operational side of the platform. The front end already supports the main role dashboards and administrative actions through local state. The back end provides infrastructure for validation, health, authentication, RBAC, and persistence. The main remaining work is the full integration between dashboard actions and persisted API endpoints.
+
+The following validation tasks remain important for future iterations:
+
+\begin{itemize}
+    \item Complete product, cart, order, payment, review, and dashboard repositories.
+    \item Align all front-end API endpoint paths with actual back-end controllers.
+    \item Add automated tests for guards, authentication, product listing, design listing, order placement, and dashboard access.
+    \item Add migration checks and seed data scripts for local development.
+    \item Add moderation history and audit logging for administration actions.
+\end{itemize}
+
+\section{Conclusion}
+The third Spiral cycle added governance and role-specific management to Printymand. It clarified the operational responsibilities of customers, designers, printers, and administrators, while strengthening the technical basis of the platform. The project remains under development, but the architecture and implemented workflows show a coherent foundation for future completion.

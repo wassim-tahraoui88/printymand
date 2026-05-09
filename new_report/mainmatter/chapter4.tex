@@ -1,0 +1,85 @@
+\chapter{Spiral Cycle 1: Authentication, onboarding, and marketplace discovery}
+\label{ch::chapter4}
+
+\section{Introduction}
+The first Spiral cycle establishes the foundations of the platform. Its objective is to make the application accessible, navigable, and understandable for the main user roles. This includes authentication, registration, role-based redirection, public marketplace discovery, product and design browsing, and the first reusable front-end components.
+
+\section{Cycle planning and objectives}
+\begin{table}[!htpb]
+\caption{Cycle 1 objectives and deliverables.}
+\centering
+\begin{tabular}{|p{0.28\linewidth}|p{0.48\linewidth}|p{0.16\linewidth}|}
+\hline
+\textbf{Objective} & \textbf{Deliverable} & \textbf{Priority} \\ \hline
+Account access & Login, registration, logout, current user state, demo accounts, and API authentication attempt. & High \\ \hline
+Role onboarding & Selection of customer, designer, or printer role during registration. & High \\ \hline
+Marketplace discovery & Home page, marketplace page, product catalog, design cards, product cards, and design detail page. & High \\ \hline
+Navigation protection & Front-end route guard and back-end JWT/RBAC guard foundations. & High \\ \hline
+Reusable UI & Layout, dashboard shell, cards, modal, stat cards, skeleton blocks, rank badges, and image fallback component. & Medium \\ \hline
+\end{tabular}
+\label{tab:cycle1_objectives}
+\end{table}
+
+\section{Risk analysis}
+\subsection{Authentication consistency}
+The front end currently tries to use the API and falls back to hybrid/mock state when the API request fails. This is useful for academic demonstration, but it creates a risk of inconsistent routes and payload formats. The back end exposes authentication under \texttt{/auth}, while some front-end API methods still reference \texttt{/users/login} and \texttt{/users/register}. The identified mitigation is to standardize endpoint paths before production deployment.
+
+\subsection{Role separation}
+Printymand has four user roles with different dashboards and permissions. Incorrect role separation could expose printer, designer, or administration pages to unauthorized users. This risk is addressed through the Angular \texttt{authRoleGuard}, the NestJS \texttt{JwtGuard}, and the \texttt{RbacGuard}. The current implementation demonstrates the intended direction, although additional integration tests are still required.
+
+\subsection{Catalog discovery quality}
+Marketplace discovery depends on active designs, product availability, search/filter behavior, and correct association between designs and compatible products. The current implementation uses seed data and local state to validate the user experience before relying fully on the database.
+
+\section{Design}
+\subsection{Use case diagram}
+The use case diagram for Cycle 1 should show the visitor and authenticated user interactions: register, login, browse marketplace, view products, view designs, open details, and access the correct dashboard after authentication.
+
+\placeholderfigure{cycle1-use-case}{figures/cycle1-use-case-diagram.png}{Cycle 1 use case diagram placeholder.}
+
+\subsection{Sequence diagram}
+The sequence diagram for Cycle 1 begins with a user submitting credentials or registration data. The front end sends a request to the API service. The back end validates the data, verifies or creates the account, signs a JWT token, and writes it to an HTTP-only cookie. The front end then updates the current user state and redirects the user to the dashboard that corresponds to the role.
+
+\placeholderfigure{cycle1-sequence}{figures/cycle1-authentication-sequence.png}{Cycle 1 authentication and onboarding sequence diagram placeholder.}
+
+\section{Development}
+\subsection{Authentication and registration}
+The front-end authentication service exposes login, registration, logout, profile update, role update, and dashboard redirection methods. It delegates state management to \texttt{PlatformStoreService}. The registration workflow creates users with role-specific defaults: customer profile, designer profile, or printer profile.
+
+On the back end, the \texttt{AuthController} exposes registration and login endpoints. The registration use case generates an entity identifier, hashes the password, stores the user through the repository, and signs a token. The login use case retrieves a user by email, verifies the bcrypt password hash, and returns a signed JWT.
+
+\placeholderfigure{login-interface}{figures/login-interface.png}{Screenshot of the login interface placeholder.}
+\placeholderfigure{register-interface}{figures/register-interface.png}{Screenshot of the registration interface placeholder.}
+
+\subsection{Marketplace and product discovery}
+The application route configuration includes home, marketplace, products, and design detail pages. The home page computes featured designs and products from the workflow service. The marketplace and product pages allow the user to explore the available catalog. Design and product card components provide reusable visual presentation.
+
+In the current implementation, the front end relies on seed data and local storage, which makes it possible to demonstrate the marketplace while the back-end product and design repositories continue to mature.
+
+\placeholderfigure{marketplace-interface}{figures/marketplace-interface.png}{Screenshot of the marketplace discovery interface placeholder.}
+\placeholderfigure{product-detail-interface}{figures/product-detail-interface.png}{Screenshot of the product or design detail interface placeholder.}
+
+\subsection{Reusable components}
+Cycle 1 also produced a reusable component base. The layout component structures the main page shell. The dashboard shell is used by role-specific dashboards. Design cards, product cards, printer cards, stat cards, rank badges, image fallback, modal, and skeleton blocks support a consistent interface.
+
+This component-oriented approach is compatible with Angular best practices and reduces duplication between customer, designer, printer, and administrator pages.
+
+\subsection{Backend foundations}
+The first cycle also set up core back-end infrastructure:
+
+\begin{itemize}
+    \item NestJS application bootstrap and global API prefix.
+    \item CORS configuration for the Angular development server.
+    \item Cookie parsing and query parsing.
+    \item Configuration module and environment-file loading.
+    \item Global validation pipe.
+    \item Exception filters and logging interceptor.
+    \item JWT utility functions for cookie writing and extraction.
+\end{itemize}
+
+\section{Validation and evaluation}
+The implemented Cycle 1 features allow a user to access the application, create or use an account, navigate the marketplace, and reach the correct dashboard. The mock/hybrid store makes it possible to validate the front-end flow even when the API is unavailable. On the back end, authentication and role guard structures provide the basis for secure integration.
+
+Remaining validation work includes aligning front-end API paths with the back-end controller paths, adding automated tests for authentication and role access, and completing API responses expected by the Angular services.
+
+\section{Conclusion}
+The first Spiral cycle established the foundation of Printymand: authentication, onboarding, discovery, navigation, and reusable interface elements. It also initiated the back-end security and infrastructure layers. The next cycle builds on this foundation by implementing customization, printer selection, checkout, and order tracking.

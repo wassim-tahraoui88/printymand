@@ -1,0 +1,14 @@
+\chapter*{General Conclusion}
+\addcontentsline{toc}{chapter}{General Conclusion}
+
+This PFA project presented the design and development of Printymand, a print-on-demand marketplace platform intended to connect customers, designers, printers, and administrators. The project allowed us to study a realistic full-stack software engineering problem that combines user experience, multi-role workflows, authentication, authorization, database modeling, and modular back-end architecture.
+
+From the front-end perspective, the Angular application implements a broad set of user-facing workflows: marketplace discovery, product and design browsing, authentication, role-specific dashboards, product customization, printer selection, cart management, checkout, order tracking, and profile management. The mock/hybrid state layer was useful for validating the user experience while the back-end services continue to evolve.
+
+From the back-end perspective, the NestJS application establishes a maintainable foundation through modular controllers, application use cases, repository contracts, PostgreSQL persistence, JWT authentication, RBAC guards, validation, exception filters, interceptors, throttling, transactions, and health checks. The database migrations define the main entities required by the marketplace, including users, designer assets, printer products, and orders.
+
+The Spiral Model was appropriate for this project because it allowed the platform to be studied and implemented through progressive cycles while keeping technical risks visible. Each cycle produced a clearer version of the system: first authentication and discovery, then customization and checkout, and finally governance and dashboards.
+
+The platform is not yet production-ready. Some API endpoints, repositories, payment flows, cart/order persistence, and integration details still require completion. However, the current codebase demonstrates a coherent academic engineering prototype and provides a solid basis for future development. Future work should focus on completing the REST API, aligning front-end and back-end contracts, adding automated tests, integrating real payment services, improving moderation, and preparing deployment infrastructure.
+
+In conclusion, Printymand represents a valuable learning experience in full-stack web development and software architecture. It shows how a local print-on-demand marketplace can be modeled, prototyped, and progressively implemented with modern technologies while respecting the constraints of an academic PFA project.

@@ -1,0 +1,111 @@
+\chapter{Preliminary study}
+\label{ch::chapter2}
+
+\section{Introduction}
+This chapter introduces the Printymand project, its domain, and the motivation behind its development. It identifies the problems faced by creators, customers, and local printing providers in the print-on-demand field. It also presents a comparative study of existing solutions and explains why the Spiral Model was selected as the project management methodology.
+
+\section{General overview}
+Printymand is a web-based print-on-demand marketplace designed as an academic PFA project for the Engineering Degree in Software Engineering at EPI University. The project aims to connect four main categories of users:
+
+\begin{itemize}
+    \item Customers, who browse designs, customize products, select printers, place orders, and track fulfillment.
+    \item Designers, who publish artworks, manage design availability, configure compatible products, and monitor sales indicators.
+    \item Printers, who publish printable products, receive order lines, and update production status.
+    \item Administrators, who supervise users, content, marketplace activity, and platform health.
+\end{itemize}
+
+The project was developed by Mohamed Amine Zini as front-end developer and Ouassim Tahraoui as back-end developer. The current implementation is a work-in-progress academic platform. It demonstrates the principal workflows and technical architecture, while some server-side marketplace capabilities are still being completed.
+
+\section{Problem statement}
+Print-on-demand platforms reduce inventory cost and allow customers to buy personalized products. However, in local contexts such as Tunisia, several limitations remain visible. International platforms can provide large catalogs and creator storefronts, but they often involve long shipping times, high delivery costs, unsuitable payment methods, and limited local production integration. Local personalization providers may offer faster delivery, but they frequently operate as direct printing shops rather than true marketplaces. This restricts designer monetization, product diversity, scalability, and transparent order tracking.
+
+The main problem addressed by Printymand is therefore the absence of a unified local POD marketplace that brings together customers, designers, printers, and administrators with adapted workflows. The platform must provide an accessible customer experience while also supporting creator publication, printer fulfillment, role-specific dashboards, and secure authentication.
+
+\section{Existing solutions study}
+The reference report and project analysis identified representative local and international solutions. The following comparison summarizes their relevance to the Printymand problem domain.
+
+\subsection{MarYouli}
+MarYouli is a local Tunisian personalization provider focused on printed clothing and customized gifts. Its main advantage is local availability and simplified purchase for Tunisian customers. However, it does not operate as a designer marketplace with storefronts, royalty logic, and multi-printer fulfillment.
+
+\subsection{TeeWinek}
+TeeWinek provides personalized apparel and gifts for local customers, often with a direct customization approach. It is useful for simple orders, but it remains limited for designers who need a dedicated publication, ranking, and sales monitoring environment.
+
+\subsection{TeePublic}
+TeePublic is an international marketplace where independent designers can publish artworks and sell them across multiple product categories. It offers a mature creator-oriented model, but it is less adapted to local Tunisian logistics, payment expectations, delivery speed, and localized production.
+
+\subsection{Redbubble}
+Redbubble is a global marketplace for independent artists. It provides a wide product range and automated fulfillment through partner networks. Its limitations for the local context are similar: international shipping constraints, reduced local printer participation, and weaker adaptation to regional buyer habits.
+
+\section{Critical analysis and identified gap}
+The studied solutions show that the POD market is divided between global creator marketplaces and local printing services. Global platforms are strong in catalog diversity, designer storefronts, and automated fulfillment, but weak in local logistics and payment accessibility. Local solutions are stronger in proximity and delivery speed, but weaker in marketplace governance, creator monetization, dashboards, and scalable order tracking.
+
+Printymand positions itself between these two models. It aims to preserve the marketplace logic of international POD platforms while adapting it to a local ecosystem where designers and printers can cooperate. The gap can be summarized as follows:
+
+\begin{itemize}
+    \item Need for a local multi-role POD marketplace, not only a print shop.
+    \item Need for designer publication and performance monitoring.
+    \item Need for printer visibility, ranking, and order management.
+    \item Need for customer customization, printer selection, and tracking.
+    \item Need for administration and moderation tools.
+\end{itemize}
+
+\section{Proposed solution}
+Printymand proposes a full-stack marketplace platform that centralizes the main POD workflow. Customers can browse active designs and products, configure a design on a product, select a printer, place an order, and follow its status. Designers can manage published designs, product compatibility, profile information, and analytics. Printers can manage their product catalog and fulfillment tasks. Administrators can supervise accounts, rankings, content availability, and global platform metrics.
+
+The current codebase supports this solution through:
+
+\begin{itemize}
+    \item An Angular front end with routes for home, marketplace, products, design details, customization, printer selection, checkout, order tracking, and dashboards.
+    \item A local platform store that provides mock/hybrid data for users, designs, products, printers, orders, reviews, payouts, and cart items.
+    \item A NestJS back end with modules for authentication, dashboard, health, designs, products, cart, users, and persistence.
+    \item PostgreSQL migrations for users, designer inventories, printer inventories, products, designs, tags, orders, and order items.
+    \item JWT authentication, secure cookies, role-based guards, global validation, exception filters, logging interceptors, throttling, and health checks.
+\end{itemize}
+
+\placeholderfigure{application-logo}{figures/application-logo.png}{Application logo placeholder.}
+
+\section{The adopted methodology}
+Choosing a methodology is important because Printymand combines evolving requirements with technical risks. The project includes several user roles, many workflows, and an architecture split between front end, back end, and database. For this reason, the Spiral Model was selected.
+
+\subsection{The choice of the Spiral Model}
+The Spiral Model is an iterative and risk-driven development model. Each cycle includes objective definition, risk analysis, development, validation, and planning for the next cycle. Unlike a strictly linear model, it allows the team to revisit decisions as the understanding of the system improves.
+
+This approach is appropriate for Printymand because the project is still under development. The front-end experience, back-end API, authentication, data model, and marketplace workflows can evolve progressively while risks are identified early.
+
+\subsection{Why the Spiral Model}
+The Spiral Model was chosen for the following reasons:
+
+\begin{itemize}
+    \item \textbf{Risk management:} Security, order consistency, payment workflow, data persistence, and role separation are critical risks that must be studied progressively.
+    \item \textbf{Iterative delivery:} The team can deliver a first marketplace experience, then improve customization and checkout, then consolidate dashboards and administration.
+    \item \textbf{Adaptability:} Requirements for designers, printers, customers, and administrators can be refined as prototypes are reviewed.
+    \item \textbf{Validation:} Each cycle produces visible outputs that can be tested through pages, services, API endpoints, and database schema.
+\end{itemize}
+
+\placeholderfigure{spiral-model}{figures/spiral-model.png}{Spiral methodology diagram placeholder.}
+
+\subsection{Project management with the Spiral Model}
+The project was organized into three main Spiral cycles:
+
+\begin{itemize}
+    \item \textbf{Cycle 1:} Authentication, onboarding, marketplace discovery, and basic navigation.
+    \item \textbf{Cycle 2:} Product customization, printer selection, cart, checkout, and order tracking.
+    \item \textbf{Cycle 3:} Role dashboards, governance, administration, health monitoring, and maintainability.
+\end{itemize}
+
+\subsubsection{Team and roles}
+\begin{table}[!htpb]
+    \caption{Roles and responsibilities in the Spiral Model.}
+    \centering
+    \begin{tabular}{|p{3cm}|p{6cm}|p{4cm}|}
+        \hline
+        \textbf{Role} & \textbf{Mission} & \textbf{Actor} \\ \hline
+        Project supervisor & Academic guidance, validation of objectives, and review of report direction. & Mrs. Rania MKHININI \\ \hline
+        Front-end developer & Angular application, pages, components, services, mock/hybrid data workflow, and user interface implementation. & Mohamed Amine Zini \\ \hline
+        Back-end developer & NestJS API, authentication, persistence layer, database migrations, guards, validation, and server-side architecture. & Ouassim Tahraoui \\ \hline
+    \end{tabular}
+    \label{tab:spiral_roles}
+\end{table}
+
+\section{Conclusion}
+This chapter presented the project context, the limitations of existing POD solutions, and the motivation for developing Printymand. It also introduced the proposed solution and justified the adoption of the Spiral Model. The next chapter studies the requirements, architecture, and technical planning of the platform.

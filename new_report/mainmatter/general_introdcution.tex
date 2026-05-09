@@ -1,0 +1,22 @@
+\chapter*{General Introduction}
+\addcontentsline{toc}{chapter}{General Introduction}
+
+Digital commerce has progressively moved from fixed catalog sales toward more flexible models where personalization, local fulfillment, and creator participation play a central role. Print-on-demand (POD) is one of these models. Instead of producing large quantities of products in advance, a POD platform prints an item only after a customer order is confirmed. This reduces stock risk, gives designers a channel to monetize digital artwork, and allows printers to receive targeted production requests.
+
+However, a POD marketplace is not only an online store. It must coordinate several actors with different objectives. Customers need to discover designs, preview personalized products, select a suitable printer, pay, and track orders. Designers need a space to publish artworks, manage their profile, and follow sales indicators. Printers need to expose products and production capacity, receive order lines, and update fulfillment status. Administrators need visibility over users, content, orders, and platform health. These requirements create a multi-role software engineering problem involving user experience design, role-based access control, transactional workflows, database modeling, and maintainable full-stack architecture.
+
+In this context, this report presents \textbf{Printymand}, an academic PFA project developed as part of the Engineering Degree in Software Engineering at EPI University. The project was developed by two students: Mohamed Amine Zini, responsible for the front-end application, and Ouassim Tahraoui, responsible for the back-end application. Printymand is still under development and is not presented as a production-ready commercial website. Nevertheless, the current codebase is sufficient to understand the intended scope, architecture, technologies, implemented modules, and development direction.
+
+The platform is implemented as an Angular single-page application connected to a NestJS REST API. The front end currently provides a rich mock/hybrid experience for marketplace browsing, authentication, role-specific dashboards, customization, checkout, and order tracking. The back end provides the modular foundation for authentication, authorization, persistence, validation, rate limiting, health checks, and marketplace resources such as designs and products. PostgreSQL migrations define the initial domain model for users, designers, printers, products, designs, and orders.
+
+This report is structured as follows:
+
+\begin{itemize}
+    \item The first chapter, \textbf{Preliminary Study}, presents the project context, problem statement, comparative study of existing solutions, proposed solution, and adopted Spiral methodology.
+    \item The second chapter, \textbf{Architecture and Planning}, details the requirements, actors, global architecture, data model, API structure, work environment, and planning of the Spiral cycles.
+    \item The third chapter, \textbf{Spiral Cycle 1}, focuses on authentication, onboarding, marketplace discovery, and the first visible user experience.
+    \item The fourth chapter, \textbf{Spiral Cycle 2}, presents product customization, printer selection, cart, checkout, and order tracking.
+    \item The fifth chapter, \textbf{Spiral Cycle 3}, describes governance, role dashboards, administration, platform optimization, and maintainability concerns.
+\end{itemize}
+
+Finally, the report ends with a general conclusion summarizing the achievements, limitations, and future perspectives of the Printymand platform.

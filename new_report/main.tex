@@ -1,0 +1,79 @@
+% --------------------------
+% Document class
+% --------------------------
+\documentclass[
+  A4paper,
+  openany,
+  chapterprefix=true,
+  12pt,
+  headings=normal,
+  titlepage=on,
+  twoside
+]{book}
+
+\setcounter{secnumdepth}{3}
+\renewcommand{\thesubsubsection}{\thesubsection.\arabic{subsubsection}}
+
+\newcommand{\University}{\protect{EPI University}}
+\newcommand{\UNIVERSITY}{\protect{EPI UNIVERSITY}}
+
+\input{thesisDetails}
+\input{settings}
+
+\begin{document}
+
+\frontmatter
+\pagestyle{empty}
+\input{frontmatter/1_cover}
+\newpage
+\input{frontmatter/2_frontpage}
+\newpage
+
+\pagenumbering{roman}
+\pagestyle{plain}
+\input{frontmatter/4_dedication}
+\newpage
+\input{frontmatter/5_acknowledgement}
+\newpage
+\input{frontmatter/6_abstract}
+\newpage
+
+\selectlanguage{english}
+\setcounter{tocdepth}{3}
+\tableofcontents
+
+\addcontentsline{toc}{section}{List of Figures}
+\listoffigures
+
+\addcontentsline{toc}{section}{List of Tables}
+\listoftables
+\newpage
+
+{\setstretch{1.15}
+\input{frontmatter/7_acronyms}
+}
+
+\cleardoublepage
+\mainmatter
+\pagenumbering{arabic}
+\setcounter{page}{1}
+\pagestyle{fancy}
+\parskip=7pt
+\parindent=0pt
+
+\include{mainmatter/general_introdcution}
+\include{mainmatter/chapter1}
+\include{mainmatter/chapter2}
+\include{mainmatter/chapter3}
+\include{mainmatter/chapter4}
+\include{mainmatter/chapter5}
+\include{mainmatter/chapter6}
+\include{mainmatter/general_conclusion}
+
+\cleardoublepage
+\backmatter
+\printbibliography[title=Webography, heading=bibintoc]
+
+\appendix
+
+\end{document}

@@ -1,0 +1,159 @@
+% called by main.tex
+%
+\chapter{Sprint 2: Data Structuring , Verification , Storing and Transforming}
+\label{ch::chapter5}
+
+\section{Introduction}
+
+In this chapter, we will focus on the progress made during Sprint 2 of our project. We will start by discussing the sprint backlog, outlining each specific feature planned for this sprint. Next, we will delve into the design phase, presenting all relevant diagrams that illustrate our approach. Finally, we will cover the development phase, detailing how each feature was implemented.
+
+\section{Sprint backlog}
+The table 4.1 below displays the sprint 2 backlog .
+\begin{table}[!htpb]
+    \caption{Sprint 2 backlog.}
+    \centering
+    \begin{tabular}{|>{\centering\arraybackslash}m{0.05\linewidth}|>{\centering\arraybackslash}m{0.15\linewidth}|>{\centering\arraybackslash}m{0.45\linewidth}|>{\centering\arraybackslash}m{0.1\linewidth}|>{\centering\arraybackslash}m{0.15\linewidth}|} \hline 
+    \textbf{ID} & \textbf{Functionality} & \textbf{User Story} & \textbf{Priority} & \textbf{Complexity} \\ \hline
+         1 & Document Type Detection and Text Organization & As a user, I want the system to recognize different types of documents and organize the extracted text accordingly, making it easier for me to read and understand. & High & High\\ \hline
+         2 & Data Verification & As a user, I want to review and edit the extracted text to ensure it's accurate and error-free before saving it to the system. & High & Medium\\ \hline
+         3 & Data Submission & As a user, I want to submit the edited text to the system once I'm satisfied with the changes. & High & High\\ \hline
+         4 & ETL & As a developer, I want the system to perform ETL operations on the extracted text data, to prepare it for the exporting phase. & High & High\\ \hline
+    \end{tabular}
+    
+    \label{tab:sprint2_backlog}
+\end{table}
+
+
+\section{Sprint functionalities}
+In this section, we'll delve into the various functionalities achieved during Sprint 2 of our project.
+
+\subsubsection{Document type detection and text organization}
+
+This functionality involves analyzing the extracted text to determine its document type and then structuring it in a clear and usable format. It ensures that users can easily comprehend the content extracted from the documents.
+
+\subsubsection{Data verification}
+
+With this functionality, users gain the ability to review and edit the organized text if necessary. It provides a mechanism for users to make adjustments or corrections to the extracted information before finalizing it.
+
+\subsubsection{Data submission}
+
+This functionality enables users to submit the edited text back to the system for storage and further processing. It facilitates the seamless transfer of modified text data back into the system for archival or future reference.
+
+\subsubsection{ETL operations on extracted text data}
+
+After users submit the text, this functionality performs ETL operations on the extracted data. It transforms the text from its original JSON format into alternative formats such as Word and CSV, making it accessible and usable in various contexts and applications.
+
+
+
+\section{Design}
+
+In this section, we'll present the design of our system through key diagrams: dynamic diagrams and static diagrams.
+\subsection{Static diagrams}
+In this section we will display the static architecture design of the sprint 2.
+\newpage
+\subsubsection{Use case diagram}
+The figure 4.1 presents the use case diagram of the sprint 2.
+
+\begin{figure}[!htpb]
+    \centering
+    \includegraphics[width=10cm]{figures/Sprint 2 Use Case.png}
+    \caption{Sprint 2 use case diagram.}
+    \label{fig:Sprint2_use_case}
+\end{figure}
+
+\subsubsection{Class diagram}
+The figure 4.2 presents the class diagram of the sprint 2.
+
+\begin{figure}[!htpb]
+    \centering
+    \includegraphics[width=13cm]{figures/Sprint 2 Class.png}
+    \caption{Sprint 2 class diagram.}
+    \label{fig:Sprint2_Class_Diagram}
+\end{figure}
+
+\vspace*{\fill}
+
+\newpage
+
+\subsection{Dynamic diagrams}
+In this section we will display the dynamic architecture design of the sprint 2.
+\subsubsection{Sequence diagram}
+This sequence diagram is where we introduced another entity, the machine learning model API, which will perform the document type detection and text organization functionality. It represents the the interaction between all the system's entities chronologically, from the image upload to the data submission phase, as illustrated in the figure 4.3 below. 
+\begin{figure}[!htpb]
+    \centering
+    \includegraphics[width=17cm]{figures/Sprint 2 Sequence.png}
+    \caption{Sprint 2 sequence diagram.}
+    \label{fig:Sprint2_Sequence}
+\end{figure}
+
+\vspace*{\fill}
+
+\section{Development}
+In this section, we'll explain how we continued to improve our project in sprint 2, following the initialization we made in sprint 1.
+
+\subsubsection{Document type detection and text organization}
+After extracting data using the OCR functionality, we often encounter a disorganized structure. To address this, we use Gemini, a machine learning model, to classify document types and organize the extracted data for its superior accuracy and efficiency. Gemini is a well-developed model trained on a vast amount of data. The process involves feeding the OCR-extracted text and a detailed prompt with clear instructions to the model. The model then processes this input to identify the document type and format the data into a structured JSON output. JSON is chosen for its organized structure and ease of use in subsequent ETL processes.
+
+these figures 4.4 and 4.5 below show the difference between the OCR-extracted text and the output of the Gemini Model . 
+
+\begin{figure}[!htpb]
+    \centering
+    \includegraphics[width=17cm]{figures/sprint 2 OCR .png}
+    \caption{OCR extracted text.}
+    \label{fig:Sprint2_ocr_results}
+\end{figure}
+
+\begin{figure}[!htpb]
+    \centering
+    \includegraphics[height=8cm]{figures/sprint 2 API .png}
+    \caption{Sprint 2 Gemini output.}
+    \label{fig:Sprint2_api_output}
+\end{figure}
+
+\subsubsection{Data verification}
+Once the data is displayed to the user , as shown in the figure 4.6 below, users can manually correct any detected errors by clicking the "Edit" button. This functionality ensures that the data is accurate and allows users to make necessary adjustments easily.
+
+\begin{figure}[!htpb]
+    \centering
+    \includegraphics[width=17cm]{figures/sprint 2 cap edit.png}
+    \caption{Data editing figure.}
+    \label{fig:Sprint2_Data_Editing_Figure}
+\end{figure}
+
+\newpage
+\subsubsection{Data submission process}
+After verifying and editing the data, users need to click the "Submit" button to proceed. While the editing step is optional due to the high accuracy of the OCR, submission is crucial. It triggers the subsequent functionalities, such as ETL and export processes, and ensures the data is saved with user confirmation. On the frontend, the export options become visible to the user only after the "Submit" button is pressed, as illustrated in the Figure 4.7 and Figure 4.8 . 
+\vspace{5mm}
+\begin{figure}[!htpb]
+    \centering
+    \includegraphics[width=16cm]{figures/initial_interface_figure.png}
+    \caption{the initial interface.}
+    \label{fig:Sprint2_cap_edit}
+\end{figure}
+
+\begin{figure}[!htpb]
+    \centering
+    \includegraphics[height=19cm]{figures/post_submission_figure.png}
+    \caption{the interface after clicking submit.}
+    \label{fig:Sprint2_Submitting_the_Data}
+\end{figure}
+
+\newpage
+\subsubsection{ETL operations}
+This backend process prepares the data for export. After the user submits the data, the JSON output from the Gemini model undergoes ETL operations to transform it into CSV and Word formats. This step results in three different files for each document, ready for export, as shown in the following figure 4.9 .
+
+
+\begin{figure}[!htpb]
+    \centering
+    \begin{minipage}{0.90\textwidth}
+        \centering
+        \includegraphics[width=8.5cm]{figures/sprint 2 ETL.png}
+        \caption{ETL output documents.}
+        \label{fig:Sprint2_ETL_output}
+    \end{minipage}
+\end{figure}
+
+
+
+\section{Conclusion}
+In this chapter, we detailed the sprint backlog, outlined key functionalities, presented the system design and discussed our development progress. These efforts have set the stage for our final sprint, where we will refine and complete the project.
