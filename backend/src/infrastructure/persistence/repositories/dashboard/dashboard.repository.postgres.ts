@@ -10,7 +10,7 @@ export class PostgresDashboardRepository implements DashboardRepository {
     constructor(private readonly db: PostgresService) {}
 
     async create(user: CreateUserDto) {
-        await this.db.query(INSERT_USER, [user.id, user.username, user.passwordHash, user.firstName, user.lastName, user.phoneNumber]);
+        await this.db.query(INSERT_USER, [user.id]);
     }
     async findByUsername(username: string) {
         const result = await this.db.query(FIND_AUTH_BY_USERNAME, [username]);

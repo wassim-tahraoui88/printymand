@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { DashboardRepository } from '../domain/repositories';
 import { PostgresDashboardRepository } from '../infrastructure/persistence/repositories';
-import { } from '../application/use-cases/dashboard';
+import { GetDashboardDataUseCase } from '../application/use-cases/dashboard';
 import { DashboardController } from '../api/controllers/dashboard/dashboard.controller';
 
 @Module({
@@ -11,6 +11,7 @@ import { DashboardController } from '../api/controllers/dashboard/dashboard.cont
             provide: DashboardRepository,
             useClass: PostgresDashboardRepository
         },
+	    GetDashboardDataUseCase
     ]
 })
 export class DashboardModule {}

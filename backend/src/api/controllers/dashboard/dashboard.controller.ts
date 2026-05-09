@@ -1,8 +1,13 @@
-import { Controller } from '@nestjs/common';
-import {  } from '../../../application/use-cases/dashboard';
+import { Controller, Get } from '@nestjs/common';
+import { GetDashboardDataUseCase } from '../../../application/use-cases/dashboard';
 
 @Controller('dashboard')
 export class DashboardController {
 
-	constructor() {}
+	constructor(private readonly getDashboardData: GetDashboardDataUseCase) {}
+
+	@Get()
+	onGetDashboardData() {
+		return this.getDashboardData.execute({});
+	}
 }
