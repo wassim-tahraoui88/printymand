@@ -1,4 +1,3 @@
-export * from './pagination-options.dto';
 export const HEADER_AUTH_TOKEN = 'AUTH_TOKEN';
 
 export const EVENTS = {

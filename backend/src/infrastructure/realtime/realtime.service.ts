@@ -3,7 +3,7 @@ import { SocketService } from './socket.service';
 import { PushService } from './push.service';
 import { PresenceService } from './presence.service';
 import { Server } from 'socket.io';
-import { PostgresService } from '../database/postgres.service';
+import { PostgresService } from '../persistence/postgres.service';
 
 export class RealtimeInitDto {
     server: Server;

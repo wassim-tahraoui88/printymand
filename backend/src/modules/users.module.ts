@@ -1,14 +1,16 @@
 import { Module } from '@nestjs/common';
-import { UserRepository } from '../domain/users/user.repository';
-import { RegisterUseCase, LoginUseCase, RefreshUseCase } from '../application/users/use-cases';
+import { UsersRepository } from '../domain/repositories';
+import { PostgresUsersRepository } from '../infrastructure/persistence/repositories';
+import { RefreshUseCase } from '../application/use-cases/users';
 import { UsersController } from '../api/controllers/users/users.controller';
 
 @Module({
     controllers: [UsersController],
     providers: [
-        UserRepository,
-        RegisterUseCase,
-        LoginUseCase,
+	    {
+			provide: UsersRepository,
+		    useClass: PostgresUsersRepository,
+	    },
         RefreshUseCase,
     ]
 })

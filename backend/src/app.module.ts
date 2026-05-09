@@ -1,17 +1,15 @@
-import { ClassSerializerInterceptor, Module, ExecutionContext, ValidationPipe } from '@nestjs/common';
+import { ClassSerializerInterceptor, Module, ExecutionContext } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard, ThrottlerLimitDetail } from '@nestjs/throttler';
 import { CacheModule } from '@nestjs/cache-manager';
-import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ScheduleModule as NestScheduleModule } from '@nestjs/schedule';
 import { GlobalExceptionFilter, AppExceptionFilter, ThrottlerExceptionFilter } from './api/filters';
 import { LoggerInterceptor } from './api/interceptors';
 import { AuthModule } from './infrastructure/auth/auth.module';
-import { DatabaseModule } from './infrastructure/database/database.module';
-import { RealtimeModule } from './infrastructure/realtime/realtime.module';
-import { HealthModule, /*SettingsModule,*/ UsersModule } from './modules';
-import { AppException } from './shared/exceptions/app.exception';
+import { PersistenceModule } from './infrastructure/persistence/persistence.module';
+import { HealthModule, AuthModule as UserAuthModule, DashboardModule, ProductsModule, DesignsModule, CartModule } from './modules';
+import { GlobalHttpValidationPipe } from './shared/validators/global-validation.pipe';
 
 @Module({
     imports: [
@@ -20,7 +18,6 @@ import { AppException } from './shared/exceptions/app.exception';
 		    envFilePath: [`.env.${process.env.NODE_ENV?.trim() || 'development'}`],
 	    }),
         CacheModule.register({ isGlobal: true }),
-        EventEmitterModule.forRoot(),
         ThrottlerModule.forRootAsync({
             imports: [ConfigModule],
             inject: [ConfigService],
@@ -49,26 +46,19 @@ import { AppException } from './shared/exceptions/app.exception';
             }),
         }),
 	    NestScheduleModule.forRoot(),
-	    DatabaseModule,
-	    RealtimeModule,
+	    PersistenceModule,
 	    HealthModule,
-	    // SettingsModule,
 	    AuthModule,
-	    UsersModule
+	    UserAuthModule,
+	    DashboardModule,
+	    ProductsModule,
+	    DesignsModule,
+	    CartModule,
     ],
 	providers: [
 		{
 			provide: APP_PIPE,
-			useFactory: () => new ValidationPipe({
-				whitelist: true,
-				forbidNonWhitelisted: true,
-				transform: true,
-				exceptionFactory: (errors) => new AppException(400, 'BAD_REQUEST', {
-					errors: errors
-						.map(err =>  Object.values(err.constraints || {}).join(', '))
-						.join('; '),
-				})
-			})
+			useClass: GlobalHttpValidationPipe
 		},
 		{
 			provide: APP_GUARD,

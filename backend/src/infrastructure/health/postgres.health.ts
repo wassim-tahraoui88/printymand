@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { HealthIndicatorResult, HealthIndicatorService } from '@nestjs/terminus';
-import { PostgresService } from '../database/postgres.service';
+import { PostgresService } from '../persistence/postgres.service';
 
 @Injectable()
 export class PostgresHealthIndicator {
