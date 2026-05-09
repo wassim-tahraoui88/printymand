@@ -119,16 +119,16 @@ The REST API is organized into modules that reflect the platform domains:
 \begin{longtable}{|p{0.12\linewidth}|p{0.25\linewidth}|p{0.45\linewidth}|p{0.12\linewidth}|}
 \caption{Implementation roadmap.} \label{tab:implementation_roadmap} \\
 \hline
-\textbf{Cycle} & \textbf{Focus} & \textbf{Main deliverables} & \textbf{Status} \\ \hline
+\textbf{Cycle} & \textbf{Focus} & \textbf{Main deliverables} \\ \hline
 \endfirsthead
 \hline
-\textbf{Cycle} & \textbf{Focus} & \textbf{Main deliverables} & \textbf{Status} \\ \hline
+\textbf{Cycle} & \textbf{Focus} & \textbf{Main deliverables} \\ \hline
 \endhead
 \hline
 \endfoot
-1 & Authentication and discovery & Registration, login, role guards, marketplace browsing, product and design pages, reusable interface components. & Completed \\ \hline
-2 & Customization and checkout & Customization draft, product preview, printer selection, cart, order placement, payment workflow, and tracking. & Completed \\ \hline
-3 & Governance and optimization & Customer, designer, printer, and admin dashboards; PostgreSQL schema; health checks; validation; RBAC; backend modularization. & Completed \\ \hline
+1 & Authentication and discovery & Registration, login, role guards, marketplace browsing, product and design pages, reusable interface components \\ \hline
+2 & Customization and checkout & Customization draft, product preview, printer selection, cart, order placement, payment workflow, and tracking \\ \hline
+3 & Governance and optimization & Customer, designer, printer, and admin dashboards; PostgreSQL schema; health checks; validation; RBAC; backend modularization \\ \hline
 \end{longtable}
 
 \section{Work environment}
@@ -189,7 +189,6 @@ NestJS & Framework used to implement the REST API, modules, controllers, guards,
 PostgreSQL & Relational database used for persistent platform data \cite{PostgreSQL}. \\ \hline
 JWT & Token format used for secure authentication \cite{JWT}. \\ \hline
 bcrypt & Library used for password hashing and verification. \\ \hline
-Socket.IO & Library used for realtime communication and presence features. \\ \hline
 Tailwind CSS & Styling technology used to support modern and responsive interface design \cite{Tailwind}. \\ \hline
 \end{longtable}
 
