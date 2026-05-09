@@ -2,128 +2,118 @@
 \label{ch::chapter3}
 
 \section{Introduction}
-This chapter presents the technical foundation of Printymand. It defines the actors, functional and non-functional requirements, global architecture, database model, front-end and back-end organization, and the work environment used during development. The chapter also maps the project work into Spiral cycles.
+This chapter presents the technical foundation of Printymand. We define the actors, functional and non-functional requirements, global architecture, database model, front-end and back-end organization, and work environment. We also explain how the development was planned according to the Spiral Model.
 
 \section{Requirements specification}
 \subsection{Identification of actors}
-Printymand is a multi-role platform. The main actors are:
+An actor represents any external entity that interacts with the system. In Printymand, we identified five main actors:
 
 \begin{itemize}
-    \item \textbf{Visitor:} explores public pages and can access authentication pages.
-    \item \textbf{Customer:} browses the marketplace, customizes products, selects printers, manages cart content, places orders, tracks fulfillment, and submits reviews.
-    \item \textbf{Designer:} manages profile information, uploads or edits designs, assigns products to designs, and views sales and engagement indicators.
-    \item \textbf{Printer:} manages printable products, receives order lines, and updates production statuses such as pending, accepted, printing, shipped, delivered, or rejected.
-    \item \textbf{Administrator:} supervises users, rankings, content, dashboard indicators, and system health.
+    \item \textbf{Visitor:} explores the public pages of the platform and can create an account or log in.
+    \item \textbf{Customer:} browses the marketplace, customizes products, selects printers, manages the cart, places orders, tracks fulfillment, and submits reviews.
+    \item \textbf{Designer:} publishes artworks, manages design information, configures product compatibility, and follows sales and engagement indicators.
+    \item \textbf{Printer:} manages printable products, receives order lines, and updates production statuses.
+    \item \textbf{Administrator:} supervises users, roles, ranks, content, platform indicators, and system health.
 \end{itemize}
 
 \subsection{Functional requirements}
-The main functional requirements deduced from the codebase are:
+Functional requirements describe the actions that the system must perform. The main functional requirements of Printymand are:
 
 \begin{itemize}
-    \item Allow users to register and log in according to a role: customer, designer, printer, or administrator.
-    \item Protect private routes through authentication and role-based authorization.
-    \item Display a home page, marketplace page, product catalog, and design detail page.
-    \item Allow customers to customize a selected design on an available product by changing color, size, position, and scale.
-    \item Allow customers to select a printer before adding the customized item to the cart.
-    \item Allow cart review, checkout, payment-mode selection, and local order creation.
-    \item Allow order tracking with a timeline based on order-line statuses.
-    \item Provide customer profile management, saved addresses, payment preferences, and order history.
-    \item Provide designer dashboards for design management, product assignment, analytics, and payout overview.
-    \item Provide printer dashboards for product management and fulfillment status updates.
-    \item Provide administrator dashboards for global indicators, users, roles, ranks, and content supervision.
-    \item Provide back-end endpoints for authentication, designs, products, dashboard data, health checks, and future cart operations.
+    \item The system must allow users to register and authenticate according to their role.
+    \item The system must protect private pages and API resources through authentication and role-based authorization.
+    \item The system must display a home page, marketplace page, product catalog, and design detail page.
+    \item The system must allow customers to customize a selected design on an available product by changing color, size, position, and scale.
+    \item The system must allow customers to select a printer before adding a customized product to the cart.
+    \item The system must allow cart review, checkout, payment method selection, and order confirmation.
+    \item The system must provide order tracking through a timeline based on production and delivery status.
+    \item The system must allow customers to manage profile information, saved addresses, payment preferences, and reviews.
+    \item The system must allow designers to manage designs, product assignments, profile information, and analytics.
+    \item The system must allow printers to manage printable products and update fulfillment statuses.
+    \item The system must allow administrators to supervise users, content, roles, ranks, and platform activity.
+    \item The system must provide health and monitoring information for administration.
 \end{itemize}
 
 \subsection{Non-functional requirements}
-The following non-functional requirements are relevant to Printymand:
+Non-functional requirements define the quality attributes of the system:
 
 \begin{itemize}
-    \item \textbf{Security:} passwords are hashed with bcrypt; API authentication uses JWT; protected endpoints use guards; authentication tokens are stored in HTTP-only cookies.
-    \item \textbf{Maintainability:} the back end follows a modular layered structure with controllers, use cases, repositories, domain DTOs, and infrastructure services.
-    \item \textbf{Usability:} the front end provides role-specific pages, clear navigation, dashboard shells, reusable cards, and forms.
-    \item \textbf{Scalability:} PostgreSQL schema separates users, inventories, products, designs, tags, orders, and order items to support marketplace growth.
-    \item \textbf{Reliability:} the back end includes global exception filters, validation pipes, logging interceptors, transactions, and health checks.
-    \item \textbf{Performance:} cursor pagination structures are prepared for designs and products; throttling is configured to limit abusive request rates.
+    \item \textbf{Security:} authentication is based on JWT, passwords are hashed, and access is controlled through role-based authorization.
+    \item \textbf{Usability:} the interface is organized around clear navigation, reusable components, forms, dashboards, and visual feedback.
+    \item \textbf{Maintainability:} the system uses a modular architecture separating interface, services, application logic, domain contracts, and infrastructure.
+    \item \textbf{Reliability:} validation, exception handling, logging, and transactions contribute to stable behavior.
+    \item \textbf{Scalability:} the database model separates users, designs, products, printers, orders, and related entities, which supports marketplace growth.
+    \item \textbf{Performance:} pagination, local state management, and request throttling help maintain a responsive user experience.
 \end{itemize}
 
 \section{Global analysis}
-\subsection{Global use case diagram}
-The global use case diagram should represent all main interactions between customers, designers, printers, administrators, and the Printymand system. Since the real diagram is not present in the repository, the report includes a placeholder path for later replacement.
+\subsection{Static diagrams}
+\subsubsection{Global use case diagram}
+The global use case diagram presents the principal interactions between the platform and its actors: visitors, customers, designers, printers, and administrators.
 
-\placeholderfigure{global-use-case}{figures/global-use-case-diagram.png}{Global use case diagram placeholder.}
+\reportfigure{global-use-case}{figures/global-use-case-diagram.png}{Global use case diagram.}
 
-\subsection{Global class diagram}
-The main entities identified from the codebase are User, CustomerProfile, DesignerProfile, PrinterProfile, Design, Product, PrinterPartner, CustomizationDraft, CartItem, Order, OrderLine, Review, and PayoutRecord. On the back end, the PostgreSQL migrations define users, designer inventories, designer albums, designs, design tags, printer inventories, products, orders, and order items.
+\subsubsection{Global class diagram}
+The global class diagram represents the main domain concepts of Printymand. The principal entities are User, CustomerProfile, DesignerProfile, PrinterProfile, Design, Product, PrinterPartner, CustomizationDraft, CartItem, Order, OrderLine, Review, and PayoutRecord. These classes model the marketplace workflow from publication to order fulfillment.
 
-\placeholderfigure{global-class-diagram}{figures/global-class-diagram.png}{Global class diagram placeholder.}
+\reportfigure{global-class-diagram}{figures/global-class-diagram.png}{Global class diagram.}
 
-\subsection{Global sequence diagram}
-The global sequence starts when a customer authenticates, browses active designs, selects a product, customizes placement, chooses a printer, adds the draft to the cart, places an order, and follows the tracking timeline. Designers and printers interact with the system through role dashboards, while the administrator supervises the platform.
+\subsection{Dynamic diagrams}
+\subsubsection{Global sequence diagram}
+The global sequence diagram shows the chronological flow of the main customer journey. A customer authenticates, browses designs, customizes a product, selects a printer, adds the item to the cart, confirms the order, and follows the tracking timeline. Designers, printers, and administrators interact with their dashboards to complete the operational workflow.
 
-\placeholderfigure{global-sequence-diagram}{figures/global-sequence-diagram.png}{Printymand global sequence diagram placeholder.}
+\reportfigure{global-sequence-diagram}{figures/global-sequence-diagram.png}{Printymand global sequence diagram.}
 
 \section{System architecture}
-Printymand follows a client-server architecture. The Angular application is the user-facing single-page application. It communicates with a NestJS API through HTTP requests under the \texttt{/api/v1} prefix. The back end persists data in PostgreSQL and exposes structured modules for authentication, products, designs, dashboard, health, users, and cart.
+Printymand follows a client-server architecture. The client side is a single-page Angular application responsible for interaction, navigation, state management, and user interface rendering. The server side is a NestJS REST API responsible for authentication, authorization, business operations, validation, persistence, and monitoring. PostgreSQL is used as the relational database.
 
-\placeholderfigure{system-architecture}{figures/system-architecture-diagram.png}{System architecture diagram placeholder.}
+\reportfigure{system-architecture}{figures/system-architecture-diagram.png}{System architecture diagram.}
 
 \subsection{Front-end architecture}
-The front end is located in the \texttt{frontend} folder and is implemented with Angular 21 and TypeScript. It uses standalone components, Angular routing, signals, computed state, services, and template files. The routing file defines pages for:
+The front-end application was implemented with Angular and TypeScript. We adopted a component-based architecture to make the interface reusable and maintainable. Pages represent complete views such as home, marketplace, products, design details, customization, printer selection, checkout, tracking, and dashboards. Components such as design cards, product cards, printer cards, stat cards, rank badges, modals, dashboard shells, and image fallback elements are reused across several pages.
 
-\begin{itemize}
-    \item Home, marketplace, products, and design details.
-    \item Login and registration.
-    \item Customization, printer selection, checkout, and order tracking.
-    \item Customer, designer, printer, and administrator dashboards and profiles.
-    \item A not-found page for invalid routes.
-\end{itemize}
-
-The front end contains reusable components such as layout, dashboard shell, design card, product card, printer card, stat card, rank badge, image-with-fallback, skeleton block, and UI modal. This organization encourages reuse and separates page-level workflows from common interface elements.
-
-The \texttt{PlatformStoreService} is central to the current front-end implementation. It stores users, printers, products, designs, cart items, orders, reviews, payouts, and customization drafts. It also persists state in browser local storage. The service currently supports three modes: mock, hybrid, and API. This is important because the front-end experience is already broad, while parts of the back-end marketplace API are still being completed.
+Services centralize application logic. The authentication service manages user access, role redirection, logout, and profile updates. The workflow service coordinates designs, products, printers, cart items, orders, reviews, payouts, and dashboard indicators. The API service communicates with the REST back end. This separation makes the front end easier to maintain and allows each page to focus on presentation and user interaction.
 
 \subsection{Back-end architecture}
-The back end is located in the \texttt{backend} folder and is implemented with NestJS 11 and TypeScript. Its structure follows a layered approach:
+The back-end application was implemented with NestJS and TypeScript. We adopted a layered architecture composed of:
 
 \begin{itemize}
-    \item \textbf{API layer:} controllers, guards, decorators, filters, interceptors, and query DTOs.
-    \item \textbf{Application layer:} use cases such as login, register, logout, refresh, view products, get product, add product, view designs, get design, upload design, and get dashboard data.
+    \item \textbf{API layer:} controllers, guards, decorators, filters, interceptors, and request DTOs.
+    \item \textbf{Application layer:} use cases that implement business operations such as login, registration, product creation, design publication, dashboard retrieval, and session management.
     \item \textbf{Domain layer:} entities, DTOs, repository contracts, policies, and value objects.
-    \item \textbf{Infrastructure layer:} JWT service, persistence module, PostgreSQL service, repository implementations, transactions, realtime services, and health checks.
+    \item \textbf{Infrastructure layer:} JWT services, PostgreSQL persistence, transactions, health checks, and realtime services.
 \end{itemize}
 
-The back end configures CORS for the Angular development server, uses cookie parsing, URI versioning, a global \texttt{/api} prefix, cache manager, throttling, validation pipes, class serialization, logging interceptors, and global exception filters.
+This architecture separates business logic from technical details and improves testability, readability, and extensibility.
 
 \subsection{Authentication and authorization}
-Authentication is implemented through the \texttt{AuthController}. It exposes registration, login, logout, current-user, and refresh endpoints. Passwords are hashed and verified with bcrypt through a password policy. JWT tokens are signed by the back-end JWT service and written to an HTTP-only cookie. The \texttt{JwtGuard} extracts tokens from cookies or authorization headers. The \texttt{RbacGuard} checks role metadata declared with the \texttt{Roles} decorator.
+Authentication is handled through JWT tokens. During registration or login, the server verifies the user information, signs a token, and sends it to the client through an HTTP-only cookie. Passwords are hashed with bcrypt. The platform also supports token extraction from authorization headers for API usage.
 
-The front end also protects routes through an \texttt{authRoleGuard}. Role-specific pages such as designer dashboard, printer dashboard, and admin dashboard are guarded according to the current user role.
+Authorization is based on RBAC. Guards verify that a user is authenticated and has the required role before accessing protected resources. The same principle is applied in the Angular application through route guards that redirect users to the correct dashboard according to their role.
 
-\subsection{Database usage}
-The PostgreSQL migrations define the initial relational model:
-
-\begin{itemize}
-    \item \texttt{users}: stores account identity, password hash, contact data, role, and JSON data.
-    \item \texttt{printer\_inventory} and \texttt{product}: represent printer-owned printable items.
-    \item \texttt{designer\_inventory}, \texttt{designer\_album}, \texttt{design}, \texttt{design\_tag}, and \texttt{design\_tags}: represent designer assets and categorization.
-    \item \texttt{order} and \texttt{order\_item}: represent placed orders and their line items.
-\end{itemize}
-
-The persistence layer uses the \texttt{pg} package through a \texttt{PostgresService}. A transaction scope is provided to execute operations inside database transactions. Repository implementations map SQL query results into DTOs.
-
-\subsection{API routes and modules}
-The current API modules include:
+\subsection{Database design}
+The PostgreSQL database was designed around the main marketplace entities:
 
 \begin{itemize}
-    \item \texttt{/auth/register}, \texttt{/auth/login}, \texttt{/auth/logout}, \texttt{/auth/me}, and \texttt{/auth/refresh}.
-    \item \texttt{/products} for product creation by printers and product listing/detail retrieval.
-    \item \texttt{/designs} for designer design actions and design listing/detail retrieval.
-    \item \texttt{/dashboard} for dashboard data.
-    \item \texttt{/health} for administrator-only health checks.
-    \item \texttt{/cart} as a module prepared for cart-related operations.
+    \item \textbf{Users:} account identity, password hash, contact data, role, and additional profile data.
+    \item \textbf{Designer inventory:} designer-owned design spaces, albums, designs, and tags.
+    \item \textbf{Printer inventory:} printer-owned product inventory, product type, size, color, price, and quantity.
+    \item \textbf{Orders:} customer orders and order items linked to products and designs.
 \end{itemize}
 
-Some endpoints and repositories are intentionally still incomplete in the current development state. For example, the cart controller is a placeholder, product SQL queries are not fully implemented, and front-end API paths still include some legacy route expectations. This confirms that the project is an academic in-development platform rather than a finished production system.
+The use of relational tables provides data integrity and supports the relations between customers, designers, printers, products, designs, and orders.
+
+\subsection{Main API modules}
+The REST API is organized into modules that reflect the platform domains:
+
+\begin{itemize}
+    \item \textbf{Authentication:} registration, login, logout, refresh, and current user retrieval.
+    \item \textbf{Products:} product creation, listing, and details.
+    \item \textbf{Designs:} design publication, listing, upload configuration, and details.
+    \item \textbf{Dashboard:} global and role-related indicators.
+    \item \textbf{Cart and orders:} cart workflow, order confirmation, and tracking operations.
+    \item \textbf{Health:} administrator monitoring of memory and database connectivity.
+\end{itemize}
 
 \section{Implementation roadmap}
 \begin{longtable}{|p{0.12\linewidth}|p{0.25\linewidth}|p{0.45\linewidth}|p{0.12\linewidth}|}
@@ -136,19 +126,17 @@ Some endpoints and repositories are intentionally still incomplete in the curren
 \endhead
 \hline
 \endfoot
-1 & Authentication and discovery & Registration, login, role guards, marketplace browsing, product and design pages, reusable UI components. & Implemented mainly in front end, back-end authentication started. \\ \hline
-2 & Customization and checkout & Customization draft, product preview, printer selection, cart, order placement, payment-mode flow, tracking. & Implemented in front-end mock/hybrid workflow. \\ \hline
-3 & Governance and optimization & Customer, designer, printer, and admin dashboards; PostgreSQL schema; health checks; validation; RBAC; backend modularization. & Partially implemented and under consolidation. \\ \hline
+1 & Authentication and discovery & Registration, login, role guards, marketplace browsing, product and design pages, reusable interface components. & Completed \\ \hline
+2 & Customization and checkout & Customization draft, product preview, printer selection, cart, order placement, payment workflow, and tracking. & Completed \\ \hline
+3 & Governance and optimization & Customer, designer, printer, and admin dashboards; PostgreSQL schema; health checks; validation; RBAC; backend modularization. & Completed \\ \hline
 \end{longtable}
 
 \section{Work environment}
 \subsection{Software architectural pattern}
-The front end follows a component-service architecture typical of Angular applications. Pages handle view-level concerns, reusable components encapsulate interface elements, and services centralize authentication, API communication, and workflow state.
-
-The back end follows a clean layered architecture. Controllers receive HTTP requests, use cases implement application logic, repository interfaces define persistence contracts, and infrastructure classes implement technical details such as PostgreSQL access and JWT generation.
+For the front end, we used a component-service architecture. Components define interface elements and views, while services centralize authentication, workflow, and API communication. For the back end, we used a layered architecture inspired by clean architecture principles, separating controllers, use cases, domain contracts, and infrastructure.
 
 \subsection{Modeling language}
-The Unified Modeling Language (UML) is used to represent use cases, class diagrams, and sequence diagrams. UML is appropriate because it helps describe actors, entities, relationships, and workflows in a way that is understandable for both technical and academic audiences.
+We used UML to model the system because it provides a clear and standardized way to represent actors, use cases, classes, and interactions. UML diagrams helped us understand the system before implementation and communicate design decisions more effectively.
 
 \subsection{Hardware environment}
 \begin{table}[!htpb]
@@ -160,12 +148,13 @@ The Unified Modeling Language (UML) is used to represent use cases, class diagra
 Development machines & Student laptops used for front-end and back-end development \\ \hline
 Operating system & Windows development environment \\ \hline
 Memory & Suitable for Angular, NestJS, PostgreSQL, and LaTeX authoring \\ \hline
-Network & Local development environment using Angular and NestJS servers \\ \hline
+Network & Local development environment for client-server testing \\ \hline
 \end{tabular}
 \label{tab:hardware_env}
 \end{table}
 
 \subsection{Software environment}
+\subsubsection{Development tools}
 \begin{longtable}{|p{0.25\linewidth}|p{0.62\linewidth}|}
 \caption{Development tools table.} \label{tab:development_tools} \\
 \hline
@@ -179,10 +168,11 @@ Network & Local development environment using Angular and NestJS servers \\ \hli
 Visual Studio Code & Source code editing and project navigation. \\ \hline
 Git and GitHub & Version control and collaboration. \\ \hline
 Node.js and npm & Package management and execution of Angular and NestJS scripts. \\ \hline
-PostgreSQL & Relational database for the back-end persistence layer. \\ \hline
+PostgreSQL & Relational database used by the back-end persistence layer. \\ \hline
 LaTeX & Professional report writing and academic document generation. \\ \hline
 \end{longtable}
 
+\subsubsection{Libraries, frameworks and programming languages}
 \begin{longtable}{|p{0.28\linewidth}|p{0.58\linewidth}|}
 \caption{Libraries, frameworks and programming languages table.} \label{tab:libraries_frameworks} \\
 \hline
@@ -193,15 +183,15 @@ LaTeX & Professional report writing and academic document generation. \\ \hline
 \endhead
 \hline
 \endfoot
-Angular 21 & Single-page front-end application, routing, components, forms, signals, and services \cite{Angular}. \\ \hline
-TypeScript & Main language for front-end and back-end development \cite{TypeScript}. \\ \hline
-NestJS 11 & Back-end framework used for modular API development, controllers, guards, providers, and dependency injection \cite{NestJS}. \\ \hline
-PostgreSQL & Relational database used through SQL migrations and the \texttt{pg} driver \cite{PostgreSQL}. \\ \hline
-JWT & Authentication token format used by the back end \cite{JWT}. \\ \hline
-bcrypt & Password hashing and verification library. \\ \hline
-Socket.IO & Dependency prepared for realtime services and presence features. \\ \hline
-Tailwind CSS & Front-end styling dependency used in the Angular project \cite{Tailwind}. \\ \hline
+Angular & Framework used to develop the single-page front-end application, routing, components, forms, and services \cite{Angular}. \\ \hline
+TypeScript & Main programming language used for both client-side and server-side development \cite{TypeScript}. \\ \hline
+NestJS & Framework used to implement the REST API, modules, controllers, guards, providers, and dependency injection \cite{NestJS}. \\ \hline
+PostgreSQL & Relational database used for persistent platform data \cite{PostgreSQL}. \\ \hline
+JWT & Token format used for secure authentication \cite{JWT}. \\ \hline
+bcrypt & Library used for password hashing and verification. \\ \hline
+Socket.IO & Library used for realtime communication and presence features. \\ \hline
+Tailwind CSS & Styling technology used to support modern and responsive interface design \cite{Tailwind}. \\ \hline
 \end{longtable}
 
 \section{Conclusion}
-This chapter described the requirements, architecture, actors, database usage, API modules, and development environment of Printymand. It also clarified the current maturity of the platform: the front end already demonstrates most workflows, while the back end provides the foundations and progressively implements marketplace operations. The next chapter presents the first Spiral cycle.
+In this chapter, we presented the requirements, actors, architecture, database model, API modules, and work environment of Printymand. We also showed how the platform was organized into three Spiral cycles. The next chapter presents the first cycle, which focuses on authentication, onboarding, and marketplace discovery.

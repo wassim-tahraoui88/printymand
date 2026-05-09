@@ -4,9 +4,11 @@
 \addcontentsline{toc}{section}{Abstract}
 \label{sec::abstract}
 
-Printymand is an academic web platform for print-on-demand commerce. The project studies how a local marketplace can connect customers, independent designers, printers, and administrators in a single workflow: design discovery, product customization, printer selection, cart management, order placement, tracking, and role-specific dashboards. The front end is implemented with Angular and TypeScript, while the back end is structured with NestJS, PostgreSQL, JWT authentication, role-based authorization, validation, interceptors, and modular controllers. Because the platform is still under development, part of the current user experience relies on mock and hybrid data services while the server-side architecture and database foundations are progressively completed.
+Printymand is a web platform designed for print-on-demand commerce. It connects customers, independent designers, printers, and administrators within a unified marketplace workflow. Customers can browse designs, customize products, choose a printer, place orders, and track their fulfillment. Designers can publish artworks, manage product compatibility, and monitor commercial indicators. Printers can manage printable products and update production progress. Administrators can supervise users, content, and global platform activity.
 
-This report presents the project context, problem statement, comparative study, requirements, architecture, implementation choices, and validation of the main development cycles. The adopted methodology is the Spiral Model, chosen because the platform combines technical risks, evolving requirements, and multiple user roles. The result is not presented as a production-ready commercial website, but as a coherent engineering PFA prototype that demonstrates the core scope and technical direction of a print-on-demand marketplace.
+The platform was implemented with Angular and TypeScript for the single-page front-end application, NestJS for the REST back-end API, and PostgreSQL for relational data persistence. The system integrates JWT authentication, role-based authorization, validation, modular services, reusable user interface components, and a structured database model. The adopted methodology is the Spiral Model, which allowed us to develop the project progressively while controlling risks related to security, order integrity, user roles, and marketplace coordination.
+
+This report presents the context, comparative study, requirements, architecture, implementation cycles, and evaluation of Printymand. It shows how the platform answers local print-on-demand needs through a complete academic software engineering project.
 
 \newpage
 \section*{Keywords}

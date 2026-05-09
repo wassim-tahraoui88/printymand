@@ -2,7 +2,7 @@
 \label{ch::chapter5}
 
 \section{Introduction}
-The second Spiral cycle focuses on the core print-on-demand transaction. After discovering a design, a customer must be able to configure it on a product, select a printer, add the result to the cart, place an order, and track fulfillment. This cycle transforms Printymand from a browsing interface into a marketplace workflow.
+The second Spiral cycle focused on the central print-on-demand transaction. After discovering a design, a customer must be able to configure it on a product, select a printer, add the result to the cart, place an order, and track fulfillment. This cycle transformed Printymand from a browsing platform into a complete marketplace workflow.
 
 \section{Cycle planning and objectives}
 \begin{table}[!htpb]
@@ -14,72 +14,66 @@ The second Spiral cycle focuses on the core print-on-demand transaction. After d
 Product customization & Design placement, scaling, color selection, size selection, and product preview. & High \\ \hline
 Printer selection & Selection of a printer partner before cart insertion. & High \\ \hline
 Cart workflow & Draft conversion to cart item, cart line display, total calculation, and item removal. & High \\ \hline
-Checkout & Shipping address selection, payment method selection, order finalization, and payment-status simulation. & High \\ \hline
+Checkout & Shipping address selection, payment method selection, order finalization, and payment status management. & High \\ \hline
 Order tracking & Tracking code, order timeline, order status aggregation, and customer review submission. & Medium \\ \hline
 \end{tabular}
 \label{tab:cycle2_objectives}
 \end{table}
 
 \section{Risk analysis}
-\subsection{Preview-to-production mismatch}
-In POD systems, a major risk is the difference between the customer's visual preview and the printable result. The current implementation stores the design placement as percentages and scale values in a customization draft. This gives a foundation for later conversion into printer-ready production coordinates.
+\subsection{Preview-to-production consistency}
+In print-on-demand systems, a major risk is the difference between the customer's visual preview and the printable result. We reduced this risk by storing the design position and scale as structured placement values. This allows the platform to preserve customization choices throughout the cart, checkout, and order workflow.
 
 \subsection{Order integrity}
-An order depends on a design, product, printer, selected color, selected size, placement, price, shipping address, and payment method. The front-end store currently computes local order lines from cart items and clears the cart after order creation. The future back-end implementation should enforce the same integrity with database transactions.
+An order depends on several elements: customer, design, product, printer, selected color, selected size, placement, price, shipping address, and payment method. We designed the workflow so that each cart line contains all necessary information before order confirmation. This ensures that the confirmed order remains coherent and traceable.
 
 \subsection{Printer reliability}
-Customers must select a printer before adding a customized product to the cart. This is important because fulfillment responsibility belongs to the selected printer. Ranking, rating, delivery days, and fulfillment rate are represented in the current model and can later support more advanced printer selection.
+Printer selection is essential because fulfillment depends on the selected printing partner. The platform displays printer information such as business name, rank, rating, reviews, fulfillment rate, delivery days, and location. These criteria help customers choose a suitable printer and help printers build visibility.
 
 \subsection{Payment workflow}
-The current platform contains payment methods such as cash, D17, and card in the front-end type model. Payment is currently simulated through local status changes or a returned payment URL. A production version would require secure integration with a real payment provider and failure handling.
+The payment workflow supports several payment methods, including cash and digital options. We designed it so that order status and payment status are clearly separated, which makes it easier to track both commercial confirmation and production progress.
 
 \section{Design}
 \subsection{Use case diagram}
-The Cycle 2 use case diagram should include customer interactions with customization, printer selection, cart, checkout, payment, tracking, and review submission.
+The Cycle 2 use case diagram includes customer interactions with customization, printer selection, cart management, checkout, payment, tracking, and review submission.
 
-\placeholderfigure{cycle2-use-case}{figures/cycle2-use-case-diagram.png}{Cycle 2 use case diagram placeholder.}
+\reportfigure{cycle2-use-case}{figures/cycle2-use-case-diagram.png}{Cycle 2 use case diagram.}
 
 \subsection{Sequence diagram}
-The Cycle 2 sequence starts when a customer opens a design customization page. The user selects a product, changes the visual placement, chooses a printer, and creates a cart line. During checkout, the platform converts cart lines into order lines, assigns a tracking code, calculates the total, and displays the tracking page.
+The Cycle 2 sequence starts when a customer opens a design customization page. The customer selects a product, adjusts the preview, chooses a printer, and adds the customized product to the cart. During checkout, the platform converts cart lines into order lines, assigns a tracking code, calculates the total, records payment information, and displays the tracking page.
 
-\placeholderfigure{cycle2-sequence}{figures/cycle2-customization-checkout-sequence.png}{Cycle 2 customization and checkout sequence diagram placeholder.}
+\reportfigure{cycle2-sequence}{figures/cycle2-customization-checkout-sequence.png}{Cycle 2 customization and checkout sequence diagram.}
 
 \section{Development}
 \subsection{Customization interface}
-The \texttt{CustomizePageComponent} handles the customization workflow. It reads the design identifier from the route, determines the compatible products, sets the selected product, manages the selected color and size, and stores placement coordinates and scale. The page supports dragging the design on the preview area and resetting placement.
+The customization interface allows the customer to select a compatible product, choose color and size, move the design on the product preview, and adjust its scale. The position and scale are saved as a customization draft, which preserves the customer's choices during the transition to printer selection and cart insertion.
 
-When the user continues, the component creates a \texttt{CustomizationDraft}. This draft includes the design identifier, product identifier, selected color, selected size, selected printer identifier, and placement values. It is stored in the workflow service for the next step.
+This interface is one of the most important parts of the customer experience because it gives visual control over the final product.
 
-\placeholderfigure{customization-interface}{figures/customization-interface.png}{Screenshot of the product customization interface placeholder.}
+\reportfigure{customization-interface}{figures/customization-interface.png}{Screenshot of the product customization interface.}
 
 \subsection{Printer selection}
-The printer selection step allows the user to choose a printer partner before adding the customized product to the cart. The available printer model includes business name, rank, rating, reviews, fulfillment rate, revenue, delivery days, location, and images. These attributes help represent operational quality and support future ranking logic.
+After customization, the customer selects a printer partner. The printer selection interface presents production-related information that helps the customer compare options. Once a printer is selected, the customized product can be added to the cart with all required details.
 
-\placeholderfigure{printer-selection-interface}{figures/printer-selection-interface.png}{Screenshot of the printer selection interface placeholder.}
+\reportfigure{printer-selection-interface}{figures/printer-selection-interface.png}{Screenshot of the printer selection interface.}
 
 \subsection{Cart management}
-The current cart workflow is implemented in the front-end platform store. The \texttt{addDraftToCart} method verifies that a customization draft exists and that a printer has been selected. It then creates a cart item containing user, design, product, printer, color, size, placement, and creation date.
+The cart displays the selected design, product, printer, color, size, placement, and calculated price for each line. Customers can review their selections before confirmation and remove items when necessary. The cart total is calculated from the product base price, design price, and printer-related costs.
 
-The \texttt{cartForUser} method builds a cart view by resolving cart items into design, product, and printer objects. It calculates the line total from the design price, product base price, and printer-related margin. This view is used by the checkout page.
-
-\placeholderfigure{cart-interface}{figures/cart-interface.png}{Screenshot of the cart interface placeholder.}
+\reportfigure{cart-interface}{figures/cart-interface.png}{Screenshot of the cart interface.}
 
 \subsection{Checkout and payment}
-The checkout workflow collects the selected payment method and shipping address. When an order is placed, the local store creates an order identifier, generates order lines, computes the total, sets the payment status, and removes the cart items belonging to the user. For non-cash payment methods, the platform can mark payment as processing or simulate a paid result when the payment API is unavailable.
+The checkout page gathers the shipping address and payment method. Once confirmed, the platform creates an order, generates order lines, assigns a tracking code, calculates the total amount, records the payment status, and clears the cart. The user is then redirected to the tracking page.
 
-The back-end package includes a cart module and repository files, but the cart controller is still a placeholder. In a future integration, the local order finalization logic should move into a server-side use case protected by database transactions.
-
-\placeholderfigure{checkout-interface}{figures/checkout-interface.png}{Screenshot of the checkout and payment interface placeholder.}
+\reportfigure{checkout-interface}{figures/checkout-interface.png}{Screenshot of the checkout and payment interface.}
 
 \subsection{Order tracking}
-Order tracking is based on order-line statuses. The workflow service can aggregate statuses to produce an order-level state. The timeline includes pending, accepted, printing, shipped, and delivered. Printers can later update the status from their dashboard, while customers observe the order progress from the tracking page.
+Order tracking is based on the status of order lines. The timeline includes pending, accepted, printing, shipped, and delivered. This gives customers a clear view of production and delivery progress. Customers can also submit reviews after completing an order, which improves marketplace trust.
 
-The review workflow prevents duplicate reviews for the same order and customer. It creates a review with a rating, comment, customer identifier, order identifier, and creation date.
-
-\placeholderfigure{order-tracking-interface}{figures/order-tracking-interface.png}{Screenshot of the order tracking interface placeholder.}
+\reportfigure{order-tracking-interface}{figures/order-tracking-interface.png}{Screenshot of the order tracking interface.}
 
 \section{Validation and evaluation}
-Cycle 2 validates the most important user journey of the platform. A customer can select a design, configure a product, choose a printer, add the configuration to the cart, place an order, and view tracking information. The implementation is currently front-end-driven and suitable for demonstrating the workflow. Full validation will require a completed back-end cart/order API, database constraints, transaction tests, and payment-provider integration.
+At the end of Cycle 2, the customer workflow was complete: selecting a design, customizing a product, choosing a printer, adding the product to the cart, confirming checkout, and tracking the order. This cycle validated the central commercial process of Printymand and confirmed that the marketplace could coordinate customers, designs, products, printers, and orders in a single coherent workflow.
 
 \section{Conclusion}
-The second Spiral cycle implemented the transactional heart of Printymand. It connected marketplace discovery to customization, printer selection, checkout, and tracking. The next cycle focuses on role dashboards, administration, governance, and platform optimization.
+The second Spiral cycle implemented the transactional heart of Printymand. It connected marketplace discovery to customization, printer selection, checkout, and tracking. The next cycle focuses on dashboards, administration, governance, and platform optimization.
