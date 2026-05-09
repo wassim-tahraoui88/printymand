@@ -2,7 +2,9 @@
 \label{ch::chapter5}
 
 \section{Introduction}
-The second Spiral cycle focused on the central print-on-demand transaction. After discovering a design, a customer must be able to configure it on a product, select a printer, add the result to the cart, place an order, and track fulfillment. This cycle transformed Printymand from a browsing platform into a complete marketplace workflow.
+The second Spiral cycle focused on the central print-on-demand transaction.
+After discovering a design, a customer must be able to configure it on a product, select a printer, add the result to the cart, place an order, and track fulfillment.
+This cycle transformed Printymand from a browsing platform into a complete marketplace workflow.
 
 \section{Cycle planning and objectives}
 \begin{table}[!htpb]
@@ -22,16 +24,23 @@ Order tracking & Tracking code, order timeline, order status aggregation, and cu
 
 \section{Risk analysis}
 \subsection{Preview-to-production consistency}
-In print-on-demand systems, a major risk is the difference between the customer's visual preview and the printable result. We reduced this risk by storing the design position and scale as structured placement values. This allows the platform to preserve customization choices throughout the cart, checkout, and order workflow.
+In print-on-demand systems, a major risk is the difference between the customer's visual preview and the printable result.
+We reduced this risk by storing the design position and scale as structured placement values.
+This allows the platform to preserve customization choices throughout the cart, checkout, and order workflow.
 
 \subsection{Order integrity}
-An order depends on several elements: customer, design, product, printer, selected color, selected size, placement, price, shipping address, and payment method. We designed the workflow so that each cart line contains all necessary information before order confirmation. This ensures that the confirmed order remains coherent and traceable.
+An order depends on several elements: customer, design, product, printer, selected color, selected size, placement, price, shipping address, and payment method.
+We designed the workflow so that each cart line contains all necessary information before order confirmation.
+This ensures that the confirmed order remains coherent and traceable.
 
 \subsection{Printer reliability}
-Printer selection is essential because fulfillment depends on the selected printing partner. The platform displays printer information such as business name, rank, rating, reviews, fulfillment rate, delivery days, and location. These criteria help customers choose a suitable printer and help printers build visibility.
+Printer selection is essential because fulfillment depends on the selected printing partner.
+The platform displays printer information such as business name, rank, rating, reviews, fulfillment rate, delivery days, and location.
+These criteria help customers choose a suitable printer and help printers build visibility.
 
 \subsection{Payment workflow}
-The payment workflow supports several payment methods, including cash and digital options. We designed it so that order status and payment status are clearly separated, which makes it easier to track both commercial confirmation and production progress.
+The payment workflow supports several payment methods, including cash and digital options.
+We designed it so that order status and payment status are clearly separated, which makes it easier to track both commercial confirmation and production progress.
 
 \section{Development}
 \subsection{Customization interface}
@@ -42,27 +51,39 @@ This interface is one of the most important parts of the customer experience bec
 \reportfigure{customization-interface}{figures/customization-interface.png}{Screenshot of the product customization interface.}
 
 \subsection{Printer selection}
-After customization, the customer selects a printer partner. The printer selection interface presents production-related information that helps the customer compare options. Once a printer is selected, the customized product can be added to the cart with all required details.
+After customization, the customer selects a printer partner.
+The printer selection interface presents production-related information that helps the customer compare options.
+Once a printer is selected, the customized product can be added to the cart with all required details.
 
 \reportfigure{printer-selection-interface}{figures/printer-selection-interface.png}{Screenshot of the printer selection interface.}
 
 \subsection{Cart management}
-The cart displays the selected design, product, printer, color, size, placement, and calculated price for each line. Customers can review their selections before confirmation and remove items when necessary. The cart total is calculated from the product base price, design price, and printer-related costs.
+The cart displays the selected design, product, printer, color, size, placement, and calculated price for each line.
+Customers can review their selections before confirmation and remove items when necessary.
+The cart total is calculated from the product base price, design price, and printer-related costs.
 
 \reportfigure{cart-interface}{figures/cart-interface.png}{Screenshot of the cart interface.}
 
 \subsection{Checkout and payment}
-The checkout page gathers the shipping address and payment method. Once confirmed, the platform creates an order, generates order lines, assigns a tracking code, calculates the total amount, records the payment status, and clears the cart. The user is then redirected to the tracking page.
+The checkout page gathers the shipping address and payment method.
+Once confirmed, the platform creates an order, generates order lines, assigns a tracking code, calculates the total amount, records the payment status, and clears the cart.
+The user is then redirected to the tracking page.
 
 \reportfigure{checkout-interface}{figures/checkout-interface.png}{Screenshot of the checkout and payment interface.}
 
 \subsection{Order tracking}
-Order tracking is based on the status of order lines. The timeline includes pending, accepted, printing, shipped, and delivered. This gives customers a clear view of production and delivery progress. Customers can also submit reviews after completing an order, which improves marketplace trust.
+Order tracking is based on the status of order lines.
+The timeline includes pending, accepted, printing, shipped, and delivered.
+This gives customers a clear view of production and delivery progress.
+Customers can also submit reviews after completing an order, which improves marketplace trust.
 
 \reportfigure{order-tracking-interface}{figures/order-tracking-interface.png}{Screenshot of the order tracking interface.}
 
 \section{Validation and evaluation}
-At the end of Cycle 2, the customer workflow was complete: selecting a design, customizing a product, choosing a printer, adding the product to the cart, confirming checkout, and tracking the order. This cycle validated the central commercial process of Printymand and confirmed that the marketplace could coordinate customers, designs, products, printers, and orders in a single coherent workflow.
+At the end of Cycle 2, the customer workflow was complete: selecting a design, customizing a product, choosing a printer, adding the product to the cart, confirming checkout, and tracking the order.
+This cycle validated the central commercial process of Printymand and confirmed that the marketplace could coordinate customers, designs, products, printers, and orders in a single coherent workflow.
 
 \section{Conclusion}
-The second Spiral cycle implemented the transactional heart of Printymand. It connected marketplace discovery to customization, printer selection, checkout, and tracking. The next cycle focuses on dashboards, administration, governance, and platform optimization.
+The second Spiral cycle implemented the transactional heart of Printymand.
+It connected marketplace discovery to customization, printer selection, checkout, and tracking.
+The next cycle focuses on dashboards, administration, governance, and platform optimization.

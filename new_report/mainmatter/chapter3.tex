@@ -2,11 +2,14 @@
 \label{ch::chapter3}
 
 \section{Introduction}
-This chapter presents the technical foundation of Printymand. We define the actors, functional and non-functional requirements, global architecture, database model, front-end and back-end organization, and work environment. We also explain how the development was planned according to the Spiral Model.
+This chapter presents the technical foundation of Printymand.
+We define the actors, functional and non-functional requirements, global architecture, database model, front-end and back-end organization, and work environment.
+We also explain how the development was planned according to the Spiral Model.
 
 \section{Requirements specification}
 \subsection{Identification of actors}
-An actor represents any external entity that interacts with the system. In Printymand, we identified five main actors:
+An actor represents any external entity that interacts with the system.
+In Printymand, we identified five main actors:
 
 \begin{itemize}
     \item \textbf{Visitor:} explores the public pages of the platform and can create an account or log in.
@@ -49,6 +52,10 @@ Non-functional requirements define the quality attributes of the system:
 \section{Global analysis}
 \subsection{Static diagrams}
 
+\subsubsection{Guest use case diagram}
+The guest use case diagram presents the principal interactions between the unauthenticated user (guest) and the platform.
+\reportfigure{guest-use-case}{figures/guest-use-case-diagram.png}{Guest use case diagram.}
+
 \subsubsection{Customer use case diagram}
 The customer use case diagram presents the principal interactions between the customer and the platform.
 \reportfigure{customer-use-case}{figures/customer-use-case-diagram.png}{Customer use case diagram.}
@@ -66,28 +73,40 @@ The admin use case diagram presents the principal interactions between the admin
 \reportfigure{admin-use-case}{figures/admin-use-case-diagram.png}{Admin use case diagram.}
 
 \subsubsection{Global class diagram}
-The global class diagram represents the main domain concepts of Printymand. The principal entities are User, CustomerProfile, DesignerProfile, PrinterProfile, Design, Product, PrinterPartner, CustomizationDraft, CartItem, Order, OrderLine, Review, and PayoutRecord. These classes model the marketplace workflow from publication to order fulfillment.
+The global class diagram represents the main domain concepts of Printymand.
+The principal entities are User, CustomerProfile, DesignerProfile, PrinterProfile, Design, Product, PrinterPartner, CustomizationDraft, CartItem, Order, OrderLine, Review, and PayoutRecord.
+These classes model the marketplace workflow from publication to order fulfillment.
 
 \reportfigure{global-class-diagram}{figures/global-class-diagram.png}{Global class diagram.}
 
 \subsection{Dynamic diagrams}
 \subsubsection{Global sequence diagram}
-The global sequence diagram shows the chronological flow of the main customer journey. A customer authenticates, browses designs, customizes a product, selects a printer, adds the item to the cart, confirms the order, and follows the tracking timeline. Designers, printers, and administrators interact with their dashboards to complete the operational workflow.
+The global sequence diagram shows the chronological flow of the main customer journey.
+A customer authenticates, browses designs, customizes a product, selects a printer, adds the item to the cart, confirms the order, and follows the tracking timeline. Designers, printers, and administrators interact with their dashboards to complete the operational workflow.
 
 \reportfigure{global-sequence-diagram}{figures/global-sequence-diagram.png}{Printymand global sequence diagram.}
 
 \section{System architecture}
-Printymand follows a client-server architecture. The client side is a single-page Angular application responsible for interaction, navigation, state management, and user interface rendering. The server side is a NestJS REST API responsible for authentication, authorization, business operations, validation, persistence, and monitoring. PostgreSQL is used as the relational database.
+Printymand follows a client-server architecture.
+The client side is a single-page Angular application responsible for interaction, navigation, state management, and user interface rendering. The server side is a NestJS REST API responsible for authentication, authorization, business operations, validation, persistence, and monitoring. PostgreSQL is used as the relational database.
 
 \reportfigure{system-architecture}{figures/system-architecture-diagram.png}{System architecture diagram.}
 
 \subsection{Front-end architecture}
-The front-end application was implemented with Angular and TypeScript. We adopted a component-based architecture to make the interface reusable and maintainable. Pages represent complete views such as home, marketplace, products, design details, customization, printer selection, checkout, tracking, and dashboards. Components such as design cards, product cards, printer cards, stat cards, rank badges, modals, dashboard shells, and image fallback elements are reused across several pages.
+The front-end application was implemented with Angular and TypeScript.
+We adopted a component-based architecture to make the interface reusable and maintainable.
+Pages represent complete views such as home, marketplace, products, design details, customization, printer selection, checkout, tracking, and dashboards.
+Components such as design cards, product cards, printer cards, stat cards, rank badges, modals, dashboard shells, and image fallback elements are reused across several pages.
 
-Services centralize application logic. The authentication service manages user access, role redirection, logout, and profile updates. The workflow service coordinates designs, products, printers, cart items, orders, reviews, payouts, and dashboard indicators. The API service communicates with the REST back end. This separation makes the front end easier to maintain and allows each page to focus on presentation and user interaction.
+Services centralize application logic.
+The authentication service manages user access, role redirection, logout, and profile updates.
+The workflow service coordinates designs, products, printers, cart items, orders, reviews, payouts, and dashboard indicators.
+The API service communicates with the REST back end.
+This separation makes the front end easier to maintain and allows each page to focus on presentation and user interaction.
 
 \subsection{Back-end architecture}
-The back-end application was implemented with NestJS and TypeScript. We adopted a layered architecture composed of:
+The back-end application was implemented with NestJS and TypeScript.
+We adopted a layered architecture composed of:
 
 \begin{itemize}
     \item \textbf{API layer:} controllers, guards, decorators, filters, interceptors, and request DTOs.
@@ -99,9 +118,13 @@ The back-end application was implemented with NestJS and TypeScript. We adopted 
 This architecture separates business logic from technical details and improves testability, readability, and extensibility.
 
 \subsection{Authentication and authorization}
-Authentication is handled through JWT tokens. During registration or login, the server verifies the user information, signs a token, and sends it to the client through an HTTP-only cookie. Passwords are hashed with bcrypt. The platform also supports token extraction from authorization headers for API usage.
+Authentication is handled through JWT tokens.
+During registration or login, the server verifies the user information, signs a token, and sends it to the client through an HTTP-only cookie.
+Passwords are hashed with bcrypt.
+The platform also supports token extraction from authorization headers for API usage.
 
-Authorization is based on RBAC. Guards verify that a user is authenticated and has the required role before accessing protected resources. The same principle is applied in the Angular application through route guards that redirect users to the correct dashboard according to their role.
+Authorization is based on RBAC. Guards verify that a user is authenticated and has the required role before accessing protected resources.
+The same principle is applied in the Angular application through route guards that redirect users to the correct dashboard according to their role.
 
 \subsection{Database design}
 The PostgreSQL database was designed around the main marketplace entities:
@@ -131,7 +154,7 @@ The REST API is organized into modules that reflect the platform domains:
 \begin{longtable}{|p{0.12\linewidth}|p{0.25\linewidth}|p{0.45\linewidth}|p{0.12\linewidth}|}
 \caption{Implementation roadmap.} \label{tab:implementation_roadmap} \\
 \hline
-\textbf{Cycle} & \textbf{Focus} & \textbf{Main deliverables} \\ \hline
+\textbf{Cycle} & \textbf{Focus} \& \textbf{Main deliverables} \\ \hline
 \endfirsthead
 \hline
 \textbf{Cycle} & \textbf{Focus} & \textbf{Main deliverables} \\ \hline
@@ -145,10 +168,13 @@ The REST API is organized into modules that reflect the platform domains:
 
 \section{Work environment}
 \subsection{Software architectural pattern}
-For the front end, we used a component-service architecture. Components define interface elements and views, while services centralize authentication, workflow, and API communication. For the back end, we used a layered architecture inspired by clean architecture principles, separating controllers, use cases, domain contracts, and infrastructure.
+For the front end, we used a component-service architecture.
+Components define interface elements and views, while services centralize authentication, workflow, and API communication.
+For the back end, we used a layered architecture inspired by clean architecture principles, separating controllers, use cases, domain contracts, and infrastructure.
 
 \subsection{Modeling language}
-We used UML to model the system because it provides a clear and standardized way to represent actors, use cases, classes, and interactions. UML diagrams helped us understand the system before implementation and communicate design decisions more effectively.
+We used UML to model the system because it provides a clear and standardized way to represent actors, use cases, classes, and interactions.
+UML diagrams helped us understand the system before implementation and communicate design decisions more effectively.
 
 \subsection{Hardware environment}
 \begin{table}[!htpb]
@@ -205,4 +231,6 @@ Tailwind CSS & Styling technology used to support modern and responsive interfac
 \end{longtable}
 
 \section{Conclusion}
-In this chapter, we presented the requirements, actors, architecture, database model, API modules, and work environment of Printymand. We also showed how the platform was organized into three Spiral cycles. The next chapter presents the first cycle, which focuses on authentication, onboarding, and marketplace discovery.
+In this chapter, we presented the requirements, actors, architecture, database model, API modules, and work environment of Printymand.
+We also showed how the platform was organized into three Spiral cycles.
+The next chapter presents the first cycle, which focuses on authentication, onboarding, and marketplace discovery.

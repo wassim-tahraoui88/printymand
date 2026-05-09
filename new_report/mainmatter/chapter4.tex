@@ -2,7 +2,9 @@
 \label{ch::chapter4}
 
 \section{Introduction}
-The first Spiral cycle established the foundations of Printymand. Its objective was to make the platform accessible, navigable, and clear for the main user roles. In this cycle, we implemented authentication, registration, role-based redirection, public marketplace discovery, product and design browsing, and reusable user interface components.
+The first Spiral cycle established the foundations of Printymand.
+Its objective was to make the platform accessible, navigable, and clear for the main user roles.
+In this cycle, we implemented authentication, registration, role-based redirection, public marketplace discovery, product and design browsing, and reusable user interface components.
 
 \section{Cycle planning and objectives}
 \begin{table}[!htpb]
@@ -22,41 +24,62 @@ Reusable UI & Layout, dashboard shell, cards, modal, stat cards, skeleton blocks
 
 \section{Risk analysis}
 \subsection{Authentication consistency}
-Authentication is a sensitive part of the platform because it protects user data and role-specific dashboards. To reduce this risk, we used JWT authentication, HTTP-only cookies, password hashing, and guarded routes. The authentication service also centralizes login, registration, logout, and profile state, which avoids duplicating access logic across pages.
+Authentication is a sensitive part of the platform because it protects user data and role-specific dashboards.
+To reduce this risk, we used JWT authentication, HTTP-only cookies, password hashing, and guarded routes.
+The authentication service also centralizes login, registration, logout, and profile state, which avoids duplicating access logic across pages.
 
 \subsection{Role separation}
-Printymand includes four authenticated roles: customer, designer, printer, and administrator. Each role has specific rights and navigation paths. We addressed this risk through role-based guards on the client side and RBAC guards on the server side. As a result, each user accesses the workspace and operations that correspond to his or her responsibilities.
+Printymand includes four authenticated roles: customer, designer, printer, and administrator.
+Each role has specific rights and navigation paths.
+We addressed this risk through role-based guards on the client side and RBAC guards on the server side.
+As a result, each user accesses the workspace and operations that correspond to his or her responsibilities.
 
 \subsection{Catalog discovery quality}
-Marketplace discovery depends on the clarity of design cards, product cards, categories, and detail pages. We focused on building a clean browsing experience so that customers can understand the offer before starting customization. This choice improves usability and creates a natural transition toward customization.
+Marketplace discovery depends on the clarity of design cards, product cards, categories, and detail pages.
+We focused on building a clean browsing experience so that customers can understand the offer before starting customization.
+This choice improves usability and creates a natural transition toward customization.
 
 \section{Development}
 \subsection{Authentication and registration}
-We implemented authentication around a clear access workflow. During registration, the user provides identity information, address, password, and role. The platform creates the account and initializes the default profile corresponding to the chosen role. During login, the server verifies the credentials, signs a JWT token, and establishes the session.
+We implemented authentication around a clear access workflow.
+During registration, the user provides identity information, address, password, and role.
+The platform creates the account and initializes the default profile corresponding to the chosen role.
+During login, the server verifies the credentials, signs a JWT token, and establishes the session.
 
-The authentication interface was designed to be simple and direct. It helps users access the platform quickly and supports role-based redirection after successful authentication.
+The authentication interface was designed to be simple and direct.
+It helps users access the platform quickly and supports role-based redirection after successful authentication.
 
 \reportfigure{login-interface}{figures/login-interface.png}{Screenshot of the login interface.}
 \reportfigure{register-interface}{figures/register-interface.png}{Screenshot of the registration interface.}
 
 \subsection{Marketplace and product discovery}
-The home page introduces the platform and highlights featured designs and products. The marketplace page allows customers to explore available designs, while the product page presents printable items. Each design and product is displayed through reusable cards that include the essential information needed for decision-making.
+The home page introduces the platform and highlights featured designs and products.
+The marketplace page allows customers to explore available designs, while the product page presents printable items.
+Each design and product is displayed through reusable cards that include the essential information needed for decision-making.
 
-The design detail page gives the customer more information about the selected artwork and provides access to customization. This flow creates a natural transition from discovery to purchase.
+The design detail page gives the customer more information about the selected artwork and provides access to customization.
+This flow creates a natural transition from discovery to purchase.
 
 \reportfigure{marketplace-interface}{figures/marketplace-interface.png}{Screenshot of the marketplace discovery interface.}
 \reportfigure{product-detail-interface}{figures/product-detail-interface.png}{Screenshot of the product or design detail interface.}
 
 \subsection{Reusable components}
-We developed reusable interface components to keep the platform consistent. The layout component structures the main navigation. The dashboard shell supports role-specific workspaces. Design cards, product cards, printer cards, stat cards, rank badges, image fallback, modal, and skeleton blocks reduce repetition and improve maintainability.
+We developed reusable interface components to keep the platform consistent.
+The layout component structures the main navigation.
+The dashboard shell supports role-specific workspaces.
+Design cards, product cards, printer cards, stat cards, rank badges, image fallback, modal, and skeleton blocks reduce repetition and improve maintainability.
 
 This component-oriented approach allowed us to build several pages with a coherent visual identity and stable behavior.
 
 \subsection{Back-end foundations}
-The first cycle also established the essential server-side foundations. We configured the NestJS application, API prefix, CORS, cookie parsing, validation, exception filters, logging interceptor, authentication module, JWT utility, and guards. These elements form the technical base used by the rest of the platform.
+The first cycle also established the essential server-side foundations.
+We configured the NestJS application, API prefix, CORS, cookie parsing, validation, exception filters, logging interceptor, authentication module, JWT utility, and guards.
+These elements form the technical base used by the rest of the platform.
 
 \section{Validation and evaluation}
-At the end of the first cycle, users could register, log in, access the platform according to their role, browse the marketplace, view products and designs, and navigate through a consistent interface. This cycle validated the platform's identity, access management, and discovery workflow.
+At the end of the first cycle, users could register, log in, access the platform according to their role, browse the marketplace, view products and designs, and navigate through a consistent interface.
+This cycle validated the platform's identity, access management, and discovery workflow.
 
 \section{Conclusion}
-The first Spiral cycle established the foundation of Printymand: authentication, onboarding, discovery, navigation, reusable components, and back-end security infrastructure. The next cycle builds on this foundation by implementing customization, printer selection, checkout, and order tracking.
+The first Spiral cycle established the foundation of Printymand: authentication, onboarding, discovery, navigation, reusable components, and back-end security infrastructure.
+The next cycle builds on this foundation by implementing customization, printer selection, checkout, and order tracking.
