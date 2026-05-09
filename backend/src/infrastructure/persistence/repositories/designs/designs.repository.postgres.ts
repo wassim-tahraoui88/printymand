@@ -17,7 +17,7 @@ export class PostgresDesignsRepository implements DesignsRepository {
     constructor(private readonly db: PostgresService) {}
 
     async create(dto: CreateDesignDto) {
-        await this.db.query(INSERT_DESIGN, [dto.id, dto.inventoryId, dto.albumId, dto.description, dto.displayUrl, dto.assetUrl]);
+        await this.db.query(INSERT_DESIGN, [dto.id, dto.inventoryId, dto.albumId, dto.name, dto.description, dto.displayUrl, dto.assetUrl]);
     }
 
 	async findDtoById(id: UUID) {

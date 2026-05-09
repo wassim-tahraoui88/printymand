@@ -1,6 +1,6 @@
 export const INSERT_DESIGN = `
-	INSERT INTO design (id, inventory_id, album_id, description, display_url, asset_url)
-	VALUES ($1, $2, $3, $4, $5, $6);
+	INSERT INTO design (id, inventory_id, album_id, name, description, display_url, asset_url)
+	VALUES ($1, $2, $3, $4, $5, $6, $7);
 `;
 
 export const FIND_BY_ID = `

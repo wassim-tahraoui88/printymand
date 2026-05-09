@@ -10,7 +10,7 @@ import { CursorQuery } from '../../query.dto';
 export class DesignsController {
 
 	constructor(private readonly uploadDesign: UploadDesignUseCase,
-	            private readonly getUploadConfig: GetUploadConfigUseCase,
+	            private readonly getUploadConfig: GetUploadConfigUseCase, // TODO: Verify
 	            private readonly viewDesigns: ViewDesignsUseCase,
 	            private readonly getDesign: GetDesignUseCase) {}
 
