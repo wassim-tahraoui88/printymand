@@ -16,9 +16,9 @@ export class DesignCardComponent {
   readonly preferredProductId = input<number | null>(null);
   readonly statusTone = computed(() => {
     const map: Record<Design['status'], string> = {
-      ACTIVE: 'border-emerald-200 bg-emerald-50 text-emerald-700',
-      ARCHIVED: 'border-amber-200 bg-amber-50 text-amber-700',
-      REMOVED: 'border-red-200 bg-red-50 text-red-700',
+      ACTIVE: 'border-emerald-400/20 bg-emerald-400/10 text-emerald-200',
+      ARCHIVED: 'border-amber-400/20 bg-amber-400/10 text-amber-200',
+      REMOVED: 'border-rose-400/20 bg-rose-400/10 text-rose-200',
     };
     return map[this.design().status];
   });

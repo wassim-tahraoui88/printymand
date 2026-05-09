@@ -1,26 +1,31 @@
-<article class="pm-card">
-  <a [routerLink]="['/design', design().id]" class="block overflow-hidden rounded-xl">
-    <app-image-with-fallback
-      [src]="design().image"
-      [alt]="design().title"
-      [imgClass]="'h-64 w-full object-cover transition duration-300 hover:scale-[1.02]'"
-    />
-  </a>
-
-  <div class="space-y-4 p-4">
-    <div class="flex items-start justify-between gap-3">
-      <div class="space-y-1">
-        <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{{ design().category }}</p>
-        <a [routerLink]="['/design', design().id]" class="text-lg font-semibold text-slate-950 hover:text-indigo-600">
-          {{ design().title }}
-        </a>
-      </div>
-      <span class="inline-flex rounded-full border px-2 py-1 text-[11px] font-semibold" [class]="statusTone()">
+<article class="pm-card pm-glow group">
+  <a [routerLink]="['/design', design().id]" class="relative block overflow-hidden rounded-[24px]">
+    <div class="absolute inset-x-0 top-0 z-10 flex items-start justify-between p-4">
+      <span class="pm-chip bg-slate-950/65 text-slate-100 backdrop-blur-xl">{{ design().category }}</span>
+      <span class="inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold backdrop-blur-xl" [class]="statusTone()">
         {{ design().status }}
       </span>
     </div>
+    <app-image-with-fallback
+      [src]="design().image"
+      [alt]="design().title"
+      [imgClass]="'h-72 w-full object-cover transition duration-500 group-hover:scale-[1.04]'"
+    />
+    <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent"></div>
+  </a>
 
-    <p class="line-clamp-2 text-sm text-slate-600">{{ design().description }}</p>
+  <div class="space-y-5 p-5">
+    <div class="flex items-start justify-between gap-3">
+      <div class="space-y-1">
+        <a [routerLink]="['/design', design().id]" class="pm-heading text-xl font-semibold text-white transition hover:text-sky-200">
+          {{ design().title }}
+        </a>
+        <p class="text-sm text-slate-400">{{ design().designer }}</p>
+      </div>
+      <span class="text-lg font-semibold text-white">{{ design().price }} TND</span>
+    </div>
+
+    <p class="line-clamp-2 text-sm leading-6 text-slate-300">{{ design().description }}</p>
 
     <div class="flex flex-wrap items-center gap-2">
       <app-designer-badge [rank]="design().designerRank" />
@@ -29,18 +34,18 @@
       }
     </div>
 
-    <div class="flex items-center justify-between text-sm">
-      <div class="flex items-center gap-3 text-slate-500">
+    <div class="pm-metric flex items-center justify-between text-sm">
+      <div class="flex items-center gap-3 text-slate-400">
         <span>{{ design().views | number }} views</span>
         <span>{{ design().sales | number }} sales</span>
       </div>
-      <span class="font-semibold text-slate-950">{{ design().price }} TND</span>
+      <span class="pm-chip bg-sky-400/10 text-sky-100">{{ (design().conversionRate * 100).toFixed(1) }}% conversion</span>
     </div>
 
-    <div class="flex items-center justify-between gap-3 border-t border-slate-200 pt-3">
+    <div class="flex items-center justify-between gap-3 border-t border-white/10 pt-4">
       <div class="min-w-0">
-        <p class="truncate text-sm font-medium text-slate-900">{{ design().designer }}</p>
-        <p class="text-xs text-slate-500">{{ (design().conversionRate * 100).toFixed(1) }}% conversion</p>
+        <p class="truncate text-sm font-medium text-slate-100">{{ design().designer }}</p>
+        <p class="text-xs text-slate-500">High-visibility product-ready asset</p>
       </div>
       <div class="flex items-center gap-2">
         <a class="pm-btn pm-btn-secondary" [routerLink]="['/design', design().id]">View</a>

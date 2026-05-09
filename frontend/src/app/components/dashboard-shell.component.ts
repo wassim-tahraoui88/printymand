@@ -5,15 +5,20 @@ import { Component, input } from '@angular/core';
   standalone: true,
   template: `
     <section class="pm-page">
-      <div class="space-y-2">
-        <p class="text-sm font-semibold uppercase tracking-[0.16em] text-indigo-600">{{ eyebrow() }}</p>
-        <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div class="space-y-2">
-            <h1 class="text-3xl font-semibold tracking-tight text-slate-950">{{ title() }}</h1>
-            <p class="text-sm leading-6 text-slate-600">{{ description() }}</p>
+      <div class="pm-hero">
+        <div class="space-y-2">
+          <p class="pm-kicker">{{ eyebrow() }}</p>
+          <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div class="space-y-3">
+              <h1 class="pm-heading text-4xl font-semibold tracking-tight text-white">{{ title() }}</h1>
+              <p class="max-w-3xl text-sm leading-7 text-slate-200">{{ description() }}</p>
+            </div>
+            <ng-content select="[dashboard-actions]" />
           </div>
-          <ng-content select="[dashboard-actions]" />
         </div>
+      </div>
+      <div class="space-y-2">
+        <p class="text-sm text-slate-400">Workspace insights, controls, and role-specific tasks live below.</p>
       </div>
       <ng-content />
     </section>

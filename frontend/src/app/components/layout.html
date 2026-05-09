@@ -1,13 +1,13 @@
-<div class="min-h-screen bg-transparent">
-  <header class="sticky top-0 z-40 border-b border-slate-200/80 bg-white/88 backdrop-blur-xl">
+<div class="min-h-screen bg-transparent text-slate-50">
+  <header class="sticky top-0 z-40 border-b border-white/8 bg-slate-950/70 backdrop-blur-2xl">
     <div class="grid w-full gap-0">
       <div class="flex w-full items-center justify-between gap-4 px-4 py-3 md:px-6 lg:px-8">
         <div class="flex min-w-0 items-center gap-4 md:gap-6">
           <a routerLink="/" class="flex min-w-0 items-center gap-3">
-            <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-indigo-600 text-lg font-bold text-white shadow-sm shadow-indigo-600/25">P</div>
+            <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-400 via-indigo-500 to-violet-600 text-lg font-bold text-white shadow-lg shadow-indigo-950/40">P</div>
             <div class="min-w-0">
-              <p class="truncate text-lg font-semibold text-slate-950">Printymand</p>
-              <p class="truncate text-xs font-medium uppercase tracking-[0.14em] text-slate-500">Print on demand Tunisia</p>
+              <p class="pm-heading truncate text-lg font-semibold text-white">Printymand</p>
+              <p class="truncate text-xs font-medium uppercase tracking-[0.18em] text-slate-400">Print on demand Tunisia</p>
             </div>
           </a>
         </div>
@@ -21,26 +21,26 @@
 
         <div class="flex shrink-0 items-center gap-2">
           @if (auth.isAuthenticated()) {
-            <span class="hidden rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 md:inline-flex">
+            <span class="hidden rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-200 md:inline-flex">
               {{ auth.backendMode() === 'api' ? 'API connected' : 'Mock-ready mode' }}
             </span>
             <a routerLink="/cart" class="pm-btn pm-btn-secondary">
               Cart
               @if (cartCount()) {
-                <span class="rounded-full bg-indigo-600 px-2 py-0.5 text-xs text-white">{{ cartCount() }}</span>
+                <span class="rounded-full bg-gradient-to-r from-sky-400 to-indigo-500 px-2 py-0.5 text-xs text-white">{{ cartCount() }}</span>
               }
             </a>
             <div class="relative hidden md:block">
               <button type="button" class="pm-btn pm-btn-secondary" (click)="userMenu.set(!userMenu())">
-                <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700">{{ userInitials() }}</span>
+                <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-xs font-bold text-sky-100">{{ userInitials() }}</span>
                 <span class="max-w-36 truncate">{{ auth.user()?.name }}</span>
               </button>
 
               @if (userMenu()) {
                 <div class="pm-flyout absolute right-0 mt-2 w-72">
-                  <div class="border-b border-slate-200 pb-3">
-                    <p class="font-semibold text-slate-950">{{ auth.user()?.name }}</p>
-                    <p class="text-sm text-slate-500">{{ auth.user()?.email }}</p>
+                  <div class="border-b border-white/10 pb-3">
+                    <p class="font-semibold text-white">{{ auth.user()?.name }}</p>
+                    <p class="text-sm text-slate-400">{{ auth.user()?.email }}</p>
                   </div>
                   <div class="grid gap-2 py-3">
                     <a class="pm-btn pm-btn-secondary justify-start" [routerLink]="auth.dashboardPath(auth.user()!.role)">Dashboard</a>
@@ -61,7 +61,7 @@
         </div>
       </div>
 
-      <div class="hidden w-full items-center justify-between gap-6 border-t border-slate-200/70 px-4 py-3 lg:flex md:px-6 lg:px-8">
+      <div class="hidden w-full items-center justify-between gap-6 border-t border-white/8 px-4 py-3 lg:flex md:px-6 lg:px-8">
         <nav class="flex min-w-0 flex-1 items-center gap-2">
           @for (link of navLinks; track link.to) {
             <a class="pm-btn pm-btn-ghost" [class.pm-btn-secondary]="isActive(link.to)" [routerLink]="link.to">{{ link.label }}</a>
@@ -78,12 +78,12 @@
     </div>
 
     @if (siteMenu()) {
-      <div class="border-t border-slate-200 bg-white/95 px-4 py-4 shadow-sm backdrop-blur-xl">
+      <div class="border-t border-white/8 bg-slate-950/86 px-4 py-4 shadow-2xl backdrop-blur-2xl">
         <div class="grid w-full gap-4 lg:grid-cols-[1.2fr_1fr_1fr] lg:px-4">
           <section class="pm-subpanel grid gap-3">
             <div>
-              <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Navigate</p>
-              <p class="mt-1 text-sm text-slate-600">Jump between discovery, account workspaces, and checkout.</p>
+              <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Navigate</p>
+              <p class="mt-1 text-sm text-slate-300">Jump between discovery, account workspaces, and checkout.</p>
             </div>
             <form class="grid gap-3 xl:hidden" (ngSubmit)="handleSearch()">
               <input class="pm-input pm-input-compact" [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" name="menuSearch" placeholder="Search marketplace" />
@@ -102,8 +102,8 @@
 
           <section class="pm-subpanel grid gap-3">
             <div>
-              <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Workspace</p>
-              <p class="mt-1 text-sm text-slate-600">The same actions stay available on both desktop and smaller screens.</p>
+              <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Workspace</p>
+              <p class="mt-1 text-sm text-slate-300">The same actions stay available on both desktop and smaller screens.</p>
             </div>
             @if (auth.isAuthenticated()) {
               <a class="pm-btn pm-btn-secondary justify-start" [routerLink]="profilePath(auth.user()!.role)">Profile settings</a>
@@ -118,17 +118,17 @@
 
           <section class="pm-subpanel grid gap-3">
             <div>
-              <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Platform status</p>
-              <p class="mt-1 text-sm text-slate-600">A quick read on the current app session and cart state.</p>
+              <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Platform status</p>
+              <p class="mt-1 text-sm text-slate-300">A quick read on the current app session and cart state.</p>
             </div>
             <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
-              <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Mode</p>
-                <p class="mt-1 text-sm font-semibold text-slate-900">{{ auth.backendMode() === 'api' ? 'API connected' : 'Mock-ready mode' }}</p>
+              <div class="rounded-2xl border border-white/10 bg-white/4 px-4 py-3">
+                <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Mode</p>
+                <p class="mt-1 text-sm font-semibold text-white">{{ auth.backendMode() === 'api' ? 'API connected' : 'Mock-ready mode' }}</p>
               </div>
-              <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Cart</p>
-                <p class="mt-1 text-sm font-semibold text-slate-900">{{ cartCount() }} configured {{ cartCount() === 1 ? 'item' : 'items' }}</p>
+              <div class="rounded-2xl border border-white/10 bg-white/4 px-4 py-3">
+                <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Cart</p>
+                <p class="mt-1 text-sm font-semibold text-white">{{ cartCount() }} configured {{ cartCount() === 1 ? 'item' : 'items' }}</p>
               </div>
             </div>
           </section>

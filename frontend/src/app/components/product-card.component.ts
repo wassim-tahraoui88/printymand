@@ -9,20 +9,25 @@ import { ImageWithFallbackComponent } from './image-with-fallback.component';
   standalone: true,
   imports: [CommonModule, RouterModule, ImageWithFallbackComponent],
   template: `
-    <article class="pm-card">
-      <div class="relative overflow-hidden rounded-xl">
+    <article class="pm-card pm-glow group">
+      <div class="relative overflow-hidden rounded-[24px]">
+        <div class="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between p-4">
+          <span class="pm-chip bg-slate-950/65 text-slate-100 backdrop-blur-xl">{{ product().category }}</span>
+          <span class="pm-chip bg-emerald-400/10 text-emerald-200 backdrop-blur-xl">{{ product().availability }}</span>
+        </div>
         <app-image-with-fallback
           [src]="currentImage()"
           [alt]="product().name"
-          [imgClass]="'h-64 w-full object-cover'"
+          [imgClass]="'h-72 w-full object-cover transition duration-500 group-hover:scale-[1.04]'"
         />
+        <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/10 to-transparent"></div>
         @if (product().images.length > 1) {
-          <div class="absolute bottom-3 right-3 flex gap-2 rounded-full bg-white/90 px-2 py-1 shadow-sm">
+          <div class="absolute bottom-4 right-4 z-10 flex gap-2 rounded-full border border-white/10 bg-slate-950/70 px-2 py-1 shadow-xl shadow-slate-950/40 backdrop-blur-xl">
             @for (image of product().images; track image; let index = $index) {
               <button
                 type="button"
                 class="h-2.5 w-2.5 rounded-full"
-                [class]="index === imageIndex() ? 'bg-slate-900' : 'bg-slate-300'"
+                [class]="index === imageIndex() ? 'bg-white' : 'bg-white/35'"
                 (click)="imageIndex.set(index)"
               ></button>
             }
@@ -30,16 +35,16 @@ import { ImageWithFallbackComponent } from './image-with-fallback.component';
         }
       </div>
 
-      <div class="space-y-4 p-4">
+      <div class="space-y-5 p-5">
         <div class="flex items-start justify-between gap-3">
-          <div>
-            <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{{ product().category }}</p>
-            <h3 class="text-lg font-semibold text-slate-950">{{ product().name }}</h3>
+          <div class="space-y-1">
+            <h3 class="pm-heading text-xl font-semibold text-white">{{ product().name }}</h3>
+            <p class="text-sm text-slate-400">{{ product().printerName }}</p>
           </div>
-          <span class="pm-chip">{{ product().availability }}</span>
+          <span class="text-lg font-semibold text-white">{{ product().basePrice }} TND</span>
         </div>
 
-        <p class="line-clamp-2 text-sm text-slate-600">{{ product().description }}</p>
+        <p class="line-clamp-2 text-sm leading-6 text-slate-300">{{ product().description }}</p>
 
         <div class="flex flex-wrap gap-2">
           @for (color of product().colors.slice(0, 4); track color) {
@@ -50,15 +55,15 @@ import { ImageWithFallbackComponent } from './image-with-fallback.component';
           }
         </div>
 
-        <div class="flex items-center justify-between text-sm">
-          <div class="text-slate-500">
-            {{ product().sizes.join(' • ') }}
+        <div class="pm-metric flex items-center justify-between gap-3 text-sm">
+          <div>
+            <p class="text-xs uppercase tracking-[0.14em] text-slate-500">Available sizes</p>
+            <p class="mt-1 text-sm font-medium text-slate-200">{{ product().sizes.join(' • ') }}</p>
           </div>
-          <span class="font-semibold text-slate-950">{{ product().basePrice }} TND</span>
+          <span class="pm-chip bg-sky-400/10 text-sky-100">{{ product().colors.length }} colors</span>
         </div>
 
-        <div class="flex items-center justify-between gap-3 border-t border-slate-200 pt-3">
-          <div class="text-sm text-slate-500">{{ product().printerName }}</div>
+        <div class="flex items-center justify-end gap-3 border-t border-white/10 pt-4">
           <div class="flex items-center gap-2">
             <a class="pm-btn pm-btn-secondary" [routerLink]="['/marketplace']" [queryParams]="{ product: product().id }">Choose design</a>
           </div>

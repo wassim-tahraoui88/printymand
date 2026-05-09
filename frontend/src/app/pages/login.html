@@ -1,17 +1,31 @@
 <section class="pm-page">
   <div class="grid w-full gap-6 lg:grid-cols-[0.9fr_1.1fr]">
     <div class="pm-hero">
-      <p class="text-sm font-semibold uppercase tracking-[0.16em] text-indigo-200">Role-based access</p>
-      <h1 class="mt-4 text-4xl font-semibold">Sign in to the exact Printymand workspace you manage.</h1>
-      <p class="mt-4 text-base leading-7 text-indigo-100">
+      <p class="pm-kicker">Role-based access</p>
+      <h1 class="pm-heading mt-4 text-4xl font-semibold">Sign in to the exact Printymand workspace you manage.</h1>
+      <p class="mt-4 text-base leading-7 text-slate-200">
         Cookie-based auth is wired through the API layer, while the frontend keeps a resilient mock fallback so the product remains usable before backend rollout.
       </p>
+      <div class="mt-8 grid gap-3 sm:grid-cols-3">
+        <div class="rounded-2xl border border-white/10 bg-white/6 p-4 backdrop-blur-xl">
+          <p class="text-xs uppercase tracking-[0.16em] text-slate-300">Routing</p>
+          <p class="mt-2 text-sm text-white">Role-aware workspace entry</p>
+        </div>
+        <div class="rounded-2xl border border-white/10 bg-white/6 p-4 backdrop-blur-xl">
+          <p class="text-xs uppercase tracking-[0.16em] text-slate-300">Session</p>
+          <p class="mt-2 text-sm text-white">API and mock-safe auth flow</p>
+        </div>
+        <div class="rounded-2xl border border-white/10 bg-white/6 p-4 backdrop-blur-xl">
+          <p class="text-xs uppercase tracking-[0.16em] text-slate-300">Access</p>
+          <p class="mt-2 text-sm text-white">Customer, designer, printer, admin</p>
+        </div>
+      </div>
     </div>
 
     <div class="pm-panel space-y-5">
       <div>
-        <h2 class="text-2xl font-semibold text-slate-950">Welcome back</h2>
-        <p class="mt-1 text-sm text-slate-500">Use any seeded account or your own registered account.</p>
+        <h2 class="pm-heading text-2xl font-semibold text-white">Welcome back</h2>
+        <p class="mt-1 text-sm text-slate-400">Use any seeded account or your own registered account.</p>
       </div>
 
       <form class="grid gap-4" (ngSubmit)="submit()">
@@ -24,24 +38,24 @@
           <input class="pm-input" type="password" [(ngModel)]="password" name="password" required />
         </label>
         @if (error()) {
-          <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ error() }}</div>
+          <div class="rounded-2xl border border-rose-400/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">{{ error() }}</div>
         }
         <button type="submit" class="pm-btn pm-btn-primary w-full">{{ loading() ? 'Signing in…' : 'Sign in' }}</button>
       </form>
 
       <div class="grid gap-3">
-        <p class="text-sm font-semibold text-slate-950">Demo accounts</p>
+        <p class="text-sm font-semibold text-white">Demo accounts</p>
         @for (account of demoAccounts; track account.email) {
           <button type="button" class="pm-btn pm-btn-secondary justify-between" (click)="useDemo(account.email, account.password)">
             <span>{{ account.label }}</span>
-            <span class="text-xs text-slate-500">{{ account.email }}</span>
+            <span class="text-xs text-slate-400">{{ account.email }}</span>
           </button>
         }
       </div>
 
-      <p class="text-sm text-slate-500">
+      <p class="text-sm text-slate-400">
         Need an account?
-        <a routerLink="/register" class="font-semibold text-indigo-600">Register here</a>
+        <a routerLink="/register" class="font-semibold text-sky-300">Register here</a>
       </p>
     </div>
   </div>

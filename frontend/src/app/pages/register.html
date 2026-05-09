@@ -1,11 +1,25 @@
 <section class="pm-page">
   <div class="grid w-full gap-6 lg:grid-cols-[0.95fr_1.05fr]">
     <div class="pm-panel space-y-4">
-      <p class="text-sm font-semibold uppercase tracking-[0.16em] text-indigo-600">Create account</p>
-      <h1 class="text-3xl font-semibold text-slate-950">Join Printymand as a customer, designer, or printer.</h1>
-      <p class="text-sm leading-7 text-slate-600">
+      <p class="pm-kicker">Create account</p>
+      <h1 class="pm-heading text-3xl font-semibold text-white">Join Printymand as a customer, designer, or printer.</h1>
+      <p class="text-sm leading-7 text-slate-300">
         Registration assigns the right default profile structure immediately, so every role lands in a usable dashboard instead of an empty demo shell.
       </p>
+      <div class="grid gap-3 sm:grid-cols-3">
+        <div class="rounded-2xl border border-white/10 bg-white/4 p-4">
+          <p class="text-xs uppercase tracking-[0.16em] text-slate-400">Faster setup</p>
+          <p class="mt-2 text-sm text-slate-100">Role-ready onboarding</p>
+        </div>
+        <div class="rounded-2xl border border-white/10 bg-white/4 p-4">
+          <p class="text-xs uppercase tracking-[0.16em] text-slate-400">Cleaner paths</p>
+          <p class="mt-2 text-sm text-slate-100">Immediate dashboard access</p>
+        </div>
+        <div class="rounded-2xl border border-white/10 bg-white/4 p-4">
+          <p class="text-xs uppercase tracking-[0.16em] text-slate-400">Flexible roles</p>
+          <p class="mt-2 text-sm text-slate-100">Customer, designer, printer</p>
+        </div>
+      </div>
     </div>
 
     <div class="pm-panel space-y-5">
@@ -36,15 +50,15 @@
         </label>
 
         @if (error()) {
-          <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ error() }}</div>
+          <div class="rounded-2xl border border-rose-400/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">{{ error() }}</div>
         }
 
         <button type="submit" class="pm-btn pm-btn-primary w-full">{{ loading() ? 'Creating account…' : 'Create account' }}</button>
       </form>
 
-      <p class="text-sm text-slate-500">
+      <p class="text-sm text-slate-400">
         Already have an account?
-        <a routerLink="/login" class="font-semibold text-indigo-600">Sign in</a>
+        <a routerLink="/login" class="font-semibold text-sky-300">Sign in</a>
       </p>
     </div>
   </div>
