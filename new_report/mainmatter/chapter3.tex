@@ -127,15 +127,10 @@ The platform also supports token extraction from authorization headers for API u
 Authorization is based on RBAC. Guards verify that a user is authenticated and has the required role before accessing protected resources.
 The same principle is applied in the Angular application through route guards that redirect users to the correct dashboard according to their role.
 
+\pagebreak
 \subsection{Database design}
 The PostgreSQL database was designed around the main marketplace entities:
-
-\begin{itemize}
-    \item \textbf{Users:} account identity, password hash, contact data, role, and additional profile data.
-    \item \textbf{Designer inventory:} designer-owned design spaces, albums, designs, and tags.
-    \item \textbf{Printer inventory:} printer-owned product inventory, product type, size, color, price, and quantity.
-    \item \textbf{Orders:} customer orders and order items linked to products and designs.
-\end{itemize}
+\reportfigure{database-domain-model}{figures/database-domain-model-diagram.png}{Database domain model diagram.}
 
 The use of relational tables provides data integrity and supports the relations between customers, designers, printers, products, designs, and orders.
 
