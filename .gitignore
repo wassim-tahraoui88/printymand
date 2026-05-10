@@ -17,3 +17,4 @@
 # temp directory
 .temp
 .tmp
+/out/
