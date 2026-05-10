@@ -91,13 +91,7 @@ backref=false
 \newcommand{\reportfigure}[3]{
 \begin{figure}[!htpb]
     \centering
-    \fbox{
-        \begin{minipage}[c][5cm][c]{0.82\textwidth}
-            \centering
-            \textbf{Figure to insert}\\[3mm]
-            \small Source path: \texttt{#2}
-        \end{minipage}
-    }
+    \includegraphics[width=0.82\textwidth]{#2}
     \caption{#3}
     \label{fig:#1}
 \end{figure}
