@@ -91,7 +91,11 @@ backref=false
 \newcommand{\reportfigure}[3]{
 \begin{figure}[!htpb]
     \centering
-    \includegraphics[width=0.82\textwidth]{#2}
+    \IfFileExists{#2}{%
+        \includegraphics[width=0.82\textwidth]{#2}%
+    }{%
+        \fbox{\parbox{0.82\textwidth}{\centering Missing figure file: #2}}%
+    }%
     \caption{#3}
     \label{fig:#1}
 \end{figure}
