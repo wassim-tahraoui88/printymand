@@ -5,9 +5,16 @@
 % Packages
 % --------------------------
 \usepackage[spanish,english,es-tabla]{babel}
-\usepackage[utf8]{inputenc}
-\usepackage[T1]{fontenc}
-\usepackage{lmodern}     % Use a modern font (that is not pixelated)
+\usepackage{iftex}
+\ifPDFTeX
+    \usepackage[T1]{fontenc}
+    \usepackage[utf8]{inputenc}
+    \usepackage{helvet}     % Arial-like fallback for pdfLaTeX
+    \renewcommand{\familydefault}{\sfdefault}
+\else
+    \usepackage{fontspec}
+    \setmainfont{Arial}
+\fi
 \usepackage[protrusion=true, expansion=true]{microtype}  % Use microtype to improve readability
 \usepackage{amsmath,amssymb} 
 \usepackage{tabularx}    % tables spanning the full text width
@@ -52,7 +59,6 @@ isbn=false,
 backref=false
 ]{biblatex}
 
-\usepackage[utf8]{inputenc}
 \usepackage{adjustbox}
 
 % The .bib files in included here
@@ -64,6 +70,7 @@ backref=false
 % Define the geometry of the document
 \newgeometry {top=2.5cm, bottom=2.5cm, right=2.5cm, left=2.5cm}
 \setlength{\parskip}{10pt}   % Change the default value
+\onehalfspacing
 
 % hiperlinks
 \hypersetup{
@@ -76,11 +83,10 @@ backref=false
 % Header and footer
 \fancyhf{}   % Clear the default header and footer
 \renewcommand{\headrulewidth}{0.2pt}
- 
-\fancyhead[RO]{\nouppercase \leftmark}  % Define the header for odd and even pages
-\fancyhead[LE]{\nouppercase \leftmark}  % Define the header for odd and even pages
-%\fancyhead[LE]{\thesisAuthor}           % Define the header for odd and even pages
-\fancyfoot[C]{\thepage}
+
+\fancyhead[L]{\nouppercase \leftmark}
+\fancyfoot[L]{PFA - 4th year SE}
+\fancyfoot[R]{\thepage}
 
 \addto\captionsenglish{\renewcommand{\contentsname}{Table of Contents}}
 
@@ -94,7 +100,15 @@ backref=false
     \IfFileExists{#2}{%
         \includegraphics[width=0.82\textwidth]{#2}%
     }{%
-        \fbox{\parbox{0.82\textwidth}{\centering Missing figure file: #2}}%
+        \IfFileExists{figures/#2}{%
+            \includegraphics[width=0.82\textwidth]{figures/#2}%
+        }{%
+            \IfFileExists{../figures/#2}{%
+                \includegraphics[width=0.82\textwidth]{../figures/#2}%
+            }{%
+                \fbox{\parbox{0.82\textwidth}{\centering Missing figure file: #2}}%
+            }%
+        }%
     }%
     \caption{#3}
     \label{fig:#1}
