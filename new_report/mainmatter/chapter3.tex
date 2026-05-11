@@ -81,12 +81,18 @@ These classes model the marketplace workflow from publication to order fulfillme
 \reportfigure{global-class-diagram}{figures/global-class-diagram.png}{Global class diagram.}
 
 \subsection{Dynamic diagrams}
-\subsubsection{Global sequence diagram}
-The global sequence diagram shows the chronological flow of the main customer journey.
-A customer authenticates, browses designs, customizes a product, selects a printer, adds the item to the cart, confirms the order, and follows the tracking timeline. Designers, printers, and administrators interact with their dashboards to complete the operational workflow.
-
-\reportfigure{global-sequence-diagram}{figures/global-sequence-diagram.png}{Printymand global sequence diagram.}
-
+\subsubsection{Sequence diagrams}
+The following sequence diagrams show the chronological flow of the journey of a customer, designer, printer and an admin respectively.
+A customer authenticates, browses designs, customizes a product, selects a printer, adds the item to the cart, confirms the order, and follows the tracking timeline.
+Designers, printers, and administrators interact with their dashboards to complete the operational workflow.
+\reportfigure{customer-sequence-diagram}{figures/sequence/customer-sequence-diagram.png}{Customer sequence diagram.}
+\pagebreak
+\reportfigure{designer-sequence-diagram}{figures/sequence/designer-sequence-diagram.png}{Designer sequence diagram.}
+\pagebreak
+\reportfigure{printer-sequence-diagram}{figures/sequence/printer-sequence-diagram.png}{Printer sequence diagram.}
+\pagebreak
+\reportfigure{admin-sequence-diagram}{figures/sequence/admin-sequence-diagram.png}{Admin sequence diagram.}
+\pagebreak
 \section{System architecture}
 Printymand follows a client-server architecture.
 The client side is a single-page Angular application responsible for interaction, navigation, state management, and user interface rendering. The server side is a NestJS REST API responsible for authentication, authorization, business operations, validation, persistence, and monitoring. PostgreSQL is used as the relational database.
@@ -150,7 +156,7 @@ The REST API is organized into modules that reflect the platform domains:
 \begin{longtable}{|p{0.12\linewidth}|p{0.25\linewidth}|p{0.45\linewidth}|p{0.12\linewidth}|}
 \caption{Implementation roadmap.} \label{tab:implementation_roadmap} \\
 \hline
-\textbf{Cycle} & \textbf{Focus} \& \textbf{Main deliverables} \\ \hline
+\textbf{Cycle} & \textbf{Focus} & \textbf{Main deliverables} \\ \hline
 \endfirsthead
 \hline
 \textbf{Cycle} & \textbf{Focus} & \textbf{Main deliverables} \\ \hline
