@@ -24,10 +24,7 @@
 
 \frontmatter
 \pagestyle{empty}
-\input{frontmatter/1_cover}
-\newpage
-\input{frontmatter/2_frontpage}
-\newpage
+\includepdf[pages=1,fitpaper=true,pagecommand={\thispagestyle{empty}}]{frontmatter/Page_de_garde.pdf}
 
 \pagenumbering{roman}
 \pagestyle{plain}
