@@ -5,20 +5,20 @@ import { Component, input, output } from '@angular/core';
   standalone: true,
   template: `
     @if (open()) {
-      <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm" (click)="closed.emit()">
+      <div style="position:fixed; inset:0; z-index:50; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.45); padding:1rem; backdrop-filter:blur(4px);" (click)="closed.emit()">
         <section class="pm-modal" (click)="$event.stopPropagation()">
-          <div class="flex items-start justify-between gap-4 border-b border-white/10 pb-4">
+          <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; border-bottom:1px solid var(--pm-border); padding-bottom:1rem; margin-bottom:1.25rem;">
             <div>
-              <h2 class="text-xl font-semibold text-slate-950">{{ title() }}</h2>
+              <h2 class="pm-heading font-bold text-lg" style="color:var(--pm-text);">{{ title() }}</h2>
               @if (description()) {
-                <p class="mt-1 text-sm text-slate-500">{{ description() }}</p>
+                <p style="margin-top:0.25rem; font-size:0.85rem; color:var(--pm-text-muted);">{{ description() }}</p>
               }
             </div>
-            <button type="button" class="pm-icon-btn" (click)="closed.emit()">×</button>
+            <button type="button" class="pm-icon-btn" style="flex-shrink:0;" (click)="closed.emit()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
           </div>
-          <div class="mt-5">
-            <ng-content />
-          </div>
+          <ng-content />
         </section>
       </div>
     }

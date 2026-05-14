@@ -9,42 +9,40 @@ import { PrinterBadgeComponent } from './rank-badge.component';
   standalone: true,
   imports: [CommonModule, ImageWithFallbackComponent, PrinterBadgeComponent],
   template: `
-    <article class="pm-card">
-      <div class="relative overflow-hidden rounded-xl">
+    <article class="pm-card group">
+      <div style="overflow:hidden;">
         <app-image-with-fallback
           [src]="currentImage()"
           [alt]="printer().businessName"
-          [imgClass]="'h-56 w-full object-cover'"
+          [imgClass]="'h-52 w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]'"
         />
       </div>
 
-      <div class="space-y-4 p-4">
-        <div class="flex items-start justify-between gap-3">
-          <div class="space-y-1">
-            <h3 class="text-lg font-semibold text-slate-950">{{ printer().businessName }}</h3>
-            <p class="text-sm text-slate-500">{{ printer().location }}</p>
+      <div style="padding:1.25rem; display:grid; gap:0.875rem;">
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:0.75rem;">
+          <div>
+            <h3 class="pm-heading" style="font-size:1.05rem; font-weight:700; color:var(--pm-text);">{{ printer().businessName }}</h3>
+            <p style="font-size:0.82rem; color:var(--pm-text-muted); margin-top:0.2rem;">{{ printer().location }}</p>
           </div>
           <app-printer-badge [rank]="printer().rank" />
         </div>
 
-        <div class="grid grid-cols-3 gap-2 text-center text-sm">
-          <div class="rounded-xl bg-slate-50 p-2">
-            <div class="font-semibold text-slate-950">{{ printer().rating }}</div>
-            <div class="text-xs text-slate-500">rating</div>
-          </div>
-          <div class="rounded-xl bg-slate-50 p-2">
-            <div class="font-semibold text-slate-950">{{ printer().fulfillmentRate }}%</div>
-            <div class="text-xs text-slate-500">fulfilled</div>
-          </div>
-          <div class="rounded-xl bg-slate-50 p-2">
-            <div class="font-semibold text-slate-950">{{ printer().deliveryDays }}d</div>
-            <div class="text-xs text-slate-500">lead time</div>
-          </div>
+        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:0.5rem; text-align:center;">
+          @for (stat of [
+            { val: printer().rating, label: 'rating' },
+            { val: printer().fulfillmentRate + '%', label: 'fulfilled' },
+            { val: printer().deliveryDays + 'd', label: 'lead time' }
+          ]; track stat.label) {
+            <div style="background:var(--pm-surface-alt); border:1px solid var(--pm-border); border-radius:10px; padding:0.625rem 0.5rem;">
+              <div style="font-weight:700; font-size:0.95rem; color:var(--pm-text);">{{ stat.val }}</div>
+              <div style="font-size:0.68rem; color:var(--pm-text-muted); margin-top:0.15rem;">{{ stat.label }}</div>
+            </div>
+          }
         </div>
 
-        <div class="flex items-center justify-between border-t border-slate-200 pt-3">
-          <p class="text-sm text-slate-500">{{ printer().reviews }} reviews</p>
-          <button type="button" class="pm-btn pm-btn-primary" (click)="selected.emit(printer().id)">Select printer</button>
+        <div style="border-top:1px solid var(--pm-border); padding-top:0.875rem; display:flex; align-items:center; justify-content:space-between; gap:0.75rem;">
+          <p style="font-size:0.82rem; color:var(--pm-text-muted);">{{ printer().reviews }} reviews</p>
+          <button type="button" class="pm-btn pm-btn-primary" style="font-size:0.85rem;" (click)="selected.emit(printer().id)">Select →</button>
         </div>
       </div>
     </article>

@@ -1,34 +1,39 @@
-<app-dashboard-shell eyebrow="Printer" title="Business profile" description="Manage business identity, supported product offerings, and the real photo galleries attached to each printer-owned listing.">
-  <div class="grid gap-6 lg:grid-cols-2">
-    <section class="pm-panel space-y-4">
-      <label class="pm-field">
-        <span class="pm-label">Business name</span>
-        <input class="pm-input" [ngModel]="user()?.printerProfile?.businessName" (ngModelChange)="auth.updatePrinterProfile({ businessName: $event })" />
-      </label>
-      <label class="pm-field">
-        <span class="pm-label">Contact email</span>
-        <input class="pm-input" [ngModel]="user()?.printerProfile?.contactEmail" (ngModelChange)="auth.updatePrinterProfile({ contactEmail: $event })" />
-      </label>
-      <label class="pm-field">
-        <span class="pm-label">Contact phone</span>
-        <input class="pm-input" [ngModel]="user()?.printerProfile?.contactPhone" (ngModelChange)="auth.updatePrinterProfile({ contactPhone: $event })" />
-      </label>
-    </section>
-
-    <section class="pm-panel space-y-4">
-      <label class="pm-field">
-        <span class="pm-label">Location</span>
-        <input class="pm-input" [ngModel]="user()?.printerProfile?.location" (ngModelChange)="auth.updatePrinterProfile({ location: $event })" />
-      </label>
-      <label class="pm-field">
-        <span class="pm-label">Governorate</span>
-        <input class="pm-input" [ngModel]="user()?.printerProfile?.governorate" (ngModelChange)="auth.updatePrinterProfile({ governorate: $event })" />
-      </label>
-      <label class="pm-field">
-        <span class="pm-label">About</span>
-        <textarea class="pm-textarea" [ngModel]="user()?.printerProfile?.about" (ngModelChange)="auth.updatePrinterProfile({ about: $event })"></textarea>
-      </label>
-    </section>
+<app-dashboard-shell eyebrow="Printer" title="Business profile" description="Manage your business identity, product catalog, and photo galleries.">
+  <div class="grid gap-6 lg:grid-cols-2 lg:items-start">
+    <div class="pm-panel" style="padding:1.5rem;">
+      <h2 class="font-bold text-lg mb-4" style="color:var(--pm-text);">Business details</h2>
+      <div class="grid gap-3">
+        <label class="pm-field">
+          <span class="pm-label">Business name</span>
+          <input class="pm-input" [ngModel]="user()?.printerProfile?.businessName" (ngModelChange)="auth.updatePrinterProfile({ businessName: $event })" />
+        </label>
+        <label class="pm-field">
+          <span class="pm-label">Contact email</span>
+          <input class="pm-input" [ngModel]="user()?.printerProfile?.contactEmail" (ngModelChange)="auth.updatePrinterProfile({ contactEmail: $event })" />
+        </label>
+        <label class="pm-field">
+          <span class="pm-label">Contact phone</span>
+          <input class="pm-input" [ngModel]="user()?.printerProfile?.contactPhone" (ngModelChange)="auth.updatePrinterProfile({ contactPhone: $event })" />
+        </label>
+      </div>
+    </div>
+    <div class="pm-panel" style="padding:1.5rem;">
+      <h2 class="font-bold text-lg mb-4" style="color:var(--pm-text);">Location & about</h2>
+      <div class="grid gap-3">
+        <label class="pm-field">
+          <span class="pm-label">Location</span>
+          <input class="pm-input" [ngModel]="user()?.printerProfile?.location" (ngModelChange)="auth.updatePrinterProfile({ location: $event })" />
+        </label>
+        <label class="pm-field">
+          <span class="pm-label">Governorate</span>
+          <input class="pm-input" [ngModel]="user()?.printerProfile?.governorate" (ngModelChange)="auth.updatePrinterProfile({ governorate: $event })" />
+        </label>
+        <label class="pm-field">
+          <span class="pm-label">About your shop</span>
+          <textarea class="pm-textarea" [ngModel]="user()?.printerProfile?.about" (ngModelChange)="auth.updatePrinterProfile({ about: $event })" placeholder="Tell designers about your print shop…"></textarea>
+        </label>
+      </div>
+    </div>
   </div>
 
   <section class="pm-panel space-y-4">

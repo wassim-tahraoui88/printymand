@@ -1,9 +1,14 @@
-<section class="pm-page">
-  <div class="pm-panel">
-    <div class="grid gap-4 lg:grid-cols-[1.5fr_1fr]">
+<div class="pm-page">
+
+  <!-- Filter bar -->
+  <div class="pm-panel" style="padding:1.25rem;">
+    <div class="grid gap-3 lg:grid-cols-[1.6fr_1fr_auto]">
       <label class="pm-field">
-        <span class="pm-label">Search products or printers</span>
-        <input class="pm-input" [ngModel]="search()" (ngModelChange)="search.set($event)" placeholder="Search products" />
+        <span class="pm-label">Search</span>
+        <div style="position:relative;">
+          <svg style="position:absolute; left:0.75rem; top:50%; transform:translateY(-50%); opacity:0.4;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input class="pm-input" style="padding-left:2.25rem;" [ngModel]="search()" (ngModelChange)="search.set($event)" placeholder="Search products or printers…" />
+        </div>
       </label>
       <label class="pm-field">
         <span class="pm-label">Category</span>
@@ -13,13 +18,17 @@
           }
         </select>
       </label>
+      <div class="flex items-end">
+        <button type="button" class="pm-btn pm-btn-secondary" (click)="search.set(''); category.set('All')">Reset</button>
+      </div>
     </div>
   </div>
 
+  <!-- Header -->
   <div>
-    <p class="pm-kicker">Catalog</p>
-    <h1 class="pm-heading text-3xl font-semibold text-white">Product catalog</h1>
-    <p class="mt-1 text-sm text-slate-400">{{ products().length }} products ready to be paired with a design.</p>
+    <p class="pm-kicker mb-1">Catalog</p>
+    <h1 class="pm-heading font-bold text-3xl" style="color:var(--pm-text);">Product catalog</h1>
+    <p class="text-sm mt-1" style="color:var(--pm-text-muted);">{{ products().length }} products — each backed by a verified Tunisian printer.</p>
   </div>
 
   @if (products().length) {
@@ -29,6 +38,10 @@
       }
     </div>
   } @else {
-    <div class="pm-empty">No products matched that search.</div>
+    <div class="pm-empty">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 1rem; opacity:0.3;"><path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+      No products matched that search.
+    </div>
   }
-</section>
+
+</div>

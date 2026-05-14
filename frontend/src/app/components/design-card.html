@@ -1,62 +1,56 @@
-<article class="pm-card pm-glow group">
-  <a [routerLink]="['/design', design().id]" class="relative block overflow-hidden rounded-[24px]">
-    <div class="absolute inset-x-0 top-0 z-10 flex items-start justify-between p-4">
-      <span class="pm-chip bg-slate-950/65 text-slate-100 backdrop-blur-xl">{{ design().category }}</span>
-      <span class="inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold backdrop-blur-xl" [class]="statusTone()">
+<article class="pm-card group">
+  <a [routerLink]="['/design', design().id]" style="display:block; position:relative; overflow:hidden;">
+    <div style="position:absolute; inset:0 0 auto; z-index:10; display:flex; align-items:flex-start; justify-content:space-between; padding:0.875rem;">
+      <span class="pm-chip" style="backdrop-filter:blur(8px);">{{ design().category }}</span>
+      <span class="pm-chip" style="backdrop-filter:blur(8px);"
+        [style.background]="design().status === 'ACTIVE' ? 'var(--pm-success-soft)' : 'var(--pm-surface-alt)'"
+        [style.color]="design().status === 'ACTIVE' ? 'var(--pm-success)' : 'var(--pm-text-muted)'">
         {{ design().status }}
       </span>
     </div>
     <app-image-with-fallback
       [src]="design().image"
       [alt]="design().title"
-      [imgClass]="'h-72 w-full object-cover transition duration-500 group-hover:scale-[1.04]'"
+      [imgClass]="'h-64 w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]'"
     />
-    <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent"></div>
+    <div style="position:absolute; inset:0; background:linear-gradient(to top, rgba(0,0,0,0.35) 0%, transparent 50%); pointer-events:none;"></div>
   </a>
 
-  <div class="space-y-5 p-5">
-    <div class="flex items-start justify-between gap-3">
-      <div class="space-y-1">
-        <a [routerLink]="['/design', design().id]" class="pm-heading text-xl font-semibold text-white transition hover:text-sky-200">
+  <div style="padding:1.25rem; display:grid; gap:0.875rem;">
+    <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:0.75rem;">
+      <div style="min-width:0;">
+        <a [routerLink]="['/design', design().id]" class="pm-heading" style="font-size:1.05rem; font-weight:700; color:var(--pm-text); display:block; transition:color 150ms;" onmouseover="this.style.color='var(--pm-primary)'" onmouseout="this.style.color='var(--pm-text)'">
           {{ design().title }}
         </a>
-        <p class="text-sm text-slate-400">{{ design().designer }}</p>
+        <p style="font-size:0.82rem; color:var(--pm-text-muted); margin-top:0.2rem;">{{ design().designer }}</p>
       </div>
-      <span class="text-lg font-semibold text-white">{{ design().price }} TND</span>
+      <span class="pm-heading" style="font-size:1rem; font-weight:700; color:var(--pm-text); white-space:nowrap; flex-shrink:0;">{{ design().price }} TND</span>
     </div>
 
-    <p class="line-clamp-2 text-sm leading-6 text-slate-300">{{ design().description }}</p>
+    <p class="line-clamp-2" style="font-size:0.85rem; line-height:1.6; color:var(--pm-text-muted);">{{ design().description }}</p>
 
-    <div class="flex flex-wrap items-center gap-2">
+    <div style="display:flex; flex-wrap:wrap; align-items:center; gap:0.375rem;">
       <app-designer-badge [rank]="design().designerRank" />
       @for (tag of design().tags.slice(0, 2); track tag) {
         <span class="pm-chip">{{ tag }}</span>
       }
     </div>
 
-    <div class="pm-metric flex items-center justify-between text-sm">
-      <div class="flex items-center gap-3 text-slate-400">
+    <div class="pm-metric" style="display:flex; align-items:center; justify-content:space-between; gap:0.75rem;">
+      <div style="display:flex; gap:0.875rem; font-size:0.82rem; color:var(--pm-text-muted);">
         <span>{{ design().views | number }} views</span>
         <span>{{ design().sales | number }} sales</span>
       </div>
-      <span class="pm-chip bg-sky-400/10 text-sky-100">{{ (design().conversionRate * 100).toFixed(1) }}% conversion</span>
+      <span class="pm-chip" style="background:var(--pm-accent-soft); color:var(--pm-accent);">{{ (design().conversionRate * 100).toFixed(1) }}%</span>
     </div>
 
-    <div class="flex items-center justify-between gap-3 border-t border-white/10 pt-4">
-      <div class="min-w-0">
-        <p class="truncate text-sm font-medium text-slate-100">{{ design().designer }}</p>
-        <p class="text-xs text-slate-500">High-visibility product-ready asset</p>
-      </div>
-      <div class="flex items-center gap-2">
-        <a class="pm-btn pm-btn-secondary" [routerLink]="['/design', design().id]">View</a>
-        <a
-          class="pm-btn pm-btn-primary"
-          [routerLink]="['/customize', design().id]"
-          [queryParams]="preferredProductId() ? { product: preferredProductId() } : null"
-        >
-          Customize
-        </a>
-      </div>
+    <div style="border-top:1px solid var(--pm-border); padding-top:1rem; display:flex; align-items:center; justify-content:flex-end; gap:0.5rem;">
+      <a class="pm-btn pm-btn-secondary" style="font-size:0.85rem;" [routerLink]="['/design', design().id]">View</a>
+      <a class="pm-btn pm-btn-primary" style="font-size:0.85rem;"
+        [routerLink]="['/customize', design().id]"
+        [queryParams]="preferredProductId() ? { product: preferredProductId() } : null">
+        Customize →
+      </a>
     </div>
   </div>
 </article>

@@ -1,35 +1,34 @@
 <app-dashboard-shell
   eyebrow="Printer"
   title="Printer operations"
-  description="Track incoming work, manage fulfillment states, and monitor business performance. Product offerings and product photos now live in the printer profile where they belong."
+  description="Manage incoming orders, track fulfillment, and monitor your business performance."
 >
   <div dashboard-actions>
-    <a class="pm-btn pm-btn-secondary" routerLink="/printer-profile">Manage profile and products</a>
+    <a class="pm-btn pm-btn-secondary text-sm" routerLink="/printer-profile">Manage catalog</a>
   </div>
 
   <div class="pm-grid-4">
-    <app-stat-card label="Configured products" [value]="products().length.toString()" hint="catalog" />
-    <app-stat-card label="Revenue" [value]="totals().revenue.toFixed(0) + ' TND'" hint="fulfilled lines" />
-    <app-stat-card label="Fulfillment" [value]="totals().fulfillmentRate + '%'" hint="SLA" />
-    <app-stat-card label="Rating" [value]="totals().rating.toFixed(1)" hint="printer score" />
+    <app-stat-card label="Products" [value]="products().length.toString()" hint="catalog" />
+    <app-stat-card label="Revenue" [value]="totals().revenue.toFixed(0) + ' TND'" hint="fulfilled" />
+    <app-stat-card label="Fulfillment" [value]="totals().fulfillmentRate + '%'" hint="SLA rate" />
+    <app-stat-card label="Rating" [value]="totals().rating.toFixed(1)" hint="avg score" />
   </div>
 
-  <div class="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-    <section class="pm-panel">
-      <div class="flex items-center justify-between gap-3">
-        <div>
-          <h2 class="text-xl font-semibold text-slate-950">Incoming orders</h2>
-          <p class="mt-1 text-sm text-slate-500">Accept, reject, and move each line item through printing, shipping, and delivery.</p>
-        </div>
-      </div>
+  <div class="grid gap-6 lg:grid-cols-[1.2fr_0.8fr] lg:items-start">
 
-      <div class="mt-4 overflow-auto">
+    <!-- Orders -->
+    <div class="pm-panel" style="padding:1.5rem;">
+      <div class="mb-4">
+        <h2 class="font-bold text-lg" style="color:var(--pm-text);">Incoming orders</h2>
+        <p class="text-sm mt-0.5" style="color:var(--pm-text-muted);">Accept, reject, or advance each line item through the workflow.</p>
+      </div>
+      <div style="overflow:auto;">
         <table class="pm-table">
           <thead>
             <tr>
               <th>Order</th>
               <th>Customer</th>
-              <th>Product</th>
+              <th>Item</th>
               <th>Status</th>
               <th>Actions</th>
             </tr>
@@ -37,15 +36,18 @@
           <tbody>
             @for (line of incomingLines(); track line.id) {
               <tr>
-                <td>#{{ line.orderId }}</td>
-                <td>{{ line.customer?.name }}</td>
-                <td>{{ line.productName }} · {{ line.color }} · {{ line.size }}</td>
+                <td><span class="font-semibold text-sm" style="color:var(--pm-text);">#{{ line.orderId }}</span></td>
+                <td><span class="text-sm" style="color:var(--pm-text-muted);">{{ line.customer?.name }}</span></td>
+                <td>
+                  <span class="text-sm" style="color:var(--pm-text);">{{ line.productName }}</span>
+                  <span class="text-xs block mt-0.5" style="color:var(--pm-text-muted);">{{ line.color }} · {{ line.size }}</span>
+                </td>
                 <td><span class="pm-chip">{{ line.status }}</span></td>
                 <td>
-                  <div class="flex flex-wrap gap-2">
-                    <button type="button" class="pm-btn pm-btn-secondary" (click)="updateLineStatus(line.orderId, line.id, 'Accepted')">Accept</button>
-                    <button type="button" class="pm-btn pm-btn-danger" (click)="updateLineStatus(line.orderId, line.id, 'Rejected')">Reject</button>
-                    <select class="pm-select max-w-40" [ngModel]="line.status" (ngModelChange)="updateLineStatus(line.orderId, line.id, $event)">
+                  <div class="flex flex-wrap gap-1.5">
+                    <button type="button" class="pm-btn pm-btn-secondary text-xs" (click)="updateLineStatus(line.orderId, line.id, 'Accepted')">Accept</button>
+                    <button type="button" class="pm-btn pm-btn-danger text-xs" (click)="updateLineStatus(line.orderId, line.id, 'Rejected')">Reject</button>
+                    <select class="pm-select" style="max-width:130px; padding-block:0.4rem; font-size:0.78rem;" [ngModel]="line.status" (ngModelChange)="updateLineStatus(line.orderId, line.id, $event)">
                       @for (status of statusOptions; track status) {
                         <option [value]="status">{{ status }}</option>
                       }
@@ -54,29 +56,31 @@
                 </td>
               </tr>
             }
+            @if (!incomingLines().length) {
+              <tr><td colspan="5"><div class="pm-empty" style="margin:0.5rem 0;">No incoming orders.</div></td></tr>
+            }
           </tbody>
         </table>
       </div>
-    </section>
+    </div>
 
-    <section class="pm-panel space-y-4">
-      <h2 class="text-xl font-semibold text-slate-950">Performance snapshot</h2>
-      <div class="rounded-2xl bg-slate-50 p-4">
-        <p class="font-semibold text-slate-950">Revenue</p>
-        <p class="mt-2 text-3xl font-semibold text-slate-950">{{ totals().revenue.toFixed(0) }} TND</p>
+    <!-- Performance -->
+    <div class="pm-panel" style="padding:1.5rem;">
+      <h2 class="font-bold text-lg mb-4" style="color:var(--pm-text);">Performance</h2>
+      <div class="grid gap-3">
+        @for (item of [
+          { label: 'Revenue', val: totals().revenue.toFixed(0) + ' TND', color: 'var(--pm-success-soft)', border: 'rgba(21,128,61,0.2)' },
+          { label: 'Fulfillment health', val: totals().fulfillmentRate + '% on-track', color: 'var(--pm-primary-soft)', border: 'rgba(199,74,43,0.2)' },
+          { label: 'Customer rating', val: totals().rating.toFixed(1) + ' / 5', color: 'var(--pm-secondary-soft)', border: 'rgba(232,158,28,0.2)' },
+          { label: 'Active products', val: products().length + ' listings', color: 'var(--pm-accent-soft)', border: 'rgba(29,78,216,0.2)' }
+        ]; track item.label) {
+          <div [style.background]="item.color" [style.borderColor]="item.border" style="border:1px solid; border-radius:var(--pm-radius); padding:1rem;">
+            <p class="text-xs font-bold tracking-widest uppercase mb-1" style="color:var(--pm-text-muted);">{{ item.label }}</p>
+            <p class="pm-heading font-bold text-lg" style="color:var(--pm-text);">{{ item.val }}</p>
+          </div>
+        }
       </div>
-      <div class="rounded-2xl bg-slate-50 p-4">
-        <p class="font-semibold text-slate-950">Fulfillment health</p>
-        <p class="mt-2 text-sm text-slate-600">{{ totals().fulfillmentRate }}% of lines are moving inside the expected workflow.</p>
-      </div>
-      <div class="rounded-2xl bg-slate-50 p-4">
-        <p class="font-semibold text-slate-950">Ratings</p>
-        <p class="mt-2 text-sm text-slate-600">{{ totals().rating.toFixed(1) }} average customer rating.</p>
-      </div>
-      <div class="rounded-2xl bg-slate-50 p-4">
-        <p class="font-semibold text-slate-950">Configured products</p>
-        <p class="mt-2 text-sm text-slate-600">{{ products().length }} product listings are active or in draft for this printer.</p>
-      </div>
-    </section>
+    </div>
   </div>
+
 </app-dashboard-shell>

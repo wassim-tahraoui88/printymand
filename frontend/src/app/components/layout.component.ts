@@ -22,6 +22,14 @@ export class LayoutComponent {
     { to: '/products', label: 'Products' },
   ] as const;
   readonly cartCount = computed(() => this.workflow.currentCart().items.length);
+  readonly theme = signal<'light' | 'dark'>(
+    (typeof localStorage !== 'undefined'
+      ? (localStorage.getItem('pm-theme') as 'light' | 'dark')
+      : null) ??
+      (typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches
+        ? 'dark'
+        : 'light'),
+  );
   private readonly destroyRef = inject(DestroyRef);
 
   constructor(
@@ -29,6 +37,8 @@ export class LayoutComponent {
     public readonly workflow: WorkflowService,
     private readonly router: Router,
   ) {
+    document.documentElement.dataset['theme'] = this.theme();
+
     this.router.events
       .pipe(
         filter((event) => event instanceof NavigationEnd),
@@ -38,6 +48,13 @@ export class LayoutComponent {
         this.siteMenu.set(false);
         this.userMenu.set(false);
       });
+  }
+
+  toggleTheme(): void {
+    const next = this.theme() === 'light' ? 'dark' : 'light';
+    this.theme.set(next);
+    document.documentElement.dataset['theme'] = next;
+    localStorage.setItem('pm-theme', next);
   }
 
   isActive(path: string): boolean {

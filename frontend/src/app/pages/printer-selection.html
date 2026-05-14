@@ -1,14 +1,15 @@
-@if (design(); as activeDesign) {
-  <section class="pm-page">
+@if (design(); as d) {
+  <div class="pm-page">
+
     <div class="flex flex-wrap items-end justify-between gap-4">
       <div>
-        <h1 class="text-3xl font-semibold text-slate-950">Choose a printer</h1>
-        <p class="mt-1 text-sm text-slate-500">
-          Printer selection is intentionally kept in frontend state today so the UI is ready before the backend contract lands.
-        </p>
+        <p class="pm-kicker mb-1">Step 3 of 3</p>
+        <h1 class="pm-heading font-bold text-3xl" style="color:var(--pm-text);">Choose a printer</h1>
+        <p class="text-sm mt-1" style="color:var(--pm-text-muted);">Pick the local print shop that will fulfill your order.</p>
       </div>
-      <div class="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
-        {{ activeDesign.title }} · {{ product()?.name }} · {{ draft()?.selectedColor }} · {{ draft()?.selectedSize }}
+      <div style="background:var(--pm-surface-alt); border:1px solid var(--pm-border); border-radius:12px; padding:0.75rem 1rem; font-size:0.85rem; color:var(--pm-text-muted);">
+        <span style="color:var(--pm-text); font-weight:600;">{{ d.title }}</span>
+        · {{ product()?.name }} · {{ draft()?.selectedColor }} · {{ draft()?.selectedSize }}
       </div>
     </div>
 
@@ -18,19 +19,23 @@
       }
     </div>
 
-    <div class="pm-panel flex flex-wrap items-center justify-between gap-3">
+    <!-- Summary bar -->
+    <div class="pm-panel flex flex-wrap items-center justify-between gap-4" style="padding:1.25rem 1.5rem;">
       <div>
-        <p class="text-sm font-semibold text-slate-950">Selected printer</p>
-        <p class="text-sm text-slate-500">{{ selectedPrinterId() ? workflow.getPrinterById(selectedPrinterId()!)?.businessName : 'None selected yet' }}</p>
+        <p class="text-sm font-semibold" style="color:var(--pm-text);">Selected printer</p>
+        <p class="text-sm mt-0.5" style="color:var(--pm-text-muted);">
+          {{ selectedPrinterId() ? workflow.getPrinterById(selectedPrinterId()!)?.businessName : 'None selected — choose above' }}
+        </p>
       </div>
       <div class="flex flex-wrap gap-3">
-        <a class="pm-btn pm-btn-secondary" [routerLink]="['/customize', activeDesign.id]" [queryParams]="{ product: product()?.id }">Back to customization</a>
-        <button type="button" class="pm-btn pm-btn-primary" (click)="addToCart()">Add to cart</button>
+        <a class="pm-btn pm-btn-secondary text-sm" [routerLink]="['/customize', d.id]" [queryParams]="{ product: product()?.id }">← Back to customization</a>
+        <button type="button" class="pm-btn pm-btn-primary" (click)="addToCart()">Add to cart →</button>
       </div>
     </div>
 
     @if (error()) {
-      <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ error() }}</div>
+      <div style="background:var(--pm-danger-soft); border:1px solid rgba(185,28,28,0.2); border-radius:10px; padding:0.875rem 1rem; font-size:0.875rem; color:var(--pm-danger);">{{ error() }}</div>
     }
-  </section>
+
+  </div>
 }

@@ -1,64 +1,82 @@
-@if (order(); as trackedOrder) {
-  <section class="pm-page">
+@if (order(); as o) {
+  <div class="pm-page">
+
     <div class="flex flex-wrap items-end justify-between gap-4">
       <div>
-        <p class="text-sm font-semibold uppercase tracking-[0.16em] text-indigo-600">Tracking</p>
-        <h1 class="text-3xl font-semibold text-slate-950">Order {{ trackedOrder.id }}</h1>
-        <p class="mt-1 text-sm text-slate-500">Tracking code {{ trackedOrder.trackingCode }} · Payment {{ trackedOrder.paymentStatus }}</p>
+        <p class="pm-kicker mb-1">Order tracking</p>
+        <h1 class="pm-heading font-bold text-3xl" style="color:var(--pm-text);">Order {{ o.id }}</h1>
+        <p class="text-sm mt-1" style="color:var(--pm-text-muted);">Tracking code {{ o.trackingCode }} · Payment {{ o.paymentStatus }}</p>
       </div>
-      <a class="pm-btn pm-btn-secondary" routerLink="/dashboard">Back to dashboard</a>
+      <a class="pm-btn pm-btn-secondary text-sm" routerLink="/dashboard">← Dashboard</a>
     </div>
 
-    <div class="pm-panel">
-      <div class="grid gap-3 md:grid-cols-5">
+    <!-- Timeline -->
+    <div class="pm-panel" style="padding:1.5rem;">
+      <p class="text-xs font-bold tracking-widest uppercase mb-4" style="color:var(--pm-text-muted);">Order progress</p>
+      <div class="grid gap-3 sm:grid-cols-5">
         @for (step of timeline(); track step.label) {
-          <div class="rounded-2xl border p-4" [class]="step.done ? 'border-indigo-200 bg-indigo-50' : 'border-slate-200 bg-white'">
-            <div class="text-sm font-semibold" [class]="step.done ? 'text-indigo-700' : 'text-slate-500'">{{ step.label }}</div>
+          <div
+            style="border-radius:var(--pm-radius); padding:0.875rem 0.75rem; text-align:center; border:1px solid;"
+            [style.background]="step.done ? 'var(--pm-primary-soft)' : 'var(--pm-surface-alt)'"
+            [style.borderColor]="step.done ? 'rgba(199,74,43,0.25)' : 'var(--pm-border)'"
+          >
+            <div
+              class="mx-auto mb-2 flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold"
+              [style.background]="step.done ? 'var(--pm-primary)' : 'var(--pm-border)'"
+              [style.color]="step.done ? '#fff' : 'var(--pm-text-muted)'"
+            >✓</div>
+            <p class="text-xs font-semibold" [style.color]="step.done ? 'var(--pm-primary)' : 'var(--pm-text-muted)'">{{ step.label }}</p>
           </div>
         }
       </div>
     </div>
 
-    <div class="grid gap-6 lg:grid-cols-[1fr_0.9fr]">
-      <article class="pm-panel">
-        <h2 class="text-xl font-semibold text-slate-950">Line items</h2>
-        <div class="mt-4 grid gap-4">
-          @for (line of trackedOrder.lines; track line.id) {
-            <div class="rounded-2xl border border-slate-200 p-4">
-              <div class="flex flex-wrap items-center justify-between gap-3">
+    <div class="grid gap-6 lg:grid-cols-[1fr_0.85fr] lg:items-start">
+
+      <!-- Line items -->
+      <div class="pm-panel" style="padding:1.5rem;">
+        <h2 class="font-bold text-lg mb-4" style="color:var(--pm-text);">Line items</h2>
+        <div class="grid gap-3">
+          @for (line of o.lines; track line.id) {
+            <div style="border:1px solid var(--pm-border); border-radius:var(--pm-radius); padding:1rem; background:var(--pm-surface-alt);">
+              <div class="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <p class="text-lg font-semibold text-slate-950">{{ line.designTitle }}</p>
-                  <p class="text-sm text-slate-500">{{ line.productName }} · {{ line.color }} · {{ line.size }}</p>
-                  <p class="text-sm text-slate-500">{{ line.printerName }}</p>
+                  <p class="font-semibold" style="color:var(--pm-text);">{{ line.designTitle }}</p>
+                  <p class="text-sm mt-0.5" style="color:var(--pm-text-muted);">{{ line.productName }} · {{ line.color }} · {{ line.size }}</p>
+                  <p class="text-sm" style="color:var(--pm-text-muted);">{{ line.printerName }}</p>
                 </div>
                 <span [class]="statusClass(line.status)">{{ line.status }}</span>
               </div>
             </div>
           }
         </div>
-      </article>
+      </div>
 
-      <aside class="pm-panel space-y-4">
-        <h2 class="text-xl font-semibold text-slate-950">Shipping and payment</h2>
-        <div class="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
-          <p class="font-semibold text-slate-950">Shipping address</p>
-          <p class="mt-2">{{ trackedOrder.shippingAddress }}</p>
-        </div>
-        <div class="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
-          <p class="font-semibold text-slate-950">Payment method</p>
-          <p class="mt-2 uppercase">{{ trackedOrder.paymentMethod }}</p>
-        </div>
-        <div class="rounded-2xl bg-slate-50 p-4">
-          <div class="flex items-center justify-between text-sm text-slate-500">
-            <span>Total</span>
-            <span class="text-2xl font-semibold text-slate-950">{{ trackedOrder.total }} TND</span>
+      <!-- Shipping & payment -->
+      <div class="pm-panel" style="padding:1.5rem;">
+        <h2 class="font-bold text-lg mb-4" style="color:var(--pm-text);">Shipping & payment</h2>
+        <div class="grid gap-3">
+          <div style="background:var(--pm-surface-alt); border:1px solid var(--pm-border); border-radius:var(--pm-radius); padding:1rem;">
+            <p class="text-xs font-bold tracking-widest uppercase mb-2" style="color:var(--pm-text-muted);">Shipping address</p>
+            <p class="text-sm" style="color:var(--pm-text);">{{ o.shippingAddress }}</p>
+          </div>
+          <div style="background:var(--pm-surface-alt); border:1px solid var(--pm-border); border-radius:var(--pm-radius); padding:1rem;">
+            <p class="text-xs font-bold tracking-widest uppercase mb-2" style="color:var(--pm-text-muted);">Payment method</p>
+            <p class="text-sm font-semibold uppercase" style="color:var(--pm-text);">{{ o.paymentMethod }}</p>
+          </div>
+          <div style="background:var(--pm-secondary-soft); border:1px solid rgba(232,158,28,0.2); border-radius:var(--pm-radius); padding:1rem; display:flex; align-items:center; justify-content:space-between;">
+            <span class="text-sm font-semibold" style="color:var(--pm-text-muted);">Order total</span>
+            <span class="pm-heading font-bold" style="color:var(--pm-text); font-size:1.6rem;">{{ o.total }} TND</span>
           </div>
         </div>
-      </aside>
+      </div>
+
     </div>
-  </section>
+  </div>
 } @else {
-  <section class="pm-page">
-    <div class="pm-empty">This order could not be found.</div>
-  </section>
+  <div class="pm-page">
+    <div class="pm-empty" style="padding:3rem;">
+      Order not found. <a routerLink="/dashboard" style="color:var(--pm-primary); font-weight:600;">Back to dashboard →</a>
+    </div>
+  </div>
 }

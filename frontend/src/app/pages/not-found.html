@@ -1,7 +1,21 @@
-<!-- FILE: src/app/pages/not-found/not-found.html -->
-<div class="flex flex-col items-center justify-center py-32 px-4 text-center">
-  <div class="text-8xl bg-linear-to-r from-[#8B5CF6] to-[#EC4899] bg-clip-text text-transparent font-display font-bold">404</div>
-  <h1 class="text-2xl font-display font-bold">Page not found</h1>
-  <p class="text-sm text-muted-foreground mt-3 max-w-sm leading-relaxed">The page you're looking for doesn't exist or has been moved. Let's get you back on track.</p>
-  <a routerLink="/" class="group mt-8 inline-flex items-center gap-2.5 px-7 py-3.5 rounded-2xl bg-linear-to-r from-primary to-purple-600 text-white shadow-lg shadow-primary/25 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 text-sm font-medium">Back to Home</a>
+<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:calc(100vh - var(--pm-nav-height)); padding:3rem 1rem; text-align:center;">
+
+  <div style="width:80px; height:80px; border-radius:20px; background:var(--pm-primary-soft); border:1px solid rgba(199,74,43,0.2); display:flex; align-items:center; justify-content:center; margin-bottom:1.5rem;">
+    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--pm-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/>
+    </svg>
+  </div>
+
+  <p class="pm-heading" style="font-size:5rem; font-weight:800; letter-spacing:-0.04em; line-height:1; background:linear-gradient(135deg, var(--pm-primary) 0%, var(--pm-secondary) 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">404</p>
+
+  <h1 class="pm-heading" style="font-size:1.5rem; font-weight:700; color:var(--pm-text); margin-top:0.75rem;">Page not found</h1>
+  <p style="font-size:0.9rem; color:var(--pm-text-muted); margin-top:0.5rem; max-width:340px; line-height:1.7;">
+    The page you're looking for doesn't exist or has been moved.
+  </p>
+
+  <div style="display:flex; gap:0.75rem; flex-wrap:wrap; justify-content:center; margin-top:2rem;">
+    <a routerLink="/" class="pm-btn pm-btn-primary" style="min-height:2.75rem;">← Back to home</a>
+    <a routerLink="/marketplace" class="pm-btn pm-btn-secondary" style="min-height:2.75rem;">Browse designs</a>
+  </div>
+
 </div>
