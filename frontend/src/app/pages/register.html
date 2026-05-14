@@ -1,65 +1,79 @@
-<section class="pm-page">
-  <div class="grid w-full gap-6 lg:grid-cols-[0.95fr_1.05fr]">
-    <div class="pm-panel space-y-4">
-      <p class="pm-kicker">Create account</p>
-      <h1 class="pm-heading text-3xl font-semibold text-white">Join Printymand as a customer, designer, or printer.</h1>
-      <p class="text-sm leading-7 text-slate-300">
-        Registration assigns the right default profile structure immediately, so every role lands in a usable dashboard instead of an empty demo shell.
-      </p>
-      <div class="grid gap-3 sm:grid-cols-3">
-        <div class="rounded-2xl border border-white/10 bg-white/4 p-4">
-          <p class="text-xs uppercase tracking-[0.16em] text-slate-400">Faster setup</p>
-          <p class="mt-2 text-sm text-slate-100">Role-ready onboarding</p>
-        </div>
-        <div class="rounded-2xl border border-white/10 bg-white/4 p-4">
-          <p class="text-xs uppercase tracking-[0.16em] text-slate-400">Cleaner paths</p>
-          <p class="mt-2 text-sm text-slate-100">Immediate dashboard access</p>
-        </div>
-        <div class="rounded-2xl border border-white/10 bg-white/4 p-4">
-          <p class="text-xs uppercase tracking-[0.16em] text-slate-400">Flexible roles</p>
-          <p class="mt-2 text-sm text-slate-100">Customer, designer, printer</p>
-        </div>
+<div class="pm-page" style="min-height:calc(100vh - var(--pm-nav-height)); display:grid; align-content:start;">
+  <div class="grid gap-6 lg:grid-cols-[1fr_1fr] lg:items-start" style="max-width:1000px; margin:0 auto; width:100%;">
+
+    <!-- Left: brand panel -->
+    <div class="pm-hero flex flex-col justify-between gap-8" style="padding:2.5rem; min-height:420px;">
+      <div style="position:relative; z-index:1;">
+        <div class="pm-nav-logo mb-6" style="width:48px; height:48px; font-size:1.3rem;">P</div>
+        <p class="pm-kicker mb-3">Join Printymand</p>
+        <h1 class="pm-heading font-extrabold leading-tight text-white" style="font-size:2.2rem;">
+          Create your account<br />and start creating.
+        </h1>
+        <p class="mt-4 text-white/65 leading-7 text-sm">
+          Register as a customer to shop, a designer to sell your art, or a printer to fulfill orders.
+        </p>
+      </div>
+      <div class="grid grid-cols-3 gap-3" style="position:relative; z-index:1;">
+        @for (item of [
+          { label: 'Customer', desc: 'Browse & order' },
+          { label: 'Designer', desc: 'Upload & earn' },
+          { label: 'Printer', desc: 'Fulfill & grow' }
+        ]; track item.label) {
+          <div style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.14); border-radius:12px; padding:0.85rem;">
+            <p style="font-size:0.68rem; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:rgba(255,255,255,0.5);">{{ item.label }}</p>
+            <p style="font-size:0.82rem; color:#fff; margin-top:0.35rem; font-weight:500;">{{ item.desc }}</p>
+          </div>
+        }
       </div>
     </div>
 
-    <div class="pm-panel space-y-5">
+    <!-- Right: form -->
+    <div class="pm-panel" style="padding:2rem;">
+      <h2 class="pm-heading font-bold text-xl mb-1" style="color:var(--pm-text);">Create your account</h2>
+      <p class="text-sm mb-6" style="color:var(--pm-text-muted);">You'll be redirected to the right workspace instantly.</p>
+
       <form class="grid gap-4" (ngSubmit)="submit()">
         <label class="pm-field">
           <span class="pm-label">Full name</span>
-          <input class="pm-input" [(ngModel)]="model.name" name="name" required />
+          <input class="pm-input" [(ngModel)]="model.name" name="name" required placeholder="Amine Zini" />
         </label>
         <label class="pm-field">
-          <span class="pm-label">Email</span>
-          <input class="pm-input" type="email" [(ngModel)]="model.email" name="email" required />
+          <span class="pm-label">Email address</span>
+          <input class="pm-input" type="email" [(ngModel)]="model.email" name="email" required placeholder="you@example.com" />
         </label>
         <label class="pm-field">
-          <span class="pm-label">Address</span>
-          <input class="pm-input" [(ngModel)]="model.address" name="address" required />
+          <span class="pm-label">Delivery address</span>
+          <input class="pm-input" [(ngModel)]="model.address" name="address" required placeholder="Rue Habib Bourguiba, Tunis" />
         </label>
         <label class="pm-field">
           <span class="pm-label">Password</span>
-          <input class="pm-input" type="password" [(ngModel)]="model.password" name="password" required />
+          <input class="pm-input" type="password" [(ngModel)]="model.password" name="password" required placeholder="••••••••" />
         </label>
         <label class="pm-field">
-          <span class="pm-label">Role</span>
+          <span class="pm-label">I want to join as</span>
           <select class="pm-select" [(ngModel)]="model.role" name="role">
-            <option value="customer">Customer</option>
-            <option value="designer">Designer</option>
-            <option value="printer">Printer</option>
+            <option value="customer">Customer — browse & order</option>
+            <option value="designer">Designer — sell my designs</option>
+            <option value="printer">Printer — fulfill orders</option>
           </select>
         </label>
 
         @if (error()) {
-          <div class="rounded-2xl border border-rose-400/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">{{ error() }}</div>
+          <div style="background:var(--pm-danger-soft); border:1px solid rgba(185,28,28,0.2); border-radius:10px; padding:0.75rem 1rem; font-size:0.85rem; color:var(--pm-danger);">
+            {{ error() }}
+          </div>
         }
 
-        <button type="submit" class="pm-btn pm-btn-primary w-full">{{ loading() ? 'Creating account…' : 'Create account' }}</button>
+        <button type="submit" class="pm-btn pm-btn-primary w-full" style="min-height:3rem; margin-top:0.25rem;">
+          {{ loading() ? 'Creating account…' : 'Create account' }}
+        </button>
       </form>
 
-      <p class="text-sm text-slate-400">
+      <p class="text-sm mt-5" style="color:var(--pm-text-muted);">
         Already have an account?
-        <a routerLink="/login" class="font-semibold text-sky-300">Sign in</a>
+        <a routerLink="/login" class="font-semibold" style="color:var(--pm-primary);">Sign in →</a>
       </p>
     </div>
+
   </div>
-</section>
+</div>

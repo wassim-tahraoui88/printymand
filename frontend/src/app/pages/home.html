@@ -1,37 +1,51 @@
-<section class="pm-page">
-  <div class="pm-hero">
-    <div class="grid gap-8 lg:grid-cols-[1.3fr_0.7fr] lg:items-end">
-      <div class="space-y-5">
-        <p class="pm-kicker">Marketplace operations</p>
-        <h1 class="pm-heading max-w-3xl text-4xl font-semibold tracking-tight md:text-5xl">Production-ready storefront, designer studio, printer ops, and admin control in one platform.</h1>
-        <p class="max-w-2xl text-base leading-7 text-slate-200">
-          Printymand now behaves like a real Tunisian print-on-demand business: dual discovery, structured customization, cart and payment flow,
-          multi-role dashboards, and backend-shaped data everywhere.
+<div class="pm-page">
+
+  <!-- HERO -->
+  <section class="pm-hero" style="padding: 3rem 2.5rem;">
+    <div class="grid gap-10 lg:grid-cols-[1fr_auto] lg:items-center">
+      <div style="position:relative; z-index:1;">
+        <span class="pm-kicker mb-4 block">Tunisia's first print-on-demand platform</span>
+        <h1 class="pm-heading font-extrabold leading-[1.08] tracking-tight text-white" style="font-size:clamp(2.2rem, 5vw, 3.6rem); max-width:700px;">
+          Design it. Print it.<br />
+          <span style="opacity:0.75;">Ship it across Tunisia.</span>
+        </h1>
+        <p class="mt-5 leading-7 text-white/70" style="max-width:520px; font-size:1rem;">
+          Connect with talented designers, choose your products, and get them printed by verified local printers. 100% Tunisian, end-to-end.
         </p>
-        <div class="flex flex-wrap gap-3">
-          <a class="pm-btn pm-btn-primary" [routerLink]="primaryLink()">{{ primaryLabel() }}</a>
-          <a class="pm-btn border border-white/15 bg-white/8 text-white backdrop-blur-xl" routerLink="/marketplace">Browse designs</a>
-          <a class="pm-btn border border-white/15 bg-white/8 text-white backdrop-blur-xl" routerLink="/products">Browse products</a>
+        <div class="flex flex-wrap gap-3 mt-8">
+          <a class="pm-btn pm-btn-primary" style="min-height:3rem; padding:0 1.6rem; font-size:0.95rem;" [routerLink]="primaryLink()">{{ primaryLabel() }}</a>
+          <a class="pm-btn" style="min-height:3rem; padding:0 1.4rem; font-size:0.95rem; background:rgba(255,255,255,0.1); color:#fff; border-color:rgba(255,255,255,0.2); backdrop-filter:blur(8px);" routerLink="/marketplace">Browse designs</a>
+          <a class="pm-btn" style="min-height:3rem; padding:0 1.4rem; font-size:0.95rem; background:rgba(255,255,255,0.1); color:#fff; border-color:rgba(255,255,255,0.2); backdrop-filter:blur(8px);" routerLink="/products">Browse products</a>
         </div>
       </div>
 
-      <div class="grid gap-3">
-        <app-stat-card label="Users on platform" [value]="platformOverview().users.toString()" hint="all roles" />
-        <app-stat-card label="Orders tracked" [value]="platformOverview().orders.toString()" hint="live-ready" />
-        <app-stat-card label="GMV" [value]="platformOverview().revenue + ' TND'" hint="mock structured" />
+      <!-- Stats column -->
+      <div class="grid gap-3 lg:w-56 shrink-0" style="position:relative; z-index:1;">
+        @for (stat of [
+          { label: 'Designers', val: platformOverview().users, unit: 'creators' },
+          { label: 'Orders placed', val: platformOverview().orders, unit: 'fulfilled' },
+          { label: 'Revenue', val: platformOverview().revenue + ' TND', unit: 'platform GMV' }
+        ]; track stat.label) {
+          <div style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); border-radius:14px; padding:1rem 1.1rem; backdrop-filter:blur(12px);">
+            <p style="font-size:0.7rem; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:rgba(255,255,255,0.55);">{{ stat.label }}</p>
+            <p class="pm-heading font-bold text-white" style="font-size:1.6rem; margin-top:0.25rem; letter-spacing:-0.02em;">{{ stat.val }}</p>
+            <p style="font-size:0.72rem; color:rgba(255,255,255,0.45); margin-top:0.1rem;">{{ stat.unit }}</p>
+          </div>
+        }
       </div>
     </div>
-  </div>
+  </section>
 
+  <!-- FEATURED DESIGNS -->
   <section class="pm-section">
     <div class="flex items-end justify-between gap-4">
       <div>
-        <h2 class="pm-heading text-2xl font-semibold text-white">Featured designs</h2>
-        <p class="mt-1 text-sm text-slate-400">Design listings already carry ranking, conversion, and product assignment signals.</p>
+        <p class="pm-kicker mb-1">Marketplace</p>
+        <h2 class="pm-heading font-bold text-2xl" style="color:var(--pm-text);">Featured designs</h2>
+        <p class="text-sm mt-1" style="color:var(--pm-text-muted);">Hand-picked by our team — ready for customization.</p>
       </div>
-      <a class="pm-btn pm-btn-secondary" routerLink="/marketplace">View all</a>
+      <a class="pm-btn pm-btn-secondary text-sm" routerLink="/marketplace">View all →</a>
     </div>
-
     <div class="pm-grid-3">
       @for (design of featuredDesigns(); track design.id) {
         <app-design-card [design]="design" />
@@ -39,15 +53,16 @@
     </div>
   </section>
 
+  <!-- FEATURED PRODUCTS -->
   <section class="pm-section">
     <div class="flex items-end justify-between gap-4">
       <div>
-        <h2 class="pm-heading text-2xl font-semibold text-white">Printer-backed products</h2>
-        <p class="mt-1 text-sm text-slate-400">Products support multiple images, availability states, color sets, sizes, and printer ownership.</p>
+        <p class="pm-kicker mb-1">Catalog</p>
+        <h2 class="pm-heading font-bold text-2xl" style="color:var(--pm-text);">Printer-backed products</h2>
+        <p class="text-sm mt-1" style="color:var(--pm-text-muted);">Every product is offered by a verified Tunisian print shop.</p>
       </div>
-      <a class="pm-btn pm-btn-secondary" routerLink="/products">View products</a>
+      <a class="pm-btn pm-btn-secondary text-sm" routerLink="/products">View products →</a>
     </div>
-
     <div class="pm-grid-3">
       @for (product of featuredProducts(); track product.id) {
         <app-product-card [product]="product" />
@@ -55,29 +70,31 @@
     </div>
   </section>
 
+  <!-- ROLE CARDS -->
   <section class="pm-grid-3">
-    <article class="pm-panel space-y-3">
-      <p class="pm-kicker">Customer</p>
-      <h3 class="pm-heading text-xl font-semibold text-white">Order history, saved addresses, payment preferences, reviews</h3>
-      <p class="text-sm text-slate-300">The customer workspace handles browsing, checkout, payment redirection, delivery tracking, and post-order review loops.</p>
-      <a class="pm-btn pm-btn-secondary self-start" routerLink="/dashboard">Open customer workspace</a>
+    <article class="pm-panel" style="border-top:3px solid var(--pm-primary);">
+      <p class="pm-kicker mb-2">Customer</p>
+      <h3 class="pm-heading font-bold text-lg mb-2" style="color:var(--pm-text);">Order, track & review</h3>
+      <p class="text-sm leading-6 mb-4" style="color:var(--pm-text-muted);">Browse the marketplace, configure your perfect item, and track delivery through every step.</p>
+      <a class="pm-btn pm-btn-secondary self-start text-sm" routerLink="/dashboard">Open workspace →</a>
     </article>
 
-    <article class="pm-panel space-y-3">
-      <p class="pm-kicker">Designer</p>
-      <h3 class="pm-heading text-xl font-semibold text-white">Design ops, product configuration, analytics, earnings</h3>
-      <p class="text-sm text-slate-300">Designers can upload assets, assign products, tune placement defaults, and monitor sales plus payout tracking.</p>
-      <a class="pm-btn pm-btn-secondary self-start" routerLink="/designer-dashboard">Open designer workspace</a>
+    <article class="pm-panel" style="border-top:3px solid var(--pm-secondary);">
+      <p class="pm-kicker mb-2" style="color:var(--pm-secondary);">Designer</p>
+      <h3 class="pm-heading font-bold text-lg mb-2" style="color:var(--pm-text);">Upload, sell & earn</h3>
+      <p class="text-sm leading-6 mb-4" style="color:var(--pm-text-muted);">Upload your artwork, assign it to products, and earn royalties on every sale.</p>
+      <a class="pm-btn pm-btn-secondary self-start text-sm" routerLink="/designer-dashboard">Open studio →</a>
     </article>
 
-    <article class="pm-panel space-y-3">
-      <p class="pm-kicker">Printer + Admin</p>
-      <h3 class="pm-heading text-xl font-semibold text-white">Product catalog, fulfillment workflow, moderation, rank control</h3>
-      <p class="text-sm text-slate-300">Printer and admin workspaces cover SLA management, product availability, role updates, and platform moderation.</p>
+    <article class="pm-panel" style="border-top:3px solid var(--pm-accent);">
+      <p class="pm-kicker mb-2" style="color:var(--pm-accent);">Printer & Admin</p>
+      <h3 class="pm-heading font-bold text-lg mb-2" style="color:var(--pm-text);">Fulfill & moderate</h3>
+      <p class="text-sm leading-6 mb-4" style="color:var(--pm-text-muted);">Manage your print catalog, fulfill incoming orders, and keep the platform running smoothly.</p>
       <div class="flex flex-wrap gap-2">
-        <a class="pm-btn pm-btn-secondary" routerLink="/printer-dashboard">Printer workspace</a>
-        <a class="pm-btn pm-btn-secondary" routerLink="/admin">Admin workspace</a>
+        <a class="pm-btn pm-btn-secondary text-sm" routerLink="/printer-dashboard">Printer ops</a>
+        <a class="pm-btn pm-btn-secondary text-sm" routerLink="/admin">Admin panel</a>
       </div>
     </article>
   </section>
-</section>
+
+</div>

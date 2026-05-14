@@ -1,9 +1,14 @@
-<section class="pm-page">
-  <div class="pm-panel">
-    <div class="grid gap-4 lg:grid-cols-[1.4fr_1fr_1fr_auto]">
+<div class="pm-page">
+
+  <!-- Filter bar -->
+  <div class="pm-panel" style="padding:1.25rem;">
+    <div class="grid gap-3 lg:grid-cols-[1.5fr_1fr_1fr_auto]">
       <label class="pm-field">
-        <span class="pm-label">Search designs or designers</span>
-        <input class="pm-input" [ngModel]="search()" (ngModelChange)="search.set($event)" placeholder="e.g. typography, Amira, culture" />
+        <span class="pm-label">Search</span>
+        <div style="position:relative;">
+          <svg style="position:absolute; left:0.75rem; top:50%; transform:translateY(-50%); opacity:0.4;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input class="pm-input" style="padding-left:2.25rem;" [ngModel]="search()" (ngModelChange)="search.set($event)" placeholder="Search designs, designers, tags…" />
+        </div>
       </label>
       <label class="pm-field">
         <span class="pm-label">Category</span>
@@ -14,7 +19,7 @@
         </select>
       </label>
       <label class="pm-field">
-        <span class="pm-label">Locked product</span>
+        <span class="pm-label">Product filter</span>
         <select class="pm-select" [ngModel]="selectedProductId()" (ngModelChange)="selectedProductId.set($event ? +$event : null)">
           <option [ngValue]="null">All products</option>
           @for (product of workflow.products(); track product.id) {
@@ -30,20 +35,21 @@
   </div>
 
   @if (selectedProduct()) {
-    <div class="pm-panel flex flex-wrap items-center justify-between gap-3">
+    <div class="pm-panel flex flex-wrap items-center justify-between gap-3" style="padding:1rem 1.25rem; background:var(--pm-primary-soft); border-color:rgba(199,74,43,0.2);">
       <div>
-        <p class="text-sm font-semibold text-slate-950">Browsing designs for {{ selectedProduct()!.name }}</p>
-        <p class="text-sm text-slate-500">{{ selectedProduct()!.colors.join(', ') }} · {{ selectedProduct()!.sizes.join(', ') }}</p>
+        <p class="text-sm font-semibold" style="color:var(--pm-primary);">Showing designs for {{ selectedProduct()!.name }}</p>
+        <p class="text-xs mt-0.5" style="color:var(--pm-text-muted);">{{ selectedProduct()!.colors.join(' · ') }} — {{ selectedProduct()!.sizes.join(', ') }}</p>
       </div>
-      <a class="pm-btn pm-btn-secondary" routerLink="/products">Back to products</a>
+      <a class="pm-btn pm-btn-secondary text-sm" routerLink="/products">← All products</a>
     </div>
   }
 
-  <div class="flex items-center justify-between gap-4">
+  <!-- Header -->
+  <div class="flex items-end justify-between gap-4">
     <div>
-      <p class="pm-kicker">Discover</p>
-      <h1 class="pm-heading text-3xl font-semibold text-white">Design marketplace</h1>
-      <p class="mt-1 text-sm text-slate-400">{{ designs().length }} results ready for product customization.</p>
+      <p class="pm-kicker mb-1">Discover</p>
+      <h1 class="pm-heading font-bold text-3xl" style="color:var(--pm-text);">Design marketplace</h1>
+      <p class="text-sm mt-1" style="color:var(--pm-text-muted);">{{ designs().length }} designs ready for customization.</p>
     </div>
   </div>
 
@@ -55,7 +61,9 @@
     </div>
   } @else {
     <div class="pm-empty">
-      No designs match the current filters. Try another category or remove the product lock.
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 1rem; opacity:0.3;"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      No designs match your filters. Try adjusting the search or category.
     </div>
   }
-</section>
+
+</div>

@@ -1,67 +1,73 @@
-@if (design(); as activeDesign) {
-  <section class="pm-page">
-    <div class="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-      <article class="pm-card">
-        <app-image-with-fallback [src]="activeDesign.image" [alt]="activeDesign.title" [imgClass]="'h-full w-full object-cover'" />
-      </article>
+@if (design(); as d) {
+  <div class="pm-page">
 
+    <div class="grid gap-6 lg:grid-cols-[1fr_1fr] lg:items-start">
+
+      <!-- Image -->
+      <div class="pm-card" style="overflow:hidden; border-radius:var(--pm-radius-xl);">
+        <app-image-with-fallback [src]="d.image" [alt]="d.title" [imgClass]="'w-full object-cover'" style="max-height:520px;" />
+      </div>
+
+      <!-- Info -->
       <div class="grid gap-4">
-        <div class="pm-panel space-y-4">
-          <div class="flex items-start justify-between gap-3">
+        <div class="pm-panel" style="padding:1.75rem;">
+          <div class="flex items-start justify-between gap-3 mb-4">
             <div>
-              <p class="text-sm font-semibold uppercase tracking-[0.16em] text-indigo-600">{{ activeDesign.category }}</p>
-              <h1 class="mt-2 text-3xl font-semibold text-slate-950">{{ activeDesign.title }}</h1>
+              <p class="text-xs font-bold tracking-widest uppercase mb-2" style="color:var(--pm-primary);">{{ d.category }}</p>
+              <h1 class="pm-heading font-bold leading-tight" style="font-size:1.9rem; color:var(--pm-text);">{{ d.title }}</h1>
+              <p class="text-sm mt-1" style="color:var(--pm-text-muted);">by {{ d.designer }}</p>
             </div>
-            <app-designer-badge [rank]="activeDesign.designerRank" />
+            <app-designer-badge [rank]="d.designerRank" />
           </div>
 
-          <p class="text-base leading-7 text-slate-600">{{ activeDesign.description }}</p>
+          <p class="leading-7 text-sm mb-5" style="color:var(--pm-text-muted);">{{ d.description }}</p>
 
-          <div class="flex flex-wrap gap-2">
-            @for (tag of activeDesign.tags; track tag) {
+          <div class="flex flex-wrap gap-2 mb-5">
+            @for (tag of d.tags; track tag) {
               <span class="pm-chip">{{ tag }}</span>
             }
           </div>
 
-          <div class="grid gap-3 sm:grid-cols-3">
-            <div class="rounded-2xl bg-slate-50 p-4">
-              <div class="text-2xl font-semibold text-slate-950">{{ activeDesign.views | number }}</div>
-              <div class="text-sm text-slate-500">views</div>
-            </div>
-            <div class="rounded-2xl bg-slate-50 p-4">
-              <div class="text-2xl font-semibold text-slate-950">{{ activeDesign.sales | number }}</div>
-              <div class="text-sm text-slate-500">sales</div>
-            </div>
-            <div class="rounded-2xl bg-slate-50 p-4">
-              <div class="text-2xl font-semibold text-slate-950">{{ activeDesign.price }} TND</div>
-              <div class="text-sm text-slate-500">design fee</div>
-            </div>
+          <!-- Stats row -->
+          <div class="grid grid-cols-3 gap-3 mb-5">
+            @for (stat of [
+              { val: d.views | number, label: 'views' },
+              { val: d.sales | number, label: 'sales' },
+              { val: d.price + ' TND', label: 'design fee' }
+            ]; track stat.label) {
+              <div style="background:var(--pm-surface-alt); border:1px solid var(--pm-border); border-radius:12px; padding:0.875rem; text-align:center;">
+                <p class="pm-heading font-bold text-lg" style="color:var(--pm-text);">{{ stat.val }}</p>
+                <p class="text-xs mt-0.5" style="color:var(--pm-text-muted);">{{ stat.label }}</p>
+              </div>
+            }
           </div>
-        </div>
 
-        <div class="pm-panel flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p class="text-sm font-semibold text-slate-950">{{ activeDesign.designer }}</p>
-            <p class="text-sm text-slate-500">{{ (activeDesign.conversionRate * 100).toFixed(1) }}% conversion · {{ (activeDesign.engagementRate * 100).toFixed(1) }}% engagement</p>
+          <div style="border-top:1px solid var(--pm-border); padding-top:1.25rem; display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap;">
+            <div>
+              <p class="text-sm font-semibold" style="color:var(--pm-text);">{{ d.designer }}</p>
+              <p class="text-xs mt-0.5" style="color:var(--pm-text-muted);">
+                {{ (d.conversionRate * 100).toFixed(1) }}% conversion · {{ (d.engagementRate * 100).toFixed(1) }}% engagement
+              </p>
+            </div>
+            <a class="pm-btn pm-btn-primary" style="min-height:2.75rem;" [routerLink]="['/customize', d.id]">Customize this design →</a>
           </div>
-          <a class="pm-btn pm-btn-primary" [routerLink]="['/customize', activeDesign.id]">Customize design</a>
         </div>
       </div>
     </div>
 
+    <!-- Supported products -->
     <section class="pm-section">
-      <div class="flex items-end justify-between gap-4">
-        <div>
-          <h2 class="text-2xl font-semibold text-slate-950">Supported products</h2>
-          <p class="mt-1 text-sm text-slate-500">Each product can carry a different default placement and available color set.</p>
-        </div>
+      <div>
+        <p class="pm-kicker mb-1">Compatible with</p>
+        <h2 class="pm-heading font-bold text-2xl" style="color:var(--pm-text);">Supported products</h2>
+        <p class="text-sm mt-1" style="color:var(--pm-text-muted);">Each product can carry a different default placement and color set.</p>
       </div>
-
       <div class="pm-grid-3">
         @for (product of supportedProducts(); track product.id) {
           <app-product-card [product]="product" />
         }
       </div>
     </section>
-  </section>
+
+  </div>
 }

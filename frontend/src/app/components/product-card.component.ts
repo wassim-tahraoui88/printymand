@@ -9,44 +9,44 @@ import { ImageWithFallbackComponent } from './image-with-fallback.component';
   standalone: true,
   imports: [CommonModule, RouterModule, ImageWithFallbackComponent],
   template: `
-    <article class="pm-card pm-glow group">
-      <div class="relative overflow-hidden rounded-[24px]">
-        <div class="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between p-4">
-          <span class="pm-chip bg-slate-950/65 text-slate-100 backdrop-blur-xl">{{ product().category }}</span>
-          <span class="pm-chip bg-emerald-400/10 text-emerald-200 backdrop-blur-xl">{{ product().availability }}</span>
+    <article class="pm-card group" style="cursor:default;">
+      <div style="position:relative; overflow:hidden;">
+        <div style="position:absolute; inset:0 0 auto; z-index:10; display:flex; align-items:flex-start; justify-content:space-between; padding:0.875rem;">
+          <span class="pm-chip" style="backdrop-filter:blur(8px);">{{ product().category }}</span>
+          <span class="pm-chip"
+            [style.background]="product().availability === 'ACTIVE' ? 'var(--pm-success-soft)' : 'var(--pm-surface-alt)'"
+            [style.color]="product().availability === 'ACTIVE' ? 'var(--pm-success)' : 'var(--pm-text-muted)'"
+            style="backdrop-filter:blur(8px);">{{ product().availability }}</span>
         </div>
         <app-image-with-fallback
           [src]="currentImage()"
           [alt]="product().name"
-          [imgClass]="'h-72 w-full object-cover transition duration-500 group-hover:scale-[1.04]'"
+          [imgClass]="'h-64 w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]'"
         />
-        <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/10 to-transparent"></div>
         @if (product().images.length > 1) {
-          <div class="absolute bottom-4 right-4 z-10 flex gap-2 rounded-full border border-white/10 bg-slate-950/70 px-2 py-1 shadow-xl shadow-slate-950/40 backdrop-blur-xl">
+          <div style="position:absolute; bottom:0.875rem; right:0.875rem; z-index:10; display:flex; gap:0.375rem; background:rgba(0,0,0,0.45); border-radius:999px; padding:0.375rem 0.5rem; backdrop-filter:blur(8px);">
             @for (image of product().images; track image; let index = $index) {
-              <button
-                type="button"
-                class="h-2.5 w-2.5 rounded-full"
-                [class]="index === imageIndex() ? 'bg-white' : 'bg-white/35'"
-                (click)="imageIndex.set(index)"
-              ></button>
+              <button type="button"
+                style="width:0.5rem; height:0.5rem; border-radius:999px; border:none; cursor:pointer; padding:0; transition:background 200ms;"
+                [style.background]="index === imageIndex() ? '#fff' : 'rgba(255,255,255,0.35)'"
+                (click)="imageIndex.set(index)"></button>
             }
           </div>
         }
       </div>
 
-      <div class="space-y-5 p-5">
-        <div class="flex items-start justify-between gap-3">
-          <div class="space-y-1">
-            <h3 class="pm-heading text-xl font-semibold text-white">{{ product().name }}</h3>
-            <p class="text-sm text-slate-400">{{ product().printerName }}</p>
+      <div style="padding:1.25rem; display:grid; gap:0.875rem;">
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:0.75rem;">
+          <div>
+            <h3 class="pm-heading" style="font-size:1.05rem; font-weight:700; color:var(--pm-text); line-height:1.3;">{{ product().name }}</h3>
+            <p style="font-size:0.82rem; color:var(--pm-text-muted); margin-top:0.2rem;">{{ product().printerName }}</p>
           </div>
-          <span class="text-lg font-semibold text-white">{{ product().basePrice }} TND</span>
+          <span class="pm-heading" style="font-size:1.05rem; font-weight:700; color:var(--pm-text); white-space:nowrap;">{{ product().basePrice }} TND</span>
         </div>
 
-        <p class="line-clamp-2 text-sm leading-6 text-slate-300">{{ product().description }}</p>
+        <p class="line-clamp-2" style="font-size:0.85rem; line-height:1.6; color:var(--pm-text-muted);">{{ product().description }}</p>
 
-        <div class="flex flex-wrap gap-2">
+        <div style="display:flex; flex-wrap:wrap; gap:0.375rem;">
           @for (color of product().colors.slice(0, 4); track color) {
             <span class="pm-color-chip">
               <span class="pm-swatch" [style.background]="color"></span>
@@ -55,18 +55,16 @@ import { ImageWithFallbackComponent } from './image-with-fallback.component';
           }
         </div>
 
-        <div class="pm-metric flex items-center justify-between gap-3 text-sm">
+        <div class="pm-metric" style="display:flex; align-items:center; justify-content:space-between; gap:0.75rem;">
           <div>
-            <p class="text-xs uppercase tracking-[0.14em] text-slate-500">Available sizes</p>
-            <p class="mt-1 text-sm font-medium text-slate-200">{{ product().sizes.join(' • ') }}</p>
+            <p style="font-size:0.68rem; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--pm-text-muted);">Sizes</p>
+            <p style="font-size:0.82rem; font-weight:600; color:var(--pm-text); margin-top:0.25rem;">{{ product().sizes.join(' · ') }}</p>
           </div>
-          <span class="pm-chip bg-sky-400/10 text-sky-100">{{ product().colors.length }} colors</span>
+          <span class="pm-chip" style="background:var(--pm-accent-soft); color:var(--pm-accent);">{{ product().colors.length }} colors</span>
         </div>
 
-        <div class="flex items-center justify-end gap-3 border-t border-white/10 pt-4">
-          <div class="flex items-center gap-2">
-            <a class="pm-btn pm-btn-secondary" [routerLink]="['/marketplace']" [queryParams]="{ product: product().id }">Choose design</a>
-          </div>
+        <div style="border-top:1px solid var(--pm-border); padding-top:1rem; display:flex; justify-content:flex-end;">
+          <a class="pm-btn pm-btn-primary" style="font-size:0.85rem;" [routerLink]="['/marketplace']" [queryParams]="{ product: product().id }">Choose design →</a>
         </div>
       </div>
     </article>

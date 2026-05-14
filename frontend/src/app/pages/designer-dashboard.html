@@ -1,38 +1,39 @@
 <app-dashboard-shell
   eyebrow="Designer"
   title="Designer studio"
-  description="Upload and manage designs, map products, tune default placement, track sales signals, and keep payouts plus profile assets current."
+  description="Upload designs, assign products, tune placement, track analytics, and manage payouts."
 >
   <div dashboard-actions>
-    <a class="pm-btn pm-btn-secondary" routerLink="/designer-profile">Profile settings</a>
+    <a class="pm-btn pm-btn-secondary text-sm" routerLink="/designer-profile">Profile settings</a>
   </div>
 
   <div class="pm-grid-4">
     <app-stat-card label="Active designs" [value]="totals().designs.toString()" hint="portfolio" />
     <app-stat-card label="Orders" [value]="totals().orders.toString()" hint="line items sold" />
     <app-stat-card label="Earnings" [value]="totals().earnings.toFixed(0) + ' TND'" hint="estimated" />
-    <app-stat-card label="Avg conversion" [value]="(totals().avgConversion * 100).toFixed(1) + '%'" hint="structured mock" />
+    <app-stat-card label="Avg conversion" [value]="(totals().avgConversion * 100).toFixed(1) + '%'" hint="across designs" />
   </div>
 
-  <div class="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
-    <section class="pm-panel space-y-4">
-      <div class="flex items-center justify-between">
-        <h2 class="text-xl font-semibold text-slate-950">Design management</h2>
-        <span class="pm-chip">Upload + edit</span>
-      </div>
+  <div class="grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
 
+    <!-- Upload form -->
+    <div class="pm-panel" style="padding:1.5rem;">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="font-bold text-lg" style="color:var(--pm-text);">{{ designForm().id ? 'Edit design' : 'Upload design' }}</h2>
+        <span class="pm-chip">{{ designForm().id ? 'Editing' : 'New' }}</span>
+      </div>
       <div class="grid gap-3">
         <label class="pm-field">
           <span class="pm-label">Title</span>
-          <input class="pm-input" [ngModel]="designForm().title" (ngModelChange)="designForm.set({ ...designForm(), title: $event })" />
+          <input class="pm-input" [ngModel]="designForm().title" (ngModelChange)="designForm.set({ ...designForm(), title: $event })" placeholder="Give your design a name" />
         </label>
         <label class="pm-field">
           <span class="pm-label">Category</span>
-          <input class="pm-input" [ngModel]="designForm().category" (ngModelChange)="designForm.set({ ...designForm(), category: $event })" />
+          <input class="pm-input" [ngModel]="designForm().category" (ngModelChange)="designForm.set({ ...designForm(), category: $event })" placeholder="e.g. Typography, Culture" />
         </label>
         <label class="pm-field">
           <span class="pm-label">Description</span>
-          <textarea class="pm-textarea" [ngModel]="designForm().description" (ngModelChange)="designForm.set({ ...designForm(), description: $event })"></textarea>
+          <textarea class="pm-textarea" style="min-height:80px;" [ngModel]="designForm().description" (ngModelChange)="designForm.set({ ...designForm(), description: $event })" placeholder="Describe your design…"></textarea>
         </label>
         <label class="pm-field">
           <span class="pm-label">Price (TND)</span>
@@ -40,49 +41,49 @@
         </label>
         <label class="pm-field">
           <span class="pm-label">Image URL</span>
-          <input class="pm-input" [ngModel]="designForm().image" (ngModelChange)="designForm.set({ ...designForm(), image: $event })" />
+          <input class="pm-input" [ngModel]="designForm().image" (ngModelChange)="designForm.set({ ...designForm(), image: $event })" placeholder="https://…" />
         </label>
         <label class="pm-field">
-          <span class="pm-label">Or upload image</span>
+          <span class="pm-label">Or upload file</span>
           <input class="pm-input" type="file" accept="image/*" (change)="onDesignFileChange($event)" />
         </label>
-        <button type="button" class="pm-btn pm-btn-primary" (click)="saveDesign()">
+        <button type="button" class="pm-btn pm-btn-primary text-sm" (click)="saveDesign()">
           {{ designForm().id ? 'Update design' : 'Upload design' }}
         </button>
       </div>
-    </section>
+    </div>
 
-    <section class="pm-panel">
-      <div class="flex items-center justify-between">
-        <h2 class="text-xl font-semibold text-slate-950">Portfolio</h2>
-      </div>
-      <div class="mt-4 grid gap-4">
+    <!-- Portfolio -->
+    <div class="pm-panel" style="padding:1.5rem;">
+      <h2 class="font-bold text-lg mb-4" style="color:var(--pm-text);">Portfolio</h2>
+      <div class="grid gap-4">
         @for (design of designs(); track design.id) {
-          <article class="rounded-2xl border border-slate-200 p-4">
-            <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div style="border:1px solid var(--pm-border); border-radius:var(--pm-radius); padding:1rem; background:var(--pm-surface-alt);">
+            <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
               <div class="min-w-0">
-                <p class="text-lg font-semibold text-slate-950">{{ design.title }}</p>
-                <p class="text-sm text-slate-500">{{ design.category }} · {{ design.price }} TND · {{ design.sales }} sales</p>
-                <p class="mt-2 text-sm text-slate-600">{{ design.description }}</p>
+                <div class="flex items-center gap-2 flex-wrap">
+                  <p class="font-semibold" style="color:var(--pm-text);">{{ design.title }}</p>
+                  <span class="pm-chip" [style.background]="design.status === 'ACTIVE' ? 'var(--pm-success-soft)' : 'var(--pm-surface-alt)'"
+                        [style.color]="design.status === 'ACTIVE' ? 'var(--pm-success)' : 'var(--pm-text-muted)'">{{ design.status }}</span>
+                </div>
+                <p class="text-xs mt-1" style="color:var(--pm-text-muted);">{{ design.category }} · {{ design.price }} TND · {{ design.sales }} sales</p>
               </div>
-              <div class="flex flex-wrap gap-2">
-                <button type="button" class="pm-btn pm-btn-secondary" (click)="editDesign(design.id)">Edit</button>
-                <button type="button" class="pm-btn pm-btn-secondary" (click)="toggleArchive(design.id, design.status === 'ARCHIVED')">
+              <div class="flex gap-2 shrink-0">
+                <button type="button" class="pm-btn pm-btn-secondary text-xs" (click)="editDesign(design.id)">Edit</button>
+                <button type="button" class="pm-btn pm-btn-secondary text-xs" (click)="toggleArchive(design.id, design.status === 'ARCHIVED')">
                   {{ design.status === 'ARCHIVED' ? 'Restore' : 'Archive' }}
                 </button>
               </div>
             </div>
 
-            <div class="mt-4 grid gap-3 border-t border-slate-200 pt-4">
-              <p class="text-sm font-semibold text-slate-950">Assigned products</p>
-              <div class="grid gap-2 md:grid-cols-2">
+            <!-- Product assignments -->
+            <div style="border-top:1px solid var(--pm-border); margin-top:0.875rem; padding-top:0.875rem;">
+              <p class="text-xs font-bold tracking-widest uppercase mb-2" style="color:var(--pm-text-muted);">Assigned products</p>
+              <div class="grid gap-1.5 sm:grid-cols-2">
                 @for (product of workflow.products(); track product.id) {
-                  <label class="flex items-center gap-2 text-sm text-slate-600">
-                    <input
-                      type="checkbox"
-                      [checked]="design.assignedProductIds.includes(product.id)"
-                      (change)="updateAssignment(design.id, product.id, $any($event.target).checked)"
-                    />
+                  <label class="flex items-center gap-2 text-xs" style="color:var(--pm-text-muted); cursor:pointer;">
+                    <input type="checkbox" [checked]="design.assignedProductIds.includes(product.id)"
+                      (change)="updateAssignment(design.id, product.id, $any($event.target).checked)" />
                     {{ product.name }} · {{ product.printerName }}
                   </label>
                 }
@@ -90,67 +91,59 @@
 
               @for (productId of design.assignedProductIds; track productId) {
                 @if (workflow.getProductById(productId); as product) {
-                  <div class="rounded-2xl bg-slate-50 p-4">
-                    <p class="font-semibold text-slate-950">{{ product.name }} defaults</p>
-                    <div class="mt-3 grid gap-3 md:grid-cols-4">
+                  <div style="background:var(--pm-surface); border:1px solid var(--pm-border); border-radius:10px; padding:0.75rem; margin-top:0.75rem;">
+                    <p class="text-xs font-semibold mb-2" style="color:var(--pm-text);">{{ product.name }} — placement defaults</p>
+                    <div class="grid gap-2 grid-cols-2 sm:grid-cols-4">
                       <label class="pm-field">
                         <span class="pm-label">X</span>
-                        <input
-                          class="pm-input"
-                          type="number"
+                        <input class="pm-input" type="number"
                           [ngModel]="workflow.getDesignConfig(design.id, product.id)?.defaultPlacement?.x ?? 50"
-                          (ngModelChange)="updatePlacement(design.id, product.id, 'x', +$event)"
-                        />
+                          (ngModelChange)="updatePlacement(design.id, product.id, 'x', +$event)" />
                       </label>
                       <label class="pm-field">
                         <span class="pm-label">Y</span>
-                        <input
-                          class="pm-input"
-                          type="number"
+                        <input class="pm-input" type="number"
                           [ngModel]="workflow.getDesignConfig(design.id, product.id)?.defaultPlacement?.y ?? 50"
-                          (ngModelChange)="updatePlacement(design.id, product.id, 'y', +$event)"
-                        />
+                          (ngModelChange)="updatePlacement(design.id, product.id, 'y', +$event)" />
                       </label>
                       <label class="pm-field">
                         <span class="pm-label">Scale</span>
-                        <input
-                          class="pm-input"
-                          type="number"
-                          step="0.01"
+                        <input class="pm-input" type="number" step="0.01"
                           [ngModel]="workflow.getDesignConfig(design.id, product.id)?.defaultPlacement?.scale ?? 0.4"
-                          (ngModelChange)="updatePlacement(design.id, product.id, 'scale', +$event)"
-                        />
+                          (ngModelChange)="updatePlacement(design.id, product.id, 'scale', +$event)" />
                       </label>
                       <label class="pm-field">
-                        <span class="pm-label">Available colors</span>
-                        <input
-                          class="pm-input"
+                        <span class="pm-label">Colors</span>
+                        <input class="pm-input"
                           [ngModel]="(workflow.getDesignConfig(design.id, product.id)?.availableColors ?? product.colors).join(', ')"
-                          (ngModelChange)="updateAvailableColors(design.id, product.id, $event)"
-                        />
+                          (ngModelChange)="updateAvailableColors(design.id, product.id, $event)" />
                       </label>
                     </div>
                   </div>
                 }
               }
             </div>
-          </article>
+          </div>
+        }
+        @if (!designs().length) {
+          <div class="pm-empty">No designs uploaded yet.</div>
         }
       </div>
-    </section>
+    </div>
   </div>
 
-  <div class="grid gap-6 lg:grid-cols-[1fr_0.9fr]">
-    <section class="pm-panel">
-      <h2 class="text-xl font-semibold text-slate-950">Analytics and trends</h2>
-      <div class="mt-4 overflow-auto">
+  <div class="grid gap-6 lg:grid-cols-[1fr_0.85fr] lg:items-start">
+
+    <!-- Analytics -->
+    <div class="pm-panel" style="padding:1.5rem;">
+      <h2 class="font-bold text-lg mb-4" style="color:var(--pm-text);">Analytics</h2>
+      <div style="overflow:auto;">
         <table class="pm-table">
           <thead>
             <tr>
               <th>Design</th>
               <th>Sales</th>
               <th>Views</th>
-              <th>Engagement</th>
               <th>Conversion</th>
               <th>Revenue</th>
             </tr>
@@ -158,53 +151,56 @@
           <tbody>
             @for (entry of analytics(); track entry.designId) {
               <tr>
-                <td>{{ workflow.getDesignById(entry.designId)?.title }}</td>
+                <td><span class="font-medium" style="color:var(--pm-text);">{{ workflow.getDesignById(entry.designId)?.title }}</span></td>
                 <td>{{ entry.sales }}</td>
                 <td>{{ entry.views }}</td>
-                <td>{{ (entry.engagement * 100).toFixed(1) }}%</td>
                 <td>{{ (entry.conversion * 100).toFixed(1) }}%</td>
-                <td>{{ entry.revenue.toFixed(0) }} TND</td>
+                <td><span class="font-semibold" style="color:var(--pm-text);">{{ entry.revenue.toFixed(0) }} TND</span></td>
               </tr>
             }
           </tbody>
         </table>
       </div>
-    </section>
+    </div>
 
-    <section class="pm-panel space-y-4">
-      <h2 class="text-xl font-semibold text-slate-950">Earnings and profile customization</h2>
+    <!-- Earnings & profile -->
+    <div class="pm-panel" style="padding:1.5rem;">
+      <h2 class="font-bold text-lg mb-4" style="color:var(--pm-text);">Earnings & profile</h2>
 
-      <div class="grid gap-3">
-        @for (payout of payouts(); track payout.id) {
-          <div class="rounded-2xl border border-slate-200 p-4">
-            <div class="flex items-center justify-between gap-3">
+      @if (payouts().length) {
+        <div class="grid gap-2 mb-4">
+          @for (payout of payouts(); track payout.id) {
+            <div style="border:1px solid var(--pm-border); border-radius:var(--pm-radius); padding:0.875rem; background:var(--pm-surface-alt); display:flex; align-items:center; justify-content:space-between; gap:1rem;">
               <div>
-                <p class="font-semibold text-slate-950">{{ payout.amount }} TND</p>
-                <p class="text-sm text-slate-500">{{ payout.reference }} · due {{ payout.dueDate }}</p>
+                <p class="font-semibold text-sm" style="color:var(--pm-text);">{{ payout.amount }} TND</p>
+                <p class="text-xs mt-0.5" style="color:var(--pm-text-muted);">{{ payout.reference }} · due {{ payout.dueDate }}</p>
               </div>
               <span class="pm-chip">{{ payout.status }}</span>
             </div>
-          </div>
-        }
-      </div>
+          }
+        </div>
+      }
 
-      <label class="pm-field">
-        <span class="pm-label">Profile picture URL</span>
-        <input class="pm-input" [ngModel]="user()?.designerProfile?.profilePicture" (ngModelChange)="auth.updateDesignerProfile({ profilePicture: $event })" />
-      </label>
-      <label class="pm-field">
-        <span class="pm-label">Banner URL</span>
-        <input class="pm-input" [ngModel]="user()?.designerProfile?.banner" (ngModelChange)="auth.updateDesignerProfile({ banner: $event })" />
-      </label>
-      <label class="pm-field">
-        <span class="pm-label">Bio</span>
-        <textarea class="pm-textarea" [ngModel]="user()?.designerProfile?.bio" (ngModelChange)="auth.updateDesignerProfile({ bio: $event })"></textarea>
-      </label>
-      <label class="pm-field">
-        <span class="pm-label">Portfolio links (one per line)</span>
-        <textarea class="pm-textarea" [ngModel]="profileLinks()" (ngModelChange)="profileLinks.set($event)"></textarea>
-      </label>
-      <button type="button" class="pm-btn pm-btn-primary" (click)="saveProfile()">Save profile links</button>
-    </section>
+      <div style="border-top:1px solid var(--pm-border); padding-top:1rem;" class="grid gap-3">
+        <label class="pm-field">
+          <span class="pm-label">Profile picture URL</span>
+          <input class="pm-input" [ngModel]="user()?.designerProfile?.profilePicture" (ngModelChange)="auth.updateDesignerProfile({ profilePicture: $event })" />
+        </label>
+        <label class="pm-field">
+          <span class="pm-label">Banner URL</span>
+          <input class="pm-input" [ngModel]="user()?.designerProfile?.banner" (ngModelChange)="auth.updateDesignerProfile({ banner: $event })" />
+        </label>
+        <label class="pm-field">
+          <span class="pm-label">Bio</span>
+          <textarea class="pm-textarea" style="min-height:80px;" [ngModel]="user()?.designerProfile?.bio" (ngModelChange)="auth.updateDesignerProfile({ bio: $event })"></textarea>
+        </label>
+        <label class="pm-field">
+          <span class="pm-label">Portfolio links (one per line)</span>
+          <textarea class="pm-textarea" style="min-height:80px;" [ngModel]="profileLinks()" (ngModelChange)="profileLinks.set($event)"></textarea>
+        </label>
+        <button type="button" class="pm-btn pm-btn-primary text-sm" (click)="saveProfile()">Save profile</button>
+      </div>
+    </div>
   </div>
+
 </app-dashboard-shell>

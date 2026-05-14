@@ -1,62 +1,79 @@
-<section class="pm-page">
-  <div class="grid w-full gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-    <div class="pm-hero">
-      <p class="pm-kicker">Role-based access</p>
-      <h1 class="pm-heading mt-4 text-4xl font-semibold">Sign in to the exact Printymand workspace you manage.</h1>
-      <p class="mt-4 text-base leading-7 text-slate-200">
-        Cookie-based auth is wired through the API layer, while the frontend keeps a resilient mock fallback so the product remains usable before backend rollout.
-      </p>
-      <div class="mt-8 grid gap-3 sm:grid-cols-3">
-        <div class="rounded-2xl border border-white/10 bg-white/6 p-4 backdrop-blur-xl">
-          <p class="text-xs uppercase tracking-[0.16em] text-slate-300">Routing</p>
-          <p class="mt-2 text-sm text-white">Role-aware workspace entry</p>
-        </div>
-        <div class="rounded-2xl border border-white/10 bg-white/6 p-4 backdrop-blur-xl">
-          <p class="text-xs uppercase tracking-[0.16em] text-slate-300">Session</p>
-          <p class="mt-2 text-sm text-white">API and mock-safe auth flow</p>
-        </div>
-        <div class="rounded-2xl border border-white/10 bg-white/6 p-4 backdrop-blur-xl">
-          <p class="text-xs uppercase tracking-[0.16em] text-slate-300">Access</p>
-          <p class="mt-2 text-sm text-white">Customer, designer, printer, admin</p>
-        </div>
+<div class="pm-page" style="min-height:calc(100vh - var(--pm-nav-height)); display:grid; align-content:start;">
+  <div class="grid gap-6 lg:grid-cols-[1fr_1fr] lg:items-start" style="max-width:1000px; margin:0 auto; width:100%;">
+
+    <!-- Left: brand panel -->
+    <div class="pm-hero flex flex-col justify-between gap-8" style="padding:2.5rem; min-height:420px;">
+      <div style="position:relative; z-index:1;">
+        <div class="pm-nav-logo mb-6" style="width:48px; height:48px; font-size:1.3rem;">P</div>
+        <p class="pm-kicker mb-3">Welcome back</p>
+        <h1 class="pm-heading font-extrabold leading-tight text-white" style="font-size:2.2rem;">
+          Sign in to your<br />Printymand workspace.
+        </h1>
+        <p class="mt-4 text-white/65 leading-7 text-sm">
+          Role-aware routing sends you directly to the right dashboard — customer, designer, printer, or admin.
+        </p>
+      </div>
+      <div class="grid grid-cols-3 gap-3" style="position:relative; z-index:1;">
+        @for (item of [
+          { label: 'Routing', desc: 'Role-aware entry' },
+          { label: 'Session', desc: 'Secure auth flow' },
+          { label: 'Access', desc: '4 user roles' }
+        ]; track item.label) {
+          <div style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.14); border-radius:12px; padding:0.85rem;">
+            <p style="font-size:0.68rem; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:rgba(255,255,255,0.5);">{{ item.label }}</p>
+            <p style="font-size:0.82rem; color:#fff; margin-top:0.35rem; font-weight:500;">{{ item.desc }}</p>
+          </div>
+        }
       </div>
     </div>
 
-    <div class="pm-panel space-y-5">
-      <div>
-        <h2 class="pm-heading text-2xl font-semibold text-white">Welcome back</h2>
-        <p class="mt-1 text-sm text-slate-400">Use any seeded account or your own registered account.</p>
-      </div>
+    <!-- Right: form -->
+    <div class="pm-panel" style="padding:2rem;">
+      <h2 class="pm-heading font-bold text-xl mb-1" style="color:var(--pm-text);">Sign in</h2>
+      <p class="text-sm mb-6" style="color:var(--pm-text-muted);">Use a demo account below or your own credentials.</p>
 
       <form class="grid gap-4" (ngSubmit)="submit()">
         <label class="pm-field">
-          <span class="pm-label">Email</span>
-          <input class="pm-input" type="email" [(ngModel)]="email" name="email" required />
+          <span class="pm-label">Email address</span>
+          <input class="pm-input" type="email" [(ngModel)]="email" name="email" required placeholder="you@example.com" />
         </label>
         <label class="pm-field">
           <span class="pm-label">Password</span>
-          <input class="pm-input" type="password" [(ngModel)]="password" name="password" required />
+          <input class="pm-input" type="password" [(ngModel)]="password" name="password" required placeholder="••••••••" />
         </label>
+
         @if (error()) {
-          <div class="rounded-2xl border border-rose-400/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">{{ error() }}</div>
+          <div style="background:var(--pm-danger-soft); border:1px solid rgba(185,28,28,0.2); border-radius:10px; padding:0.75rem 1rem; font-size:0.85rem; color:var(--pm-danger);">
+            {{ error() }}
+          </div>
         }
-        <button type="submit" class="pm-btn pm-btn-primary w-full">{{ loading() ? 'Signing in…' : 'Sign in' }}</button>
+
+        <button type="submit" class="pm-btn pm-btn-primary w-full" style="min-height:3rem; margin-top:0.25rem;">
+          {{ loading() ? 'Signing in…' : 'Sign in' }}
+        </button>
       </form>
 
-      <div class="grid gap-3">
-        <p class="text-sm font-semibold text-white">Demo accounts</p>
+      <!-- Divider -->
+      <div class="flex items-center gap-3 my-5">
+        <hr class="pm-divider flex-1" />
+        <span class="text-xs font-semibold" style="color:var(--pm-text-muted);">Demo accounts</span>
+        <hr class="pm-divider flex-1" />
+      </div>
+
+      <div class="grid gap-2">
         @for (account of demoAccounts; track account.email) {
-          <button type="button" class="pm-btn pm-btn-secondary justify-between" (click)="useDemo(account.email, account.password)">
-            <span>{{ account.label }}</span>
-            <span class="text-xs text-slate-400">{{ account.email }}</span>
+          <button type="button" class="pm-btn pm-btn-secondary justify-between w-full text-sm" (click)="useDemo(account.email, account.password)">
+            <span class="font-semibold" style="color:var(--pm-text);">{{ account.label }}</span>
+            <span style="color:var(--pm-text-muted); font-size:0.78rem;">{{ account.email }}</span>
           </button>
         }
       </div>
 
-      <p class="text-sm text-slate-400">
-        Need an account?
-        <a routerLink="/register" class="font-semibold text-sky-300">Register here</a>
+      <p class="text-sm mt-5" style="color:var(--pm-text-muted);">
+        No account yet?
+        <a routerLink="/register" class="font-semibold" style="color:var(--pm-primary);">Create one free →</a>
       </p>
     </div>
+
   </div>
-</section>
+</div>
