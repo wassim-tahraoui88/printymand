@@ -31,6 +31,16 @@ export class CustomizePageComponent {
   readonly scale = signal(0.42);
   readonly error = signal('');
 
+  /**
+   * Spec "Customization Rule": a designer's marketplace design is always preserved
+   * exactly as intended — this page is preview-only for it. Repositioning/scaling
+   * is allowed ONLY for the customer's own uploaded artwork.
+   */
+  readonly customizationLocked = computed(() => {
+    const d = this.design();
+    return !!d && !d.isUserUpload;
+  });
+
   private dragPointerId: number | null = null;
   private dragOffset = { x: 0, y: 0 };
 
@@ -38,20 +48,23 @@ export class CustomizePageComponent {
     this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
       const designId = Number(params.get('id') ?? 701);
       this.designId.set(designId);
-      const preferredProduct = Number(this.route.snapshot.queryParamMap.get('product'));
+      const qp = this.route.snapshot.queryParamMap;
+      const preferredProduct = Number(qp.get('product'));
+      const preferredColor = qp.get('color') ?? '';
+      const preferredSize  = qp.get('size')  ?? '';
       const supportedProducts = this.workflow.availableProductsForDesign(designId);
       const product = supportedProducts.find((entry) => entry.id === preferredProduct) ?? supportedProducts[0];
       if (product) {
         this.selectedProductId.set(product.id);
-        this.selectedColor.set(product.colors[0] ?? 'white');
-        this.selectedSize.set(product.sizes[0] ?? 'M');
+        this.selectedColor.set(preferredColor || product.colors[0] || 'white');
+        this.selectedSize.set(preferredSize  || product.sizes[0]  || 'M');
       }
 
       const config = product ? this.workflow.getDesignConfig(designId, product.id) : undefined;
       if (config) {
         this.position.set({ x: config.defaultPlacement.x, y: config.defaultPlacement.y });
         this.scale.set(config.defaultPlacement.scale);
-        this.selectedColor.set(config.availableColors[0] ?? this.selectedColor());
+        if (!preferredColor) this.selectedColor.set(config.availableColors[0] ?? this.selectedColor());
       }
     });
   }
@@ -73,16 +86,19 @@ export class CustomizePageComponent {
   }
 
   updateScale(event: Event): void {
+    if (this.customizationLocked()) return;
     const value = Number((event.target as HTMLInputElement).value);
     this.scale.set(Math.max(0.1, Math.min(1, value)));
   }
 
   resetPlacement(): void {
+    if (this.customizationLocked()) return;
     this.position.set({ x: 50, y: 48 });
     this.scale.set(0.42);
   }
 
   startDrag(event: PointerEvent, host: HTMLElement): void {
+    if (this.customizationLocked()) return;
     event.preventDefault();
     const rect = host.getBoundingClientRect();
     const pointer = this.pointerToPercent(event, rect);
@@ -96,6 +112,7 @@ export class CustomizePageComponent {
   }
 
   onCanvasMove(event: PointerEvent, host: HTMLElement): void {
+    if (this.customizationLocked()) return;
     if (this.dragPointerId !== event.pointerId) return;
     const rect = host.getBoundingClientRect();
     const pointer = this.pointerToPercent(event, rect);

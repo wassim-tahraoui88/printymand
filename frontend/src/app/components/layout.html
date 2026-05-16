@@ -1,65 +1,66 @@
-<div class="min-h-screen" style="background-color: var(--pm-bg); color: var(--pm-text);">
+<div style="min-height:100vh; background-color:var(--pm-bg); color:var(--pm-text); display:flex; flex-direction:column;">
 
-  <!-- NAV BAR -->
-  <header style="height:var(--pm-nav-height); background:var(--pm-surface); border-bottom:1px solid var(--pm-border); position:sticky; top:0; z-index:50; box-shadow:0 1px 0 var(--pm-border);">
-    <div class="flex h-full w-full items-center gap-3 px-4 md:px-6 lg:px-8" style="max-width:1440px; margin:0 auto;">
+  <!-- ═══════════════════════════════════════════════════════
+       NAV BAR
+  ═══════════════════════════════════════════════════════ -->
+  <header
+    [class.pm-nav-scrolled]="isScrolled()"
+    style="height:var(--pm-nav-height); background:var(--pm-surface); border-bottom:1px solid var(--pm-border); position:sticky; top:0; z-index:50; transition:box-shadow 320ms ease, background-color 180ms ease;">
+    <div class="flex h-full w-full items-center gap-2 px-4 md:px-6 lg:px-8" style="max-width:1440px; margin:0 auto;">
 
       <!-- Brand -->
-      <a routerLink="/" class="flex items-center gap-2.5 shrink-0 mr-2">
-        <div class="pm-nav-logo">P</div>
-        <div class="hidden sm:block">
-          <p class="pm-heading font-bold text-base leading-none" style="color:var(--pm-text); letter-spacing:-0.02em;">Printymand</p>
-          <p class="text-[10px] font-semibold tracking-widest uppercase mt-0.5" style="color:var(--pm-text-muted);">Tunisia</p>
-        </div>
+      <a routerLink="/" class="pm-nav-brand mr-1">
+        <div class="pm-nav-logo" aria-hidden="true">P</div>
+        <span class="pm-heading font-bold hidden sm:block" style="font-size:var(--pm-text-base); color:var(--pm-text); letter-spacing:-0.02em;">Printymand</span>
       </a>
 
       <!-- Desktop nav links -->
-      <nav class="hidden lg:flex items-center gap-1 ml-2">
+      <nav class="hidden lg:flex items-center gap-0.5 ml-1" aria-label="Main navigation">
         @for (link of navLinks; track link.to) {
           <a
             [routerLink]="link.to"
-            class="px-3.5 py-2 rounded-lg text-sm font-semibold transition-colors duration-150"
-            [style]="isActive(link.to)
-              ? 'background:var(--pm-primary-soft); color:var(--pm-primary);'
-              : 'color:var(--pm-text-muted);'"
-            [class.hover:text-[var(--pm-text)]]="!isActive(link.to)"
+            class="pm-nav-link"
+            [class.is-active]="isActive(link.to)"
+            [attr.aria-current]="isActive(link.to) ? 'page' : null"
           >{{ link.label }}</a>
         }
       </nav>
 
-      <!-- Search — desktop center -->
-      <form class="hidden xl:flex flex-1 mx-6 max-w-sm" (ngSubmit)="handleSearch()">
+      <!-- Search — visible from md upward -->
+      <form class="hidden md:flex flex-1 mx-4 max-w-xs" (ngSubmit)="handleSearch()" role="search">
         <div class="relative w-full">
-          <svg class="absolute left-3 top-1/2 -translate-y-1/2 opacity-40" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <svg class="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" style="opacity:0.38;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
           <input
-            class="pm-input pm-input-compact w-full pl-9"
+            class="pm-input pm-input-compact w-full"
+            style="padding-left:2.25rem;"
             [ngModel]="searchQuery()"
             (ngModelChange)="searchQuery.set($event)"
             name="globalSearch"
-            placeholder="Search designs & products…"
+            placeholder="Search designs…"
+            aria-label="Search designs and products"
           />
         </div>
       </form>
 
       <!-- Right actions -->
-      <div class="flex items-center gap-2 ml-auto">
+      <div class="flex items-center gap-1.5 ml-auto">
 
-        <!-- Theme toggle -->
+        <!-- Theme toggle — pure CSS hover via pm-theme-toggle class -->
         <button
           type="button"
+          class="pm-theme-toggle"
           (click)="toggleTheme()"
-          [title]="theme() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
-          style="display:inline-flex; align-items:center; gap:0.45rem; padding:0.35rem 0.75rem 0.35rem 0.5rem; border-radius:999px; border:1px solid var(--pm-border-strong); background:var(--pm-surface-alt); cursor:pointer; font-size:0.8rem; font-weight:600; color:var(--pm-text-muted); transition:background 180ms ease, border-color 180ms ease, color 180ms ease; white-space:nowrap;"
-          onmouseover="this.style.borderColor='var(--pm-primary)'; this.style.color='var(--pm-primary)';"
-          onmouseout="this.style.borderColor='var(--pm-border-strong)'; this.style.color='var(--pm-text-muted)';"
+          [attr.aria-label]="theme() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
+          [attr.title]="theme() === 'dark' ? 'Light mode' : 'Dark mode'"
         >
           @if (theme() === 'dark') {
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="4"/>
+              <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
             </svg>
             <span class="hidden sm:inline">Light</span>
           } @else {
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
             </svg>
             <span class="hidden sm:inline">Dark</span>
@@ -68,94 +69,245 @@
 
         @if (auth.isAuthenticated()) {
           <!-- Cart -->
-          <a routerLink="/cart" class="pm-btn pm-btn-secondary relative">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+          <a routerLink="/cart" class="pm-btn pm-btn-secondary relative" aria-label="View cart">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+            </svg>
             <span class="hidden sm:inline">Cart</span>
             @if (cartCount()) {
-              <span class="absolute -top-1.5 -right-1.5 min-w-[1.25rem] h-5 flex items-center justify-center rounded-full text-[10px] font-bold text-white px-1" style="background:var(--pm-primary);">{{ cartCount() }}</span>
+              <span
+                class="absolute -top-1.5 -right-1.5 min-w-[1.125rem] h-[1.125rem] flex items-center justify-center rounded-full text-[9px] font-bold text-white px-1"
+                style="background:var(--pm-primary);"
+                aria-label="{{ cartCount() }} items in cart"
+              >{{ cartCount() }}</span>
+            }
+          </a>
+
+          <!-- Notifications -->
+          <a routerLink="/notifications" class="pm-btn pm-btn-secondary relative" aria-label="Notifications">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+            <span class="hidden sm:inline">Alerts</span>
+            @if (unreadNotifications()) {
+              <span
+                class="absolute -top-1.5 -right-1.5 min-w-[1.125rem] h-[1.125rem] flex items-center justify-center rounded-full text-[9px] font-bold text-white px-1"
+                style="background:var(--pm-primary);"
+                aria-label="{{ unreadNotifications() }} unread notifications"
+              >{{ unreadNotifications() }}</span>
             }
           </a>
 
           <!-- User menu -->
           <div class="relative hidden md:block">
-            <button type="button" class="pm-btn pm-btn-secondary gap-2" (click)="userMenu.set(!userMenu())">
-              <span class="inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold text-white" style="background:var(--pm-primary);">{{ userInitials() }}</span>
-              <span class="max-w-[120px] truncate text-sm">{{ auth.user()?.name }}</span>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
+            <button
+              type="button"
+              class="pm-btn pm-btn-secondary gap-2"
+              (click)="userMenu.set(!userMenu())"
+              [attr.aria-expanded]="userMenu()"
+              aria-haspopup="true"
+              aria-label="User menu"
+            >
+              <span
+                class="inline-flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold text-white shrink-0"
+                style="background:var(--pm-primary);"
+                aria-hidden="true"
+              >{{ userInitials() }}</span>
+              <span class="max-w-[110px] truncate" style="font-size:var(--pm-text-sm);">{{ auth.user()?.name }}</span>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
             </button>
 
             @if (userMenu()) {
-              <div class="pm-flyout absolute right-0 top-full mt-2 w-64">
-                <div class="px-3 py-2 mb-2" style="border-bottom:1px solid var(--pm-border);">
-                  <p class="text-sm font-semibold" style="color:var(--pm-text);">{{ auth.user()?.name }}</p>
-                  <p class="text-xs mt-0.5" style="color:var(--pm-text-muted);">{{ auth.user()?.email }}</p>
-                  <span class="pm-chip mt-2">{{ auth.user()?.role }}</span>
+              <div class="pm-flyout absolute right-0 top-full mt-2 w-60" role="menu">
+                <div class="px-3 py-2.5 mb-1.5" style="border-bottom:1px solid var(--pm-border);">
+                  <p style="font-size:var(--pm-text-sm); font-weight:600; color:var(--pm-text);">{{ auth.user()?.name }}</p>
+                  <p style="font-size:var(--pm-text-xs); margin-top:0.15rem; color:var(--pm-text-muted);">{{ auth.user()?.email }}</p>
+                  <span class="pm-chip mt-1.5" style="text-transform:capitalize;">{{ auth.user()?.role }}</span>
                 </div>
-                <div class="grid gap-1 py-1">
-                  <a class="pm-btn pm-btn-ghost justify-start text-sm" [routerLink]="auth.dashboardPath(auth.user()!.role)">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                <div class="grid gap-0.5 py-1">
+                  <a class="pm-btn pm-btn-ghost justify-start" style="font-size:var(--pm-text-sm);" [routerLink]="auth.dashboardPath(auth.user()!.role)" role="menuitem">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
                     Dashboard
                   </a>
-                  <a class="pm-btn pm-btn-ghost justify-start text-sm" [routerLink]="profilePath(auth.user()!.role)">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  <a class="pm-btn pm-btn-ghost justify-start" style="font-size:var(--pm-text-sm);" [routerLink]="profilePath(auth.user()!.role)" role="menuitem">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                     Profile
                   </a>
                 </div>
-                <div style="border-top:1px solid var(--pm-border);" class="pt-2 mt-1">
-                  <button type="button" class="pm-btn pm-btn-danger w-full" (click)="logout()">Sign out</button>
+                <div style="border-top:1px solid var(--pm-border);" class="pt-1.5 mt-1">
+                  <button type="button" class="pm-btn pm-btn-danger w-full" style="font-size:var(--pm-text-sm);" (click)="logout()" role="menuitem">Sign out</button>
                 </div>
               </div>
             }
           </div>
 
         } @else {
-          <a class="pm-btn pm-btn-ghost hidden sm:inline-flex text-sm" routerLink="/register">Register</a>
-          <a class="pm-btn pm-btn-primary text-sm" routerLink="/login">Sign in</a>
+          <a class="pm-btn pm-btn-ghost hidden sm:inline-flex" style="font-size:var(--pm-text-sm);" routerLink="/register">Register</a>
+          <a class="pm-btn pm-btn-primary" style="font-size:var(--pm-text-sm);" routerLink="/login">Sign in</a>
         }
 
         <!-- Hamburger -->
-        <button type="button" class="pm-icon-btn lg:hidden" (click)="toggleSiteMenu()">
+        <button
+          type="button"
+          class="pm-icon-btn lg:hidden"
+          (click)="toggleSiteMenu()"
+          [attr.aria-expanded]="siteMenu()"
+          aria-label="Toggle menu"
+        >
           @if (siteMenu()) {
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
           } @else {
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
           }
         </button>
       </div>
     </div>
   </header>
 
-  <!-- MOBILE MENU -->
+  <!-- ═══════════════════════════════════════════════════════
+       MOBILE MENU
+  ═══════════════════════════════════════════════════════ -->
   @if (siteMenu()) {
-    <div style="background:var(--pm-surface); border-bottom:1px solid var(--pm-border); padding:1rem 1.25rem 1.5rem;">
+    <nav
+      style="background:var(--pm-surface); border-bottom:1px solid var(--pm-border);"
+      aria-label="Mobile navigation"
+    >
       <!-- Mobile search -->
-      <form class="flex gap-2 mb-4 xl:hidden" (ngSubmit)="handleSearch()">
-        <input class="pm-input pm-input-compact flex-1" [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" name="menuSearch" placeholder="Search designs & products…" />
-        <button type="submit" class="pm-btn pm-btn-primary px-4">Go</button>
-      </form>
-
-      <div class="grid grid-cols-2 gap-2 sm:grid-cols-3">
-        @for (link of navLinks; track link.to) {
-          <a [routerLink]="link.to" class="pm-btn pm-btn-secondary justify-start text-sm">{{ link.label }}</a>
-        }
-        <a routerLink="/" class="pm-btn pm-btn-secondary justify-start text-sm">Home</a>
-
-        @if (auth.isAuthenticated()) {
-          <a [routerLink]="auth.dashboardPath(auth.user()!.role)" class="pm-btn pm-btn-secondary justify-start text-sm">Dashboard</a>
-          <a [routerLink]="profilePath(auth.user()!.role)" class="pm-btn pm-btn-secondary justify-start text-sm">Profile</a>
-          <a routerLink="/cart" class="pm-btn pm-btn-secondary justify-start text-sm">Cart ({{ cartCount() }})</a>
-          <button type="button" class="pm-btn pm-btn-danger justify-start text-sm col-span-2 sm:col-span-1" (click)="logout()">Sign out</button>
-        } @else {
-          <a routerLink="/login" class="pm-btn pm-btn-primary justify-start text-sm">Sign in</a>
-          <a routerLink="/register" class="pm-btn pm-btn-secondary justify-start text-sm">Register</a>
-        }
+      <div class="px-4 pt-3 pb-2 md:hidden">
+        <form class="flex gap-2" (ngSubmit)="handleSearch()" role="search">
+          <input
+            class="pm-input pm-input-compact flex-1"
+            [ngModel]="searchQuery()"
+            (ngModelChange)="searchQuery.set($event)"
+            name="menuSearch"
+            placeholder="Search designs and products…"
+            aria-label="Search"
+          />
+          <button type="submit" class="pm-btn pm-btn-primary px-4">Go</button>
+        </form>
       </div>
-    </div>
+
+      <!-- Nav links -->
+      <div class="px-4 py-2 grid gap-0.5">
+        @for (link of navLinks; track link.to) {
+          <a [routerLink]="link.to" class="pm-btn pm-btn-ghost justify-start" style="font-size:var(--pm-text-sm);">{{ link.label }}</a>
+        }
+        <a routerLink="/" class="pm-btn pm-btn-ghost justify-start" style="font-size:var(--pm-text-sm);">Home</a>
+      </div>
+
+      @if (auth.isAuthenticated()) {
+        <div class="px-4 py-2 grid gap-0.5" style="border-top:1px solid var(--pm-border);">
+          <a [routerLink]="auth.dashboardPath(auth.user()!.role)" class="pm-btn pm-btn-ghost justify-start" style="font-size:var(--pm-text-sm);">Dashboard</a>
+          <a [routerLink]="profilePath(auth.user()!.role)" class="pm-btn pm-btn-ghost justify-start" style="font-size:var(--pm-text-sm);">Profile</a>
+          <a routerLink="/notifications" class="pm-btn pm-btn-ghost justify-start" style="font-size:var(--pm-text-sm);">
+            Notifications
+            @if (unreadNotifications()) { <span class="pm-chip ml-1">{{ unreadNotifications() }}</span> }
+          </a>
+          <a routerLink="/cart" class="pm-btn pm-btn-ghost justify-start" style="font-size:var(--pm-text-sm);">
+            Cart
+            @if (cartCount()) { <span class="pm-chip ml-1">{{ cartCount() }}</span> }
+          </a>
+        </div>
+        <div class="px-4 py-3" style="border-top:1px solid var(--pm-border);">
+          <button type="button" class="pm-btn pm-btn-danger w-full" style="font-size:var(--pm-text-sm);" (click)="logout()">Sign out</button>
+        </div>
+      } @else {
+        <div class="px-4 py-3 flex gap-2" style="border-top:1px solid var(--pm-border);">
+          <a routerLink="/login" class="pm-btn pm-btn-primary flex-1" style="font-size:var(--pm-text-sm);">Sign in</a>
+          <a routerLink="/register" class="pm-btn pm-btn-secondary flex-1" style="font-size:var(--pm-text-sm);">Register</a>
+        </div>
+      }
+    </nav>
   }
 
-  <!-- PAGE CONTENT -->
-  <main class="pb-16">
+  <!-- ═══════════════════════════════════════════════════════
+       PAGE CONTENT
+  ═══════════════════════════════════════════════════════ -->
+  <main style="flex:1;">
     <router-outlet />
   </main>
+
+  <!-- ═══════════════════════════════════════════════════════
+       FOOTER
+  ═══════════════════════════════════════════════════════ -->
+  <footer class="pm-footer" aria-label="Site footer">
+    <div class="pm-container">
+
+      <div class="pm-footer-grid">
+
+        <!-- Brand column -->
+        <div>
+          <div class="flex items-center gap-2.5 mb-4">
+            <div class="pm-nav-logo" aria-hidden="true">P</div>
+            <span class="pm-heading font-bold text-white" style="font-size:var(--pm-text-base); letter-spacing:-0.02em;">Printymand</span>
+          </div>
+          <p style="font-size:var(--pm-text-sm); line-height:1.7; max-width:260px; color:rgba(244,237,226,0.55);">
+            Tunisia's print-on-demand platform. Designed by local artists, printed by verified shops, shipped anywhere in Tunisia.
+          </p>
+          <!-- Social links -->
+          <div class="flex gap-2 mt-5">
+            @for (social of socials; track social.label) {
+              <a
+                [href]="social.href"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="pm-icon-btn"
+                style="background:rgba(255,255,255,0.06); border-color:rgba(255,255,255,0.1); color:rgba(244,237,226,0.5);"
+                [attr.aria-label]="social.label"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path [attr.d]="social.path"/>
+                </svg>
+              </a>
+            }
+          </div>
+        </div>
+
+        <!-- Shop column -->
+        <div>
+          <p class="pm-footer-heading">Shop</p>
+          <a routerLink="/marketplace" class="pm-footer-link">All Designs</a>
+          <a routerLink="/products" class="pm-footer-link">Products</a>
+          <a [routerLink]="['/marketplace']" [queryParams]="{category:'Minimal'}" class="pm-footer-link">Minimal</a>
+          <a [routerLink]="['/marketplace']" [queryParams]="{category:'Street'}" class="pm-footer-link">Streetwear</a>
+          <a [routerLink]="['/marketplace']" [queryParams]="{category:'Typography'}" class="pm-footer-link">Calligraphy</a>
+        </div>
+
+        <!-- Account column -->
+        <div>
+          <p class="pm-footer-heading">Account</p>
+          <a routerLink="/login" class="pm-footer-link">Sign in</a>
+          <a routerLink="/register" class="pm-footer-link">Create account</a>
+          <a routerLink="/dashboard" class="pm-footer-link">Dashboard</a>
+          <a routerLink="/profile" class="pm-footer-link">Profile</a>
+          <a routerLink="/tracking" class="pm-footer-link">Order tracking</a>
+        </div>
+
+        <!-- Makers column -->
+        <div>
+          <p class="pm-footer-heading">Makers</p>
+          <a routerLink="/designer-dashboard" class="pm-footer-link">Designer studio</a>
+          <a routerLink="/printer-dashboard" class="pm-footer-link">Printer hub</a>
+          <a routerLink="/register" class="pm-footer-link">Become a designer</a>
+          <a routerLink="/register" class="pm-footer-link">Partner as printer</a>
+        </div>
+
+      </div>
+
+      <hr class="pm-footer-divider" />
+
+      <div class="pm-footer-bar">
+        <p class="pm-footer-copy">© {{ currentYear }} Printymand · Made in Tunisia 🇹🇳</p>
+        <div class="pm-payment-marks" aria-label="Accepted payment methods">
+          <span class="pm-payment-mark">VISA</span>
+          <span class="pm-payment-mark">MC</span>
+          <span class="pm-payment-mark">D17</span>
+          <span class="pm-payment-mark">CASH</span>
+        </div>
+      </div>
+
+    </div>
+  </footer>
 
 </div>

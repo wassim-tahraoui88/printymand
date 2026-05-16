@@ -3,6 +3,7 @@ import type {
   Order,
   PayoutRecord,
   PrinterPartner,
+  PrinterProductOffering,
   Product,
   Review,
   User,
@@ -182,6 +183,7 @@ export const seedPrinters: PrinterPartner[] = [
     deliveryDays: 2,
     location: 'Tunis',
     images: [seedImage('printer-gallery-1', 900, 700), seedImage('printer-gallery-2', 900, 700)],
+    availability: 'available',
   },
   {
     id: 502,
@@ -195,6 +197,7 @@ export const seedPrinters: PrinterPartner[] = [
     deliveryDays: 3,
     location: 'Sfax',
     images: [seedImage('printer-gallery-3', 900, 700), seedImage('printer-gallery-4', 900, 700)],
+    availability: 'available',
   },
   {
     id: 503,
@@ -208,15 +211,22 @@ export const seedPrinters: PrinterPartner[] = [
     deliveryDays: 4,
     location: 'Nabeul',
     images: [seedImage('printer-gallery-5', 900, 700), seedImage('printer-gallery-6', 900, 700)],
+    availability: 'available',
   },
 ];
+
+/**
+ * GLOBAL product catalog — platform-owned. Printers do not own these; they opt
+ * in via seedOfferings. Names, categories and placeholder images are fixed by
+ * the platform (admin-managed).
+ */
+const PLATFORM = { printerId: 0, printerName: 'Printymand' };
 
 export const seedProducts: Product[] = [
   {
     id: 601,
-    printerId: 501,
-    printerName: 'PrintPro Tunisia',
-    name: 'Premium T-Shirt',
+    ...PLATFORM,
+    name: 'T-Shirt',
     category: 'Apparel',
     description: 'Heavyweight cotton tee suited for full front artwork and richer colors.',
     basePrice: 28,
@@ -231,9 +241,8 @@ export const seedProducts: Product[] = [
   },
   {
     id: 602,
-    printerId: 501,
-    printerName: 'PrintPro Tunisia',
-    name: 'Oversized Hoodie',
+    ...PLATFORM,
+    name: 'Hoodie',
     category: 'Apparel',
     description: 'Streetwear hoodie with centered chest and back print zones.',
     basePrice: 52,
@@ -248,9 +257,8 @@ export const seedProducts: Product[] = [
   },
   {
     id: 603,
-    printerId: 502,
-    printerName: 'Atelier Couleurs',
-    name: 'Ceramic Mug',
+    ...PLATFORM,
+    name: 'Mug',
     category: 'Drinkware',
     description: '11oz glossy mug for wraparound illustration prints.',
     basePrice: 21,
@@ -265,9 +273,8 @@ export const seedProducts: Product[] = [
   },
   {
     id: 604,
-    printerId: 502,
-    printerName: 'Atelier Couleurs',
-    name: 'Canvas Tote Bag',
+    ...PLATFORM,
+    name: 'Tote Bag',
     category: 'Accessories',
     description: 'Large natural canvas tote optimized for minimal graphics and typography.',
     basePrice: 24,
@@ -282,8 +289,7 @@ export const seedProducts: Product[] = [
   },
   {
     id: 605,
-    printerId: 503,
-    printerName: 'Studio Press Nabeul',
+    ...PLATFORM,
     name: 'Phone Case',
     category: 'Accessories',
     description: 'Impact-resistant phone case with edge-to-edge UV print.',
@@ -297,6 +303,45 @@ export const seedProducts: Product[] = [
     totalOrders: 102,
     assignedDesignIds: [702, 705],
   },
+  {
+    id: 606,
+    ...PLATFORM,
+    name: 'Sticker',
+    category: 'Accessories',
+    description: 'Durable die-cut vinyl sticker with vivid full-color print.',
+    basePrice: 8,
+    colors: ['white'],
+    sizes: ['Small', 'Medium', 'Large'],
+    images: [seedImage('product-sticker-1', 1000, 1000), seedImage('product-sticker-2', 1000, 1000)],
+    availability: 'ACTIVE',
+    leadTimeDays: 2,
+    rating: 4.8,
+    totalOrders: 320,
+    assignedDesignIds: [703, 706],
+  },
+];
+
+/**
+ * Printer opt-ins for global products (their production price + availability).
+ * Multiple printers can offer the SAME global product — there is still only one
+ * "Phone Case" product type; printers just compete on it.
+ */
+export const seedOfferings: PrinterProductOffering[] = [
+  // PrintPro Tunisia (printer 501)
+  { id: 6601, printerId: 501, productId: 601, basePrice: 28, available: true, createdAt: '2026-01-10' },
+  { id: 6602, printerId: 501, productId: 602, basePrice: 52, available: true, createdAt: '2026-01-10' },
+  { id: 6603, printerId: 501, productId: 603, basePrice: 22, available: true, createdAt: '2026-01-10' },
+  { id: 6604, printerId: 501, productId: 605, basePrice: 30, available: true, createdAt: '2026-01-10' },
+  { id: 6605, printerId: 501, productId: 606, basePrice: 8, available: true, createdAt: '2026-01-10' },
+  // Atelier Couleurs (printer 502)
+  { id: 6606, printerId: 502, productId: 601, basePrice: 26, available: true, createdAt: '2026-01-12' },
+  { id: 6607, printerId: 502, productId: 603, basePrice: 21, available: true, createdAt: '2026-01-12' },
+  { id: 6608, printerId: 502, productId: 604, basePrice: 24, available: true, createdAt: '2026-01-12' },
+  { id: 6609, printerId: 502, productId: 606, basePrice: 7, available: true, createdAt: '2026-01-12' },
+  // Studio Press Nabeul (printer 503)
+  { id: 6610, printerId: 503, productId: 601, basePrice: 27, available: true, createdAt: '2026-01-15' },
+  { id: 6611, printerId: 503, productId: 602, basePrice: 50, available: true, createdAt: '2026-01-15' },
+  { id: 6612, printerId: 503, productId: 605, basePrice: 29, available: true, createdAt: '2026-01-15' },
 ];
 
 export const seedDesigns: Design[] = [
@@ -481,6 +526,7 @@ export const seedOrders: Order[] = [
     total: 73,
     paymentMethod: 'card',
     paymentStatus: 'paid',
+    requestStatus: 'ACCEPTED',
     shippingAddress: 'Residence du Lac, Bloc C, App 12, Tunis 1053',
     lines: [
       {
@@ -511,6 +557,7 @@ export const seedOrders: Order[] = [
     total: 49,
     paymentMethod: 'd17',
     paymentStatus: 'paid',
+    requestStatus: 'ACCEPTED',
     shippingAddress: 'Residence du Lac, Bloc C, App 12, Tunis 1053',
     lines: [
       {
@@ -540,7 +587,8 @@ export const seedOrders: Order[] = [
     trackingCode: 'PMD-240420-803',
     total: 84,
     paymentMethod: 'cash',
-    paymentStatus: 'pending',
+    paymentStatus: 'paid',
+    requestStatus: 'ACCEPTED',
     shippingAddress: 'Pole Technologique El Ghazala, Ariana 2083',
     lines: [
       {
@@ -559,7 +607,7 @@ export const seedOrders: Order[] = [
         y: 46,
         scale: 0.42,
         price: 47,
-        status: 'Accepted',
+        status: 'Confirmed',
       },
       {
         id: 4,

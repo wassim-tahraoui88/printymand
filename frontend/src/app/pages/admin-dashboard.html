@@ -1,112 +1,395 @@
-<app-dashboard-shell
-  eyebrow="Admin"
-  title="Platform control center"
-  description="Manage users, assign ranks, moderate designs, and monitor platform-wide health."
->
-  <div class="pm-grid-4">
-    <app-stat-card label="Users" [value]="overview().users.toString()" hint="all roles" />
-    <app-stat-card label="Orders" [value]="overview().orders.toString()" hint="tracked" />
-    <app-stat-card label="Revenue" [value]="overview().revenue.toFixed(0) + ' TND'" hint="GMV" />
-    <app-stat-card label="Active designs" [value]="overview().activeDesigns.toString()" hint="moderated" />
-  </div>
+<div class="pm-dashboard">
 
-  <div class="grid gap-6 lg:grid-cols-[1.2fr_0.8fr] lg:items-start">
+  <!-- Sidebar -->
+  <app-dashboard-sidebar
+    [nav]="nav"
+    [activeTab]="activeTab()"
+    roleLabel="Admin"
+    [mobileOpen]="sidebarOpen()"
+    (tabChange)="activeTab.set($event)"
+    (mobileClose)="sidebarOpen.set(false)"
+  />
 
-    <!-- User management -->
-    <div class="pm-panel" style="padding:1.5rem;">
-      <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between mb-4">
-        <div>
-          <h2 class="font-bold text-lg" style="color:var(--pm-text);">User management</h2>
-          <p class="text-sm mt-0.5" style="color:var(--pm-text-muted);">Adjust roles, ranks, and suspension status.</p>
-        </div>
-        <label class="pm-field" style="min-width:200px;">
-          <span class="pm-label">Search users</span>
-          <input class="pm-input pm-input-compact" [ngModel]="search()" (ngModelChange)="search.set($event)" placeholder="Name or email…" />
-        </label>
+  <!-- Main -->
+  <div class="pm-dashboard-main">
+
+    <!-- Section header -->
+    <div class="pm-dash-header">
+      <button type="button" class="pm-sidebar-mobile-btn" style="align-items:center; justify-content:center; background:transparent; cursor:pointer;" (click)="sidebarOpen.set(true)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <div style="flex:1; min-width:0;">
+        @switch (activeTab()) {
+          @case ('overview') { <h1 class="pm-heading" style="font-size:var(--pm-text-lg); font-weight:800; color:var(--pm-text);">Platform overview</h1> }
+          @case ('users')    { <h1 class="pm-heading" style="font-size:var(--pm-text-lg); font-weight:800; color:var(--pm-text);">User management</h1> }
+          @case ('moderation') { <h1 class="pm-heading" style="font-size:var(--pm-text-lg); font-weight:800; color:var(--pm-text);">Moderation queue</h1> }
+          @case ('catalog')  { <h1 class="pm-heading" style="font-size:var(--pm-text-lg); font-weight:800; color:var(--pm-text);">Product catalog</h1> }
+          @case ('designs')  { <h1 class="pm-heading" style="font-size:var(--pm-text-lg); font-weight:800; color:var(--pm-text);">Designs</h1> }
+          @case ('orders')   { <h1 class="pm-heading" style="font-size:var(--pm-text-lg); font-weight:800; color:var(--pm-text);">All orders</h1> }
+          @case ('settings') { <h1 class="pm-heading" style="font-size:var(--pm-text-lg); font-weight:800; color:var(--pm-text);">Platform settings</h1> }
+        }
       </div>
-      <div style="overflow:auto;">
-        <table class="pm-table">
-          <thead>
-            <tr>
-              <th>User</th>
-              <th>Role</th>
-              <th>Designer rank</th>
-              <th>Printer rank</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (user of users(); track user.id) {
-              <tr>
-                <td>
-                  <div class="font-semibold text-sm" style="color:var(--pm-text);">{{ user.name }}</div>
-                  <div class="text-xs mt-0.5" style="color:var(--pm-text-muted);">{{ user.email }}</div>
-                </td>
-                <td>
-                  <select class="pm-select" style="max-width:130px; font-size:0.8rem; padding-block:0.4rem;" [ngModel]="user.role" (ngModelChange)="auth.updateUserRole(user.id, $event)">
-                    @for (role of ['customer', 'designer', 'printer', 'admin']; track role) {
-                      <option [value]="role">{{ role }}</option>
-                    }
-                  </select>
-                </td>
-                <td>
-                  <select class="pm-select" style="max-width:120px; font-size:0.8rem; padding-block:0.4rem;" [ngModel]="user.designerRank ?? 'Novice'" (ngModelChange)="auth.updateDesignerRank(user.id, $event)" [disabled]="user.role !== 'designer'">
-                    @for (rank of ['Novice', 'Rising', 'Artisan', 'Elite']; track rank) {
-                      <option [value]="rank">{{ rank }}</option>
-                    }
-                  </select>
-                </td>
-                <td>
-                  <select class="pm-select" style="max-width:120px; font-size:0.8rem; padding-block:0.4rem;" [ngModel]="user.printerRank ?? 'Verified'" (ngModelChange)="auth.updatePrinterRank(user.id, $event)" [disabled]="user.role !== 'printer'">
-                    @for (rank of ['Verified', 'Gold', 'Premium']; track rank) {
-                      <option [value]="rank">{{ rank }}</option>
-                    }
-                  </select>
-                </td>
-                <td>
-                  <button type="button" class="pm-btn text-xs"
-                    [class.pm-btn-danger]="!user.suspended"
-                    [class.pm-btn-secondary]="user.suspended"
-                    (click)="auth.toggleUserSuspended(user.id)">
-                    {{ user.suspended ? 'Unsuspend' : 'Suspend' }}
-                  </button>
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
+      <span class="pm-chip" style="background:var(--pm-primary-soft); color:var(--pm-primary); border-color:rgba(199,74,43,0.2);">Admin</span>
     </div>
 
-    <!-- Design moderation -->
-    <div class="pm-panel" style="padding:1.5rem;">
-      <h2 class="font-bold text-lg mb-4" style="color:var(--pm-text);">Design moderation</h2>
-      <div class="grid gap-3">
-        @for (design of designs(); track design.id) {
-          <div style="border:1px solid var(--pm-border); border-radius:var(--pm-radius); padding:1rem; background:var(--pm-surface-alt);">
-            <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div class="min-w-0">
-                <p class="font-semibold text-sm" style="color:var(--pm-text);">{{ design.title }}</p>
-                <p class="text-xs mt-0.5" style="color:var(--pm-text-muted);">{{ design.designer }} · {{ design.category }}</p>
-                <span class="pm-chip mt-2 inline-flex"
-                  [style.background]="design.status === 'ACTIVE' ? 'var(--pm-success-soft)' : design.status === 'REMOVED' ? 'var(--pm-danger-soft)' : 'var(--pm-surface-alt)'"
-                  [style.color]="design.status === 'ACTIVE' ? 'var(--pm-success)' : design.status === 'REMOVED' ? 'var(--pm-danger)' : 'var(--pm-text-muted)'">
-                  {{ design.status }}
-                </span>
-              </div>
-              <div class="flex flex-wrap gap-1.5 shrink-0">
-                <button type="button" class="pm-btn pm-btn-secondary text-xs" (click)="workflow.setDesignStatus(design.id, 'ACTIVE')">Activate</button>
-                <button type="button" class="pm-btn pm-btn-secondary text-xs" (click)="workflow.setDesignStatus(design.id, 'ARCHIVED')">Archive</button>
-                <button type="button" class="pm-btn pm-btn-danger text-xs" (click)="workflow.setDesignStatus(design.id, 'REMOVED')">Remove</button>
-              </div>
-            </div>
+    <!-- Section body -->
+    <div class="pm-dash-body">
+
+      <!-- ── OVERVIEW ──────────────────────────────────── -->
+      @if (activeTab() === 'overview') {
+
+        <div class="pm-stat-grid">
+          <div class="pm-stat-card">
+            <span class="pm-stat-label">Total users</span>
+            <span class="pm-stat-value">{{ overview().users }}</span>
+          </div>
+          <div class="pm-stat-card">
+            <span class="pm-stat-label">Total orders</span>
+            <span class="pm-stat-value">{{ overview().orders }}</span>
+          </div>
+          <div class="pm-stat-card">
+            <span class="pm-stat-label">Platform revenue</span>
+            <span class="pm-stat-value">{{ overview().revenue }} <span style="font-size:var(--pm-text-sm); font-weight:600;">TND</span></span>
+          </div>
+          <div class="pm-stat-card">
+            <span class="pm-stat-label">Active designs</span>
+            <span class="pm-stat-value">{{ overview().activeDesigns }}</span>
+          </div>
+        </div>
+
+        <!-- Quick-links -->
+        <div class="pm-panel" style="padding:1.5rem;">
+          <h2 class="pm-heading" style="font-size:var(--pm-text-base); font-weight:700; color:var(--pm-text); margin-bottom:1.25rem;">Quick actions</h2>
+          <div style="display:flex; flex-wrap:wrap; gap:0.75rem;">
+            <button type="button" class="pm-btn pm-btn-ghost" (click)="activeTab.set('users')">Manage users →</button>
+            <button type="button" class="pm-btn pm-btn-ghost" (click)="activeTab.set('designs')">Moderate designs →</button>
+            <button type="button" class="pm-btn pm-btn-ghost" (click)="activeTab.set('orders')">View all orders →</button>
+          </div>
+        </div>
+
+        <!-- Active printers -->
+        <div class="pm-panel" style="padding:1.5rem;">
+          <h2 class="pm-heading" style="font-size:var(--pm-text-base); font-weight:700; color:var(--pm-text); margin-bottom:0.75rem;">Active printers</h2>
+          <p style="font-size:var(--pm-text-2xl); font-family:'Plus Jakarta Sans'; font-weight:800; color:var(--pm-text);">{{ overview().activePrinters }}</p>
+          <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted); margin-top:0.25rem;">registered printing partners</p>
+        </div>
+      }
+
+      <!-- ── USERS ──────────────────────────────────────── -->
+      @if (activeTab() === 'users') {
+
+        <!-- Search -->
+        <div class="pm-panel" style="padding:1rem 1.25rem;">
+          <input
+            class="pm-input"
+            type="search"
+            placeholder="Search by name, email, or role…"
+            [ngModel]="search()"
+            (ngModelChange)="search.set($event)"
+            style="max-width:400px;"
+          />
+        </div>
+
+        @if (users().length) {
+          <div class="pm-panel" style="padding:0; overflow:hidden;">
+            <table style="width:100%; border-collapse:collapse; font-size:var(--pm-text-sm);">
+              <thead>
+                <tr style="border-bottom:1px solid var(--pm-border); background:var(--pm-surface-alt);">
+                  <th style="text-align:left; padding:0.875rem 1.25rem; font-size:var(--pm-text-xs); font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--pm-text-muted);">Name</th>
+                  <th style="text-align:left; padding:0.875rem 1.25rem; font-size:var(--pm-text-xs); font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--pm-text-muted);">Email</th>
+                  <th style="text-align:left; padding:0.875rem 1.25rem; font-size:var(--pm-text-xs); font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--pm-text-muted);">Role</th>
+                  <th style="text-align:left; padding:0.875rem 1.25rem; font-size:var(--pm-text-xs); font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--pm-text-muted);">Status</th>
+                  <th style="text-align:right; padding:0.875rem 1.25rem; font-size:var(--pm-text-xs); font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--pm-text-muted);">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (user of users(); track user.id) {
+                  <tr style="border-bottom:1px solid var(--pm-border);">
+                    <td style="padding:0.875rem 1.25rem; font-weight:600; color:var(--pm-text);">{{ user.name }}</td>
+                    <td style="padding:0.875rem 1.25rem; color:var(--pm-text-muted);">{{ user.email }}</td>
+                    <td style="padding:0.875rem 1.25rem;">
+                      <span class="pm-chip">{{ user.role }}</span>
+                    </td>
+                    <td style="padding:0.875rem 1.25rem;">
+                      <span class="pm-chip"
+                        [style.background]="accountStatus(user) === 'ACTIVE' ? 'var(--pm-success-soft)' : accountStatus(user) === 'PENDING_VERIFICATION' ? 'var(--pm-secondary-soft)' : 'var(--pm-danger-soft)'"
+                        [style.color]="accountStatus(user) === 'ACTIVE' ? 'var(--pm-success)' : accountStatus(user) === 'PENDING_VERIFICATION' ? 'var(--pm-text)' : 'var(--pm-danger)'">
+                        {{ accountStatus(user) }}
+                      </span>
+                    </td>
+                    <td style="padding:0.875rem 1.25rem; text-align:right;">
+                      @if (user.role !== 'admin') {
+                        <div style="display:flex; gap:0.375rem; justify-content:flex-end; flex-wrap:wrap;">
+                          @if (accountStatus(user) === 'PENDING_VERIFICATION') {
+                            <button type="button" class="pm-btn pm-btn-primary pm-btn-sm" (click)="setAccountStatus(user.id, 'ACTIVE')">Verify</button>
+                          }
+                          @if (accountStatus(user) !== 'ACTIVE' && accountStatus(user) !== 'PENDING_VERIFICATION') {
+                            <button type="button" class="pm-btn pm-btn-ghost pm-btn-sm" (click)="setAccountStatus(user.id, 'ACTIVE')">Reactivate</button>
+                          }
+                          @if (accountStatus(user) !== 'SUSPENDED' && accountStatus(user) !== 'BANNED') {
+                            <button type="button" class="pm-btn pm-btn-ghost pm-btn-sm" (click)="setAccountStatus(user.id, 'SUSPENDED')">Suspend</button>
+                          }
+                          @if (accountStatus(user) !== 'BANNED') {
+                            <button type="button" class="pm-btn pm-btn-danger pm-btn-sm" (click)="setAccountStatus(user.id, 'BANNED')">Ban</button>
+                          }
+                        </div>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <div class="pm-empty pm-panel" style="padding:3rem 1.5rem;">
+            <p style="font-size:var(--pm-text-sm); color:var(--pm-text-muted);">No users match your search.</p>
           </div>
         }
-        @if (!designs().length) {
-          <div class="pm-empty">No designs to moderate.</div>
+      }
+
+      <!-- ── DESIGNS ────────────────────────────────────── -->
+      <!-- ── MODERATION QUEUE (pending designs) ─────────── -->
+      @if (activeTab() === 'moderation') {
+        @if (pendingDesigns().length) {
+          <div style="display:grid; gap:1rem;">
+            @for (design of pendingDesigns(); track design.id) {
+              <div class="pm-panel" style="padding:1.25rem 1.5rem; display:flex; align-items:flex-start; gap:1rem; flex-wrap:wrap;">
+                <div style="width:3.5rem; height:3.5rem; border-radius:8px; overflow:hidden; flex-shrink:0; background:var(--pm-border);">
+                  <img [src]="design.image" [alt]="design.title" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.display='none'" />
+                </div>
+                <div style="flex:1; min-width:0;">
+                  <p style="font-size:var(--pm-text-base); font-weight:700; color:var(--pm-text);">{{ design.title }}</p>
+                  <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted);">{{ design.designer }} · {{ design.category }}</p>
+                  <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted); margin-top:0.25rem;">{{ design.description }}</p>
+                </div>
+                <div style="display:flex; gap:0.5rem; flex-shrink:0;">
+                  <button type="button" class="pm-btn pm-btn-primary pm-btn-sm" (click)="moderate(design.id, 'APPROVED')">Approve</button>
+                  <button type="button" class="pm-btn pm-btn-danger pm-btn-sm" (click)="moderate(design.id, 'REJECTED')">Reject</button>
+                </div>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="pm-empty pm-panel" style="padding:3rem 1.5rem;">
+            <p style="font-size:var(--pm-text-sm); font-weight:600; color:var(--pm-text);">Nothing pending</p>
+            <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted); margin-top:0.375rem;">New designer uploads awaiting review will appear here.</p>
+          </div>
         }
-      </div>
+      }
+
+      <!-- ── GLOBAL PRODUCT CATALOG (admin-owned) ───────── -->
+      @if (activeTab() === 'catalog') {
+
+        <div class="pm-panel" style="padding:1.5rem;">
+          <h2 class="pm-heading" style="font-size:var(--pm-text-base); font-weight:700; color:var(--pm-text); margin-bottom:0.5rem;">
+            {{ productForm().id ? 'Edit product type' : 'Add a global product type' }}
+          </h2>
+          <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted); margin-bottom:1.25rem; line-height:1.6;">
+            The platform owns product names, categories and placeholder/mockup images. Printers
+            only opt in and price these; designers attach designs to them.
+          </p>
+          <div style="display:grid; gap:1rem; max-width:620px;">
+            <div class="grid gap-4 sm:grid-cols-2">
+              <label class="pm-field">
+                <span class="pm-label">Name</span>
+                <input class="pm-input" type="text" [ngModel]="productForm().name" (ngModelChange)="productForm.set({...productForm(), name: $event})" placeholder="e.g. Phone Case" />
+              </label>
+              <label class="pm-field">
+                <span class="pm-label">Category</span>
+                <select class="pm-select" [ngModel]="productForm().category" (ngModelChange)="productForm.set({...productForm(), category: $event})">
+                  @for (c of ['Apparel','Drinkware','Accessories','Home']; track c) { <option [value]="c">{{ c }}</option> }
+                </select>
+              </label>
+            </div>
+            <label class="pm-field">
+              <span class="pm-label">Description</span>
+              <input class="pm-input" type="text" [ngModel]="productForm().description" (ngModelChange)="productForm.set({...productForm(), description: $event})" />
+            </label>
+            <label class="pm-field">
+              <span class="pm-label">Placeholder / mockup image URL</span>
+              <input class="pm-input" type="text" [ngModel]="productForm().image" (ngModelChange)="productForm.set({...productForm(), image: $event})" placeholder="https://…" />
+            </label>
+            <div class="grid gap-4 sm:grid-cols-3">
+              <label class="pm-field">
+                <span class="pm-label">Reference price (TND)</span>
+                <input class="pm-input" type="number" min="1" [ngModel]="productForm().basePrice" (ngModelChange)="productForm.set({...productForm(), basePrice: +$event})" />
+              </label>
+              <label class="pm-field">
+                <span class="pm-label">Colors (comma separated)</span>
+                <input class="pm-input" type="text" [ngModel]="productForm().colors" (ngModelChange)="productForm.set({...productForm(), colors: $event})" />
+              </label>
+              <label class="pm-field">
+                <span class="pm-label">Sizes (comma separated)</span>
+                <input class="pm-input" type="text" [ngModel]="productForm().sizes" (ngModelChange)="productForm.set({...productForm(), sizes: $event})" />
+              </label>
+            </div>
+            <div style="display:flex; gap:0.75rem;">
+              <button type="button" class="pm-btn pm-btn-primary" (click)="saveProduct()">{{ productForm().id ? 'Save changes' : 'Add to catalog' }}</button>
+              @if (catalogMsg()) {
+                <span style="font-size:var(--pm-text-sm); color:var(--pm-success); align-self:center;">{{ catalogMsg() }}</span>
+              }
+            </div>
+          </div>
+        </div>
+
+        <div class="pm-panel" style="padding:0; overflow:hidden;">
+          <table style="width:100%; border-collapse:collapse; font-size:var(--pm-text-sm);">
+            <thead>
+              <tr style="border-bottom:1px solid var(--pm-border); background:var(--pm-surface-alt);">
+                <th style="text-align:left; padding:0.875rem 1.25rem; font-size:var(--pm-text-xs); font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--pm-text-muted);">Product</th>
+                <th style="text-align:left; padding:0.875rem 1.25rem; font-size:var(--pm-text-xs); font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--pm-text-muted);">Category</th>
+                <th style="text-align:left; padding:0.875rem 1.25rem; font-size:var(--pm-text-xs); font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--pm-text-muted);">Sizes</th>
+                <th style="text-align:right; padding:0.875rem 1.25rem; font-size:var(--pm-text-xs); font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--pm-text-muted);">Ref. price</th>
+                <th style="text-align:right; padding:0.875rem 1.25rem; font-size:var(--pm-text-xs); font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--pm-text-muted);">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (product of catalog(); track product.id) {
+                <tr style="border-bottom:1px solid var(--pm-border);">
+                  <td style="padding:0.75rem 1.25rem;">
+                    <div style="display:flex; align-items:center; gap:0.75rem;">
+                      <div style="width:2.25rem; height:2.25rem; border-radius:5px; overflow:hidden; flex-shrink:0; background:var(--pm-border);">
+                        <img [src]="product.images[0]" [alt]="product.name" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.display='none'" />
+                      </div>
+                      <span style="font-weight:600; color:var(--pm-text);">{{ product.name }}</span>
+                    </div>
+                  </td>
+                  <td style="padding:0.75rem 1.25rem; color:var(--pm-text-muted);">{{ product.category }}</td>
+                  <td style="padding:0.75rem 1.25rem; color:var(--pm-text-muted);">{{ product.sizes.join(', ') }}</td>
+                  <td style="padding:0.75rem 1.25rem; text-align:right; font-weight:700; color:var(--pm-text);">{{ product.basePrice }} TND</td>
+                  <td style="padding:0.75rem 1.25rem; text-align:right;">
+                    <div style="display:flex; gap:0.375rem; justify-content:flex-end;">
+                      <button type="button" class="pm-btn pm-btn-ghost pm-btn-sm" (click)="editProduct(product.id)">Edit</button>
+                      <button type="button" class="pm-btn pm-btn-danger pm-btn-sm" (click)="removeProduct(product.id)">Remove</button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+      @if (activeTab() === 'designs') {
+        @if (designs().length) {
+          <div class="pm-panel" style="padding:0; overflow:hidden;">
+            <table style="width:100%; border-collapse:collapse; font-size:var(--pm-text-sm);">
+              <thead>
+                <tr style="border-bottom:1px solid var(--pm-border); background:var(--pm-surface-alt);">
+                  <th style="text-align:left; padding:0.875rem 1.25rem; font-size:var(--pm-text-xs); font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--pm-text-muted);">Design</th>
+                  <th style="text-align:left; padding:0.875rem 1.25rem; font-size:var(--pm-text-xs); font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--pm-text-muted);">Category</th>
+                  <th style="text-align:left; padding:0.875rem 1.25rem; font-size:var(--pm-text-xs); font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--pm-text-muted);">Status</th>
+                  <th style="text-align:right; padding:0.875rem 1.25rem; font-size:var(--pm-text-xs); font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--pm-text-muted);">Customizable</th>
+                  <th style="text-align:right; padding:0.875rem 1.25rem; font-size:var(--pm-text-xs); font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--pm-text-muted);">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (design of designs(); track design.id) {
+                  <tr style="border-bottom:1px solid var(--pm-border);">
+                    <td style="padding:0.75rem 1.25rem;">
+                      <div style="display:flex; align-items:center; gap:0.75rem;">
+                        <div style="width:2.25rem; height:2.25rem; border-radius:5px; overflow:hidden; flex-shrink:0; background:var(--pm-border);">
+                          <img [src]="design.image" [alt]="design.title" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.display='none'" />
+                        </div>
+                        <span style="font-weight:600; color:var(--pm-text);">{{ design.title }}</span>
+                      </div>
+                    </td>
+                    <td style="padding:0.75rem 1.25rem; color:var(--pm-text-muted);">{{ design.category }}</td>
+                    <td style="padding:0.75rem 1.25rem;">
+                      <span class="pm-chip">{{ design.status }}</span>
+                      <span class="pm-chip" style="margin-left:0.25rem;">{{ design.moderation ?? 'APPROVED' }}</span>
+                    </td>
+                    <td style="padding:0.75rem 1.25rem; text-align:right; color:var(--pm-text-muted);">{{ design.customizationAllowed ? 'Yes' : 'No' }}</td>
+                    <td style="padding:0.75rem 1.25rem; text-align:right;">
+                      <div style="display:flex; gap:0.375rem; justify-content:flex-end; flex-wrap:wrap;">
+                        @if (design.status !== 'ACTIVE') {
+                          <button type="button" class="pm-btn pm-btn-ghost pm-btn-sm" (click)="setDesignStatus(design.id, 'ACTIVE')">Approve</button>
+                        }
+                        @if (design.status !== 'ARCHIVED') {
+                          <button type="button" class="pm-btn pm-btn-ghost pm-btn-sm" (click)="setDesignStatus(design.id, 'ARCHIVED')">Archive</button>
+                        }
+                        @if (design.status !== 'REMOVED') {
+                          <button type="button" class="pm-btn pm-btn-danger pm-btn-sm" (click)="setDesignStatus(design.id, 'REMOVED')">Remove</button>
+                        }
+                        <button type="button" class="pm-btn pm-btn-ghost pm-btn-sm" (click)="toggleFeatured('design', design.id)">
+                          {{ isFeatured('design', design.id) ? '★ Featured' : '☆ Feature' }}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <div class="pm-empty pm-panel" style="padding:3rem 1.5rem;">
+            <p style="font-size:var(--pm-text-sm); color:var(--pm-text-muted);">No designs found.</p>
+          </div>
+        }
+      }
+
+      <!-- ── ORDERS ─────────────────────────────────────── -->
+      @if (activeTab() === 'orders') {
+        @if (allOrders().length) {
+          <div class="pm-panel" style="padding:0; overflow:hidden;">
+            <table style="width:100%; border-collapse:collapse; font-size:var(--pm-text-sm);">
+              <thead>
+                <tr style="border-bottom:1px solid var(--pm-border); background:var(--pm-surface-alt);">
+                  <th style="text-align:left; padding:0.875rem 1.25rem; font-size:var(--pm-text-xs); font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--pm-text-muted);">Order ID</th>
+                  <th style="text-align:left; padding:0.875rem 1.25rem; font-size:var(--pm-text-xs); font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--pm-text-muted);">Customer</th>
+                  <th style="text-align:left; padding:0.875rem 1.25rem; font-size:var(--pm-text-xs); font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--pm-text-muted);">Payment</th>
+                  <th style="text-align:left; padding:0.875rem 1.25rem; font-size:var(--pm-text-xs); font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--pm-text-muted);">Status</th>
+                  <th style="text-align:right; padding:0.875rem 1.25rem; font-size:var(--pm-text-xs); font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--pm-text-muted);">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (order of allOrders(); track order.id) {
+                  <tr style="border-bottom:1px solid var(--pm-border);">
+                    <td style="padding:0.875rem 1.25rem; font-weight:600; color:var(--pm-text);">#{{ order.id }}</td>
+                    <td style="padding:0.875rem 1.25rem; color:var(--pm-text-muted);">User {{ order.userId }}</td>
+                    <td style="padding:0.875rem 1.25rem;"><span class="pm-chip">{{ order.paymentMethod }}</span></td>
+                    <td style="padding:0.875rem 1.25rem;"><span class="pm-chip">{{ workflow.getOrderStatus(order) }}</span></td>
+                    <td style="padding:0.875rem 1.25rem; text-align:right; font-weight:700; color:var(--pm-text);">{{ order.total }} TND</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <div class="pm-empty pm-panel" style="padding:3rem 1.5rem;">
+            <p style="font-size:var(--pm-text-sm); color:var(--pm-text-muted);">No orders on the platform yet.</p>
+          </div>
+        }
+      }
+
+      <!-- ── PLATFORM SETTINGS ──────────────────────────── -->
+      @if (activeTab() === 'settings') {
+        <div class="pm-panel" style="padding:1.5rem; max-width:560px;">
+          <h2 class="pm-heading" style="font-size:var(--pm-text-base); font-weight:700; color:var(--pm-text); margin-bottom:1rem;">Pricing &amp; payout policy</h2>
+          <div style="display:grid; gap:1rem;">
+            <label class="pm-field">
+              <span class="pm-label">Platform margin (TND, added on top of printer base price)</span>
+              <input class="pm-input" type="number" min="0" [ngModel]="settingsForm().margin" (ngModelChange)="settingsForm.set({...settingsForm(), margin: +$event})" />
+            </label>
+            <label class="pm-field">
+              <span class="pm-label">Designer royalty per sale (TND, platform-fixed)</span>
+              <input class="pm-input" type="number" min="0" [ngModel]="settingsForm().designerRoyalty" (ngModelChange)="settingsForm.set({...settingsForm(), designerRoyalty: +$event})" />
+            </label>
+            <label class="pm-field">
+              <span class="pm-label">Designer payout threshold (TND)</span>
+              <input class="pm-input" type="number" min="0" [ngModel]="settingsForm().payoutThreshold" (ngModelChange)="settingsForm.set({...settingsForm(), payoutThreshold: +$event})" />
+            </label>
+            <div>
+              <button type="button" class="pm-btn pm-btn-primary" (click)="saveSettings()">Save settings</button>
+            </div>
+            @if (settingsMsg()) {
+              <p style="font-size:var(--pm-text-sm); color:var(--pm-success);">{{ settingsMsg() }}</p>
+            }
+          </div>
+        </div>
+      }
+
     </div>
   </div>
 
-</app-dashboard-shell>
+</div>

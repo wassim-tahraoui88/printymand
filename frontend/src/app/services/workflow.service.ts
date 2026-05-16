@@ -8,6 +8,7 @@ import type {
   Order,
   OrderLineStatus,
   PlaceOrderPayload,
+  PrinterAvailability,
   PrinterPartner,
   Product,
   ReviewPayload,
@@ -25,6 +26,12 @@ export class WorkflowService {
   readonly orders = this.store.orders;
   readonly reviews = this.store.reviews;
   readonly payouts = this.store.payouts;
+  readonly printerPayouts = this.store.printerPayouts;
+  readonly notifications = this.store.notifications;
+  readonly currentUserNotifications = this.store.currentUserNotifications;
+  readonly featured = this.store.featured;
+  readonly moderationLog = this.store.moderationLog;
+  readonly platformSettings = this.store.platformSettings;
   readonly draft = this.store.customizationDraft;
   readonly currentCart = computed<Cart>(() => this.store.currentCart());
   readonly currentOrders = computed<Order[]>(() => this.store.currentUserOrders());
@@ -69,27 +76,129 @@ export class WorkflowService {
     this.store.removeCartItem(userId, lineId);
   }
 
-  placeOrderForUser(userId: number, payload: PlaceOrderPayload) {
-    return this.store.placeOrder(userId, payload);
+  /** Spec: submit an order request (no payment until the printer accepts). */
+  submitOrderRequest(userId: number, payload: PlaceOrderPayload) {
+    return this.store.submitOrderRequest(userId, payload);
   }
 
-  initiatePayment(orderId: number | string) {
-    return this.store.startPayment(orderId);
+  /** New flow: send the request straight from printer selection (no cart). */
+  submitDraftOrderRequest(userId: number, shippingAddress?: string) {
+    return this.store.submitDraftOrderRequest(userId, shippingAddress);
   }
 
-  markPaymentPaid(orderId: number | string): void {
-    this.store.markOrderPaymentStatus(orderId, 'paid');
+  readonly currentAwaitingPaymentOrders = this.store.currentAwaitingPaymentOrders;
+
+  awaitingPaymentOrdersForUser(userId: number) {
+    return this.store.awaitingPaymentOrdersForUser(userId);
   }
 
-  submitReview(orderId: number | string, customerId: number, review: ReviewPayload) {
+  acceptOrderRequest(orderId: number | string) {
+    return this.store.acceptOrderRequest(orderId);
+  }
+
+  rejectOrderRequest(orderId: number | string, reason?: string) {
+    return this.store.rejectOrderRequest(orderId, reason);
+  }
+
+  cancelOrderRequest(orderId: number | string, userId: number) {
+    return this.store.cancelOrderRequest(orderId, userId);
+  }
+
+  /** Customer pays an accepted order. */
+  payForOrder(orderId: number | string) {
+    return this.store.payForOrder(orderId);
+  }
+
+  setOrderShippingAddress(orderId: number | string, address: string) {
+    this.store.setOrderShippingAddress(orderId, address);
+  }
+
+  setOrderPaymentMethod(orderId: number | string, method: 'paymee' | 'd17' | 'card' | 'cash') {
+    this.store.setOrderPaymentMethod(orderId, method);
+  }
+
+  submitReview(
+    orderId: number | string,
+    customerId: number,
+    review: ReviewPayload & { target: 'design' | 'printer'; designId?: number; printerId?: number },
+  ) {
     return this.store.submitReview(orderId, customerId, review);
+  }
+
+  markNotificationRead(id: number) {
+    this.store.markNotificationRead(id);
+  }
+
+  markAllNotificationsRead(userId: number) {
+    this.store.markAllNotificationsRead(userId);
+  }
+
+  moderateDesign(adminId: number, designId: number, decision: 'APPROVED' | 'REJECTED', reason?: string) {
+    this.store.moderateDesign(adminId, designId, decision, reason);
+  }
+
+  toggleFeatured(adminId: number, targetType: 'design' | 'designer' | 'printer', targetId: number) {
+    this.store.toggleFeatured(adminId, targetType, targetId);
+  }
+
+  isFeatured(targetType: 'design' | 'designer' | 'printer', targetId: number) {
+    return this.store.isFeatured(targetType, targetId);
+  }
+
+  requestDesignerPayout(userId: number) {
+    return this.store.requestDesignerPayout(userId);
+  }
+
+  printerPayoutsForUser(printerUserId: number) {
+    return this.store.printerPayoutsForUser(printerUserId);
+  }
+
+  // ── Global catalog (admin) + printer offerings ──
+  readonly offerings = this.store.offerings;
+
+  addOrUpdateGlobalProduct(
+    input: Partial<Product> & Pick<Product, 'name' | 'category' | 'description' | 'basePrice' | 'colors' | 'sizes' | 'images'>,
+  ) {
+    return this.store.addOrUpdateGlobalProduct(input);
+  }
+
+  removeGlobalProduct(productId: number) {
+    this.store.removeGlobalProduct(productId);
+  }
+
+  offeringsForPrinterUser(printerUserId: number) {
+    return this.store.offeringsForPrinterUser(printerUserId);
+  }
+
+  getOffering(printerId: number, productId: number) {
+    return this.store.getOffering(printerId, productId);
+  }
+
+  offeringPrice(printerId: number, productId: number) {
+    return this.store.offeringPrice(printerId, productId);
+  }
+
+  printersForProduct(productId: number) {
+    return this.store.printersForProduct(productId);
+  }
+
+  setPrinterOffering(printerUserId: number, productId: number, basePrice: number, available: boolean) {
+    this.store.setPrinterOffering(printerUserId, productId, basePrice, available);
+  }
+
+  removePrinterOffering(printerUserId: number, productId: number) {
+    this.store.removePrinterOffering(printerUserId, productId);
+  }
+
+  allDesigns() {
+    return this.store.designs();
   }
 
   getOrderById(orderId: number | string) {
     return this.store.getOrderById(orderId);
   }
 
-  getOrderStatus(order: Order): OrderLineStatus {
+  getOrderStatus(order: Order): string {
     return this.store.getOrderStatus(order);
   }
 
@@ -121,6 +230,14 @@ export class WorkflowService {
     return this.store.linesForPrinterUser(printerUserId);
   }
 
+  ordersAwaitingPrinter(printerUserId: number) {
+    return this.store.ordersAwaitingPrinter(printerUserId);
+  }
+
+  fulfillmentLinesForPrinter(printerUserId: number) {
+    return this.store.fulfillmentLinesForPrinter(printerUserId);
+  }
+
   printerTotals(printerUserId: number) {
     return this.store.printerTotals(printerUserId);
   }
@@ -129,8 +246,28 @@ export class WorkflowService {
     return this.store.adminOverview();
   }
 
-  addOrUpdateDesign(input: Partial<Design> & Pick<Design, 'title' | 'image' | 'category' | 'description' | 'price'>, designerId: number) {
+  addOrUpdateDesign(input: Partial<Design> & Pick<Design, 'title' | 'image' | 'category' | 'description'>, designerId: number) {
     return this.store.addOrUpdateDesign(input, designerId);
+  }
+
+  createUploadedDesign(userId: number, input: { title: string; image: string }) {
+    return this.store.createUploadedDesign(userId, input);
+  }
+
+  marketplaceDesigns() {
+    return this.store.marketplaceDesigns();
+  }
+
+  setPrinterAvailability(printerUserId: number, availability: PrinterAvailability) {
+    this.store.setPrinterAvailability(printerUserId, availability);
+  }
+
+  getPrinterByUserId(userId: number) {
+    return this.store.getPrinterByUserId(userId);
+  }
+
+  updatePlatformSettings(updates: Partial<{ margin: number; designerRoyalty: number; payoutThreshold: number; categories: string[] }>) {
+    this.store.updatePlatformSettings(updates);
   }
 
   setDesignStatus(designId: number, status: Design['status']) {
@@ -153,9 +290,6 @@ export class WorkflowService {
     return this.store.availableDesignsForProduct(productId);
   }
 
-  addOrUpdateProduct(input: Partial<Product> & Pick<Product, 'name' | 'category' | 'description' | 'basePrice' | 'colors' | 'sizes' | 'images' | 'availability' | 'leadTimeDays'>, printerUserId: number) {
-    return this.store.addOrUpdateProduct(input, printerUserId);
-  }
 
   advanceOrderLineStatus(orderId: number | string, lineId: number) {
     this.store.advanceOrderLineStatus(orderId, lineId);

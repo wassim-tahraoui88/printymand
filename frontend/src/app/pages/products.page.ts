@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { ProductCardComponent } from '../components/product-card.component';
 import { WorkflowService } from '../services/workflow.service';
 
+export type ProductSort = 'popular' | 'top_rated' | 'price_asc' | 'price_desc';
+
 @Component({
   selector: 'app-products-page',
   standalone: true,
@@ -15,16 +17,54 @@ export class ProductsPageComponent {
 
   readonly search = signal('');
   readonly category = signal('All');
-  readonly categories = computed(() => ['All', ...Array.from(new Set(this.workflow.products().map((product) => product.category)))]);
-  readonly products = computed(() =>
-    this.workflow
+  readonly sort = signal<ProductSort>('popular');
+
+  readonly categories = computed(() => [
+    'All',
+    ...Array.from(new Set(this.workflow.products().map((p) => p.category))),
+  ]);
+
+  readonly sortOptions: { value: ProductSort; label: string }[] = [
+    { value: 'popular',   label: 'Most popular'     },
+    { value: 'top_rated', label: 'Top rated'        },
+    { value: 'price_asc', label: 'Price: low → high'},
+    { value: 'price_desc',label: 'Price: high → low'},
+  ];
+
+  readonly products = computed(() => {
+    const query   = this.search().trim().toLowerCase();
+    const cat     = this.category();
+    const sortKey = this.sort();
+
+    const filtered = this.workflow
       .products()
-      .filter((product) => product.availability !== 'DRAFT')
-      .filter((product) => this.category() === 'All' || product.category === this.category())
-      .filter((product) => {
-        const query = this.search().trim().toLowerCase();
+      .filter((p) => p.availability !== 'DRAFT')
+      .filter((p) => cat === 'All' || p.category === cat)
+      .filter((p) => {
         if (!query) return true;
-        return [product.name, product.printerName, product.description].some((value) => value.toLowerCase().includes(query));
-      }),
-  );
+        return [p.name, p.category, p.description].some((v) => v.toLowerCase().includes(query));
+      });
+
+    return [...filtered].sort((a, b) => {
+      switch (sortKey) {
+        case 'top_rated':  return b.rating - a.rating;
+        case 'price_asc':  return a.basePrice - b.basePrice;
+        case 'price_desc': return b.basePrice - a.basePrice;
+        default:           return b.totalOrders - a.totalOrders;
+      }
+    });
+  });
+
+  readonly activeFilterCount = computed(() => {
+    let n = 0;
+    if (this.search()) n++;
+    if (this.category() !== 'All') n++;
+    return n;
+  });
+
+  clearFilters(): void {
+    this.search.set('');
+    this.category.set('All');
+    this.sort.set('popular');
+  }
 }

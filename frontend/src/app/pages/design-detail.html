@@ -1,73 +1,247 @@
 @if (design(); as d) {
-  <div class="pm-page">
+  <div style="padding: 2rem 0 5rem;">
+    <div class="pm-container">
 
-    <div class="grid gap-6 lg:grid-cols-[1fr_1fr] lg:items-start">
+      <!-- Breadcrumb -->
+      <nav aria-label="Breadcrumb" style="margin-bottom: 1.5rem;">
+        <a routerLink="/marketplace" class="pm-back-link">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          Back to marketplace
+        </a>
+      </nav>
 
-      <!-- Image -->
-      <div class="pm-card" style="overflow:hidden; border-radius:var(--pm-radius-xl);">
-        <app-image-with-fallback [src]="d.image" [alt]="d.title" [imgClass]="'w-full object-cover'" style="max-height:520px;" />
-      </div>
+      <!-- ── PDP grid ───────────────────────────────── -->
+      <div class="pm-pdp-grid">
 
-      <!-- Info -->
-      <div class="grid gap-4">
-        <div class="pm-panel" style="padding:1.75rem;">
-          <div class="flex items-start justify-between gap-3 mb-4">
-            <div>
-              <p class="text-xs font-bold tracking-widest uppercase mb-2" style="color:var(--pm-primary);">{{ d.category }}</p>
-              <h1 class="pm-heading font-bold leading-tight" style="font-size:1.9rem; color:var(--pm-text);">{{ d.title }}</h1>
-              <p class="text-sm mt-1" style="color:var(--pm-text-muted);">by {{ d.designer }}</p>
+        <!-- LEFT: Design image -->
+        <div>
+          <div class="pm-card" style="overflow:hidden; border-radius:var(--pm-radius-xl);">
+            <app-image-with-fallback
+              [src]="d.image"
+              [alt]="d.title"
+              [imgClass]="'w-full object-cover'"
+              style="aspect-ratio:1/1; display:block;"
+            />
+          </div>
+
+          <!-- Tags -->
+          @if (d.tags.length) {
+            <div style="display:flex; flex-wrap:wrap; gap:0.375rem; margin-top:1rem;">
+              @for (tag of d.tags; track tag) {
+                <span class="pm-chip">{{ tag }}</span>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- RIGHT: Configuration panel (sticky on desktop) -->
+        <div class="pm-pdp-sticky" style="display:grid; gap:1.5rem;">
+
+          <!-- Title -->
+          <div>
+            <p class="pm-kicker" style="margin-bottom:0.375rem;">{{ d.category }}</p>
+            <h1 class="pm-display" style="font-size:clamp(1.75rem, 3.5vw, 2.5rem); color:var(--pm-text);">
+              {{ d.title }}
+            </h1>
+          </div>
+
+          <!-- Designer row -->
+          <div style="display:flex; align-items:center; gap:0.875rem; padding:0.875rem; background:var(--pm-surface-alt); border-radius:var(--pm-radius); border:1px solid var(--pm-border);">
+            <div style="width:2.5rem; height:2.5rem; border-radius:50%; background:var(--pm-primary); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:800; font-size:1rem; font-family:'Plus Jakarta Sans',sans-serif; flex-shrink:0;">
+              {{ d.designer.charAt(0).toUpperCase() }}
+            </div>
+            <div style="flex:1; min-width:0;">
+              <p style="font-size:var(--pm-text-sm); font-weight:700; color:var(--pm-text); line-height:1.3;">{{ d.designer }}</p>
+              <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted);">{{ d.designerRank }} designer</p>
             </div>
             <app-designer-badge [rank]="d.designerRank" />
+            <div style="text-align:right; flex-shrink:0;">
+              <span class="pm-stars">{{ d.rating.toFixed(1) }} ★</span>
+              <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted); margin-top:0.1rem;">{{ d.sales }} sales</p>
+            </div>
           </div>
 
-          <p class="leading-7 text-sm mb-5" style="color:var(--pm-text-muted);">{{ d.description }}</p>
+          <!-- Product selector (shown only when multiple products available) -->
+          @if (supportedProducts().length > 1) {
+            <div>
+              <p class="pm-label" style="margin-bottom:0.625rem;">Choose product</p>
+              <div class="pm-product-tiles-list">
+                @for (prod of supportedProducts(); track prod.id) {
+                  <button
+                    type="button"
+                    class="pm-product-tile"
+                    [class.is-selected]="selectedProduct()?.id === prod.id"
+                    (click)="selectProduct(prod.id)"
+                  >
+                    <div class="pm-product-tile-thumb">
+                      @if (prod.images[0]) {
+                        <img [src]="prod.images[0]" [alt]="prod.name" style="width:100%; height:100%; object-fit:cover;" />
+                      }
+                    </div>
+                    <div style="flex:1; min-width:0;">
+                      <p style="font-size:var(--pm-text-sm); font-weight:700; color:var(--pm-text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ prod.name }}</p>
+                      <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted);">{{ prod.category }}</p>
+                    </div>
+                    <span style="font-size:var(--pm-text-sm); font-weight:700; color:var(--pm-text); white-space:nowrap; flex-shrink:0;">{{ prod.basePrice }} TND</span>
+                  </button>
+                }
+              </div>
+            </div>
+          }
 
-          <div class="flex flex-wrap gap-2 mb-5">
-            @for (tag of d.tags; track tag) {
-              <span class="pm-chip">{{ tag }}</span>
-            }
-          </div>
+          <!-- Color picker -->
+          @if (selectedProduct()?.colors?.length) {
+            <div>
+              <p class="pm-label" style="margin-bottom:0.625rem;">
+                Color —
+                <span style="font-weight:400; text-transform:none; letter-spacing:0; color:var(--pm-text);">{{ effectiveColor() }}</span>
+              </p>
+              <div style="display:flex; flex-wrap:wrap; gap:0.5rem;">
+                @for (color of selectedProduct()!.colors; track color) {
+                  <button
+                    type="button"
+                    class="pm-swatch-btn"
+                    [class.is-selected]="effectiveColor() === color"
+                    [style.background]="color"
+                    [title]="color"
+                    [attr.aria-label]="color"
+                    [attr.aria-pressed]="effectiveColor() === color"
+                    (click)="selectedColor.set(color)"
+                  ></button>
+                }
+              </div>
+            </div>
+          }
 
-          <!-- Stats row -->
-          <div class="grid grid-cols-3 gap-3 mb-5">
-            @for (stat of [
-              { val: d.views | number, label: 'views' },
-              { val: d.sales | number, label: 'sales' },
-              { val: d.price + ' TND', label: 'design fee' }
-            ]; track stat.label) {
-              <div style="background:var(--pm-surface-alt); border:1px solid var(--pm-border); border-radius:12px; padding:0.875rem; text-align:center;">
-                <p class="pm-heading font-bold text-lg" style="color:var(--pm-text);">{{ stat.val }}</p>
-                <p class="text-xs mt-0.5" style="color:var(--pm-text-muted);">{{ stat.label }}</p>
+          <!-- Size picker -->
+          @if (selectedProduct()?.sizes?.length) {
+            <div>
+              <p class="pm-label" style="margin-bottom:0.625rem;">Size</p>
+              <div style="display:flex; flex-wrap:wrap; gap:0.5rem;">
+                @for (size of selectedProduct()!.sizes; track size) {
+                  <button
+                    type="button"
+                    class="pm-size-btn"
+                    [class.is-selected]="effectiveSize() === size"
+                    (click)="selectedSize.set(size)"
+                  >{{ size }}</button>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Price breakdown -->
+          <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:1rem; padding:1rem; background:var(--pm-surface-alt); border-radius:var(--pm-radius); border:1px solid var(--pm-border);">
+            <div>
+              <p style="font-size:var(--pm-text-xs); font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--pm-text-muted);">Total from</p>
+              @if (totalPrice() !== null) {
+                <p class="pm-display" style="font-size:var(--pm-text-3xl); color:var(--pm-text); margin-top:0.1rem;">
+                  {{ totalPrice() }} <span style="font-size:var(--pm-text-base); font-weight:500; color:var(--pm-text-muted);">TND</span>
+                </p>
+              }
+            </div>
+            @if (selectedProduct()) {
+              <div style="text-align:right; flex-shrink:0;">
+                <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted);">From: {{ selectedProduct()!.basePrice }} TND</p>
+                <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted);">Platform fee: {{ platformMargin() }} TND</p>
               </div>
             }
           </div>
 
-          <div style="border-top:1px solid var(--pm-border); padding-top:1.25rem; display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap;">
-            <div>
-              <p class="text-sm font-semibold" style="color:var(--pm-text);">{{ d.designer }}</p>
-              <p class="text-xs mt-0.5" style="color:var(--pm-text-muted);">
-                {{ (d.conversionRate * 100).toFixed(1) }}% conversion · {{ (d.engagementRate * 100).toFixed(1) }}% engagement
-              </p>
-            </div>
-            <a class="pm-btn pm-btn-primary" style="min-height:2.75rem;" [routerLink]="['/customize', d.id]">Customize this design →</a>
+          <!-- Trust signals -->
+          <div class="pm-trust-inline">
+            <span class="pm-trust-inline-item">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 5v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+              Ships {{ selectedProduct()?.leadTimeDays ?? 5 }}–{{ (selectedProduct()?.leadTimeDays ?? 5) + 2 }} days
+            </span>
+            <span class="pm-trust-inline-item">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg>
+              30-day returns
+            </span>
+            <span class="pm-trust-inline-item">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              Quality guaranteed
+            </span>
+            @if (selectedPrinter()) {
+              <span class="pm-trust-inline-item">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+                {{ selectedPrinter()!.businessName }}
+              </span>
+            }
           </div>
+
+          <!-- Primary CTA -->
+          <a
+            class="pm-btn pm-btn-primary pm-btn-lg"
+            style="width:100%; justify-content:center;"
+            [routerLink]="['/customize', d.id]"
+            [queryParams]="{ product: selectedProduct()?.id, color: effectiveColor(), size: effectiveSize() }"
+          >
+            Preview this design →
+          </a>
+
+          <!-- Accordions -->
+          <div>
+            <details class="pm-accordion-item" open>
+              <summary class="pm-accordion-trigger">About this design</summary>
+              <div class="pm-accordion-body">{{ d.description }}</div>
+            </details>
+
+            @if (selectedProduct()) {
+              <details class="pm-accordion-item">
+                <summary class="pm-accordion-trigger">Product details</summary>
+                <div class="pm-accordion-body">
+                  <strong>Product:</strong> {{ selectedProduct()!.name }}<br>
+                  <strong>Category:</strong> {{ selectedProduct()!.category }}<br>
+                  <strong>Sizes:</strong> {{ selectedProduct()!.sizes.join(', ') }}<br>
+                  <strong>Colors:</strong> {{ selectedProduct()!.colors.join(', ') }}<br>
+                  <strong>Lead time:</strong> chosen at printer selection
+                </div>
+              </details>
+            }
+
+            <details class="pm-accordion-item">
+              <summary class="pm-accordion-trigger">Shipping & returns</summary>
+              <div class="pm-accordion-body">
+                Free shipping on orders over 150 TND. Standard delivery 3–7 business days across Tunisia.
+                Returns accepted within 30 days for unused, unworn items in original packaging.
+              </div>
+            </details>
+
+            <details class="pm-accordion-item">
+              <summary class="pm-accordion-trigger">About the designer</summary>
+              <div class="pm-accordion-body">
+                {{ d.designer }} is a {{ d.designerRank }} designer on Printymand with
+                {{ d.sales }} completed orders and a {{ d.rating.toFixed(1) }}/5 rating.
+              </div>
+            </details>
+          </div>
+
         </div>
       </div>
+
+      <!-- More by this designer -->
+      @if (moreByDesigner().length) {
+        <section style="margin-top:5rem; padding-top:3rem; border-top:1px solid var(--pm-border);">
+          <div style="margin-bottom:2rem;">
+            <p class="pm-kicker" style="margin-bottom:0.375rem;">From the same designer</p>
+            <h2 class="pm-display" style="font-size:clamp(1.5rem, 3vw, 2rem); color:var(--pm-text);">More by {{ d.designer }}</h2>
+          </div>
+          <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            @for (related of moreByDesigner(); track related.id) {
+              <app-design-card [design]="related" />
+            }
+          </div>
+        </section>
+      }
+
     </div>
-
-    <!-- Supported products -->
-    <section class="pm-section">
-      <div>
-        <p class="pm-kicker mb-1">Compatible with</p>
-        <h2 class="pm-heading font-bold text-2xl" style="color:var(--pm-text);">Supported products</h2>
-        <p class="text-sm mt-1" style="color:var(--pm-text-muted);">Each product can carry a different default placement and color set.</p>
-      </div>
-      <div class="pm-grid-3">
-        @for (product of supportedProducts(); track product.id) {
-          <app-product-card [product]="product" />
-        }
-      </div>
-    </section>
-
+  </div>
+} @else {
+  <div class="pm-container" style="padding:4rem 0;">
+    <div class="pm-empty">
+      <p>Design not found.</p>
+      <a routerLink="/marketplace" class="pm-btn pm-btn-secondary pm-btn-sm" style="margin-top:1rem; display:inline-flex;">← Browse marketplace</a>
+    </div>
   </div>
 }

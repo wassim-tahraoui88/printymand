@@ -1,6 +1,7 @@
 import { Injectable, computed, inject } from '@angular/core';
 import { demoAccounts } from '../data/mock';
 import type {
+  AccountStatus,
   Address,
   CustomerProfile,
   DesignerProfile,
@@ -99,6 +100,21 @@ export class AuthService {
 
   toggleUserSuspended(userId: number): void {
     this.store.toggleUserSuspended(userId);
+  }
+
+  setAccountStatus(userId: number, status: AccountStatus): void {
+    this.store.setAccountStatus(userId, status);
+  }
+
+  /** Current user's verification state (defaults to ACTIVE for legacy/customer accounts). */
+  accountStatus(): AccountStatus {
+    const user = this.user();
+    if (!user) return 'ACTIVE';
+    return user.accountStatus ?? (user.suspended ? 'SUSPENDED' : 'ACTIVE');
+  }
+
+  isVerified(): boolean {
+    return this.accountStatus() === 'ACTIVE';
   }
 
   dashboardPath(role: UserRole): string {

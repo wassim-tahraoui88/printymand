@@ -1,86 +1,173 @@
 <div class="pm-page">
 
+  <!-- ── PAGE HEADER ─────────────────────────────────────── -->
   <div>
-    <p class="pm-kicker mb-1">Checkout</p>
-    <h1 class="pm-heading font-bold text-3xl" style="color:var(--pm-text);">Your cart</h1>
-    <p class="text-sm mt-1" style="color:var(--pm-text-muted);">Review your items, enter shipping details, and place your order.</p>
+    <p class="pm-kicker mb-1">Cart</p>
+    <h1 class="pm-display" style="font-size:clamp(1.875rem, 4vw, 2.75rem); color:var(--pm-text);">Ready to pay</h1>
+    <p style="font-size:var(--pm-text-base); color:var(--pm-text-muted); margin-top:0.375rem;">
+      These requests were accepted by the printer. Choose a payment method and pay to start production.
+    </p>
   </div>
 
-  <div class="grid gap-6 lg:grid-cols-[1.3fr_0.7fr] lg:items-start">
+  @if (orders().length) {
+    <div class="grid gap-6 lg:grid-cols-[1.4fr_0.6fr] lg:items-start">
 
-    <!-- Cart items -->
-    <div class="pm-panel" style="padding:1.5rem;">
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="font-bold text-lg" style="color:var(--pm-text);">Items</h2>
-        <span class="pm-chip">{{ cart().items.length }} {{ cart().items.length === 1 ? 'item' : 'items' }}</span>
-      </div>
+      <!-- ── LEFT: Accepted orders + address ─────────────── -->
+      <div style="display:grid; gap:1.25rem;">
 
-      @if (cart().items.length) {
-        <div class="grid gap-3">
-          @for (item of cart().items; track item.id) {
-            <div style="border:1px solid var(--pm-border); border-radius:var(--pm-radius); padding:1rem; background:var(--pm-surface-alt);">
-              <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div class="min-w-0">
-                  <p class="font-semibold" style="color:var(--pm-text);">{{ item.design.title }}</p>
-                  <p class="text-sm mt-0.5" style="color:var(--pm-text-muted);">{{ item.product.name }} · {{ item.color }} · {{ item.size }}</p>
-                  <p class="text-sm" style="color:var(--pm-text-muted);">{{ item.printer?.businessName ?? 'Printer pending' }}</p>
-                  <p class="text-xs mt-1" style="color:var(--pm-text-soft);">x={{ item.placement.x }} · y={{ item.placement.y }} · scale={{ item.placement.scale }}</p>
-                </div>
-                <div class="flex items-center gap-3 shrink-0">
-                  <span class="pm-heading font-bold" style="color:var(--pm-text); font-size:1.1rem;">{{ item.lineTotal }} TND</span>
-                  <button type="button" class="pm-btn pm-btn-danger text-sm" (click)="removeItem(item.id)">Remove</button>
-                </div>
+        @for (order of orders(); track order.id) {
+          <div class="pm-panel" style="padding:1.5rem;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.25rem; flex-wrap:wrap; gap:0.5rem;">
+              <div>
+                <h2 class="pm-heading" style="font-size:var(--pm-text-lg); font-weight:700; color:var(--pm-text);">Order {{ order.id }}</h2>
+                <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted);">Accepted by {{ order.lines[0].printerName }}</p>
               </div>
+              <span class="pm-chip" style="background:var(--pm-success-soft); color:var(--pm-success); border-color:rgba(21,128,61,0.2);">Accepted — awaiting payment</span>
             </div>
-          }
-        </div>
-      } @else {
-        <div class="pm-empty">
-          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 1rem; opacity:0.3;"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-          Your cart is empty. Head to the <a routerLink="/marketplace" style="color:var(--pm-primary); font-weight:600;">marketplace</a> to find a design.
-        </div>
-      }
-    </div>
 
-    <!-- Order summary -->
-    <div class="pm-panel" style="padding:1.5rem;">
-      <h2 class="font-bold text-lg mb-4" style="color:var(--pm-text);">Order summary</h2>
+            <div style="display:grid; gap:0.875rem;">
+              @for (line of order.lines; track line.id) {
+                <div style="display:flex; gap:1rem; align-items:flex-start; padding:1rem; background:var(--pm-surface-alt); border:1px solid var(--pm-border); border-radius:var(--pm-radius);">
+                  <div style="width:3.5rem; height:3.5rem; border-radius:var(--pm-radius); overflow:hidden; flex-shrink:0; background:var(--pm-border);">
+                    <img [src]="line.designImage" [alt]="line.designTitle" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.display='none'" />
+                  </div>
+                  <div style="flex:1; min-width:0;">
+                    <p style="font-size:var(--pm-text-sm); font-weight:700; color:var(--pm-text); line-height:1.3;">{{ line.designTitle }}</p>
+                    <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted); margin-top:0.2rem;">{{ line.productName }} · {{ line.color }} · {{ line.size }}</p>
+                  </div>
+                  <span class="pm-heading" style="font-size:1.05rem; font-weight:800; color:var(--pm-text);">{{ line.price }} TND</span>
+                </div>
+              }
+            </div>
 
-      <div class="grid gap-4">
-        <label class="pm-field">
-          <span class="pm-label">Shipping address</span>
-          <textarea class="pm-textarea" style="min-height:80px;" [ngModel]="shippingAddress()" (ngModelChange)="shippingAddress.set($event)"></textarea>
-        </label>
+            <div style="border-top:1px solid var(--pm-border); margin-top:1rem; padding-top:1rem; display:flex; align-items:center; justify-content:space-between;">
+              <span style="font-size:var(--pm-text-sm); font-weight:700; color:var(--pm-text);">Total</span>
+              <span class="pm-display" style="font-size:var(--pm-text-2xl); color:var(--pm-text);">{{ order.total }} TND</span>
+            </div>
 
-        <label class="pm-field">
-          <span class="pm-label">Payment method</span>
-          <select class="pm-select" [ngModel]="paymentMethod()" (ngModelChange)="paymentMethod.set($event)">
-            <option value="card">Card</option>
-            <option value="d17">D17</option>
-            <option value="cash">Cash on delivery</option>
-          </select>
-        </label>
-
-        <div style="background:var(--pm-surface-alt); border:1px solid var(--pm-border); border-radius:var(--pm-radius); padding:1rem;">
-          <div class="flex items-center justify-between text-sm mb-2">
-            <span style="color:var(--pm-text-muted);">Items</span>
-            <span style="color:var(--pm-text); font-weight:600;">{{ cart().items.length }}</span>
+            <button
+              type="button"
+              class="pm-btn pm-btn-primary pm-btn-lg"
+              style="width:100%; justify-content:center; margin-top:1rem;"
+              [disabled]="busy() === order.id"
+              (click)="pay(order)"
+            >
+              {{ busy() === order.id ? 'Processing…' : 'Pay ' + order.total + ' TND →' }}
+            </button>
           </div>
-          <div style="border-top:1px solid var(--pm-border); padding-top:0.75rem; display:flex; align-items:center; justify-content:space-between;">
-            <span class="font-semibold" style="color:var(--pm-text);">Total</span>
-            <span class="pm-heading font-bold" style="color:var(--pm-text); font-size:1.5rem;">{{ cart().total }} TND</span>
-          </div>
-        </div>
-
-        @if (error()) {
-          <div style="background:var(--pm-danger-soft); border:1px solid rgba(185,28,28,0.2); border-radius:10px; padding:0.75rem 1rem; font-size:0.85rem; color:var(--pm-danger);">{{ error() }}</div>
         }
 
-        <button type="button" class="pm-btn pm-btn-primary w-full" style="min-height:3rem;" [disabled]="busy()" (click)="placeOrder()">
-          {{ busy() ? 'Processing…' : 'Place order →' }}
-        </button>
-      </div>
-    </div>
+        <!-- Shipping address -->
+        <div class="pm-panel" style="padding:1.5rem;">
+          <h2 class="pm-heading" style="font-size:var(--pm-text-lg); font-weight:700; color:var(--pm-text); margin-bottom:1.25rem;">Shipping address</h2>
+          <div style="display:grid; gap:1rem;">
+            <div class="grid gap-4 sm:grid-cols-2">
+              <label class="pm-field">
+                <span class="pm-label">Full name</span>
+                <input class="pm-input" type="text" [ngModel]="recipientName()" (ngModelChange)="recipientName.set($event)" placeholder="Your full name" />
+              </label>
+              <label class="pm-field">
+                <span class="pm-label">Phone</span>
+                <input class="pm-input" type="tel" [ngModel]="phone()" (ngModelChange)="phone.set($event)" placeholder="+216 XX XXX XXX" />
+              </label>
+            </div>
+            <label class="pm-field">
+              <span class="pm-label">Address line</span>
+              <input class="pm-input" type="text" [ngModel]="addressLine()" (ngModelChange)="addressLine.set($event)" placeholder="Street, building, apartment…" />
+            </label>
+            <div class="grid gap-4 sm:grid-cols-2">
+              <label class="pm-field">
+                <span class="pm-label">City</span>
+                <input class="pm-input" type="text" [ngModel]="city()" (ngModelChange)="city.set($event)" placeholder="City" />
+              </label>
+              <label class="pm-field">
+                <span class="pm-label">Governorate</span>
+                <select class="pm-select" [ngModel]="governorate()" (ngModelChange)="governorate.set($event)">
+                  <option value="">Select governorate</option>
+                  @for (gov of governorates; track gov) {
+                    <option [value]="gov">{{ gov }}</option>
+                  }
+                </select>
+              </label>
+            </div>
+          </div>
+        </div>
 
-  </div>
+      </div>
+
+      <!-- ── RIGHT: Payment method ───────────────────────── -->
+      <div style="display:grid; gap:1.25rem;">
+        <div class="pm-panel" style="padding:1.5rem;">
+          <h2 class="pm-heading" style="font-size:var(--pm-text-lg); font-weight:700; color:var(--pm-text); margin-bottom:1.25rem;">Payment method</h2>
+          <div style="display:grid; gap:0.75rem;">
+
+            <button type="button" class="pm-payment-tile" [class.is-selected]="paymentMethod() === 'd17'" (click)="paymentMethod.set('d17')">
+              <div class="pm-payment-tile-icon" style="background:linear-gradient(135deg,#00B4D8,#0096B4);">D17</div>
+              <div style="flex:1; min-width:0;">
+                <p style="font-size:var(--pm-text-sm); font-weight:700; color:var(--pm-text);">D17 — Mobile payment</p>
+                <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted);">Pay instantly via the D17 app</p>
+              </div>
+              <span class="pm-chip" style="background:var(--pm-success-soft); color:var(--pm-success); border-color:rgba(21,128,61,0.2); flex-shrink:0;">Popular</span>
+            </button>
+
+            <button type="button" class="pm-payment-tile" [class.is-selected]="paymentMethod() === 'paymee'" (click)="paymentMethod.set('paymee')">
+              <div class="pm-payment-tile-icon" style="background:linear-gradient(135deg,#7C3AED,#5B21B6);">PM</div>
+              <div style="flex:1; min-width:0;">
+                <p style="font-size:var(--pm-text-sm); font-weight:700; color:var(--pm-text);">Paymee</p>
+                <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted);">Secure Tunisian payment gateway</p>
+              </div>
+            </button>
+
+            <button type="button" class="pm-payment-tile" [class.is-selected]="paymentMethod() === 'card'" (click)="paymentMethod.set('card')">
+              <div class="pm-payment-tile-icon" style="background:linear-gradient(135deg,var(--pm-primary),var(--pm-primary-deep));">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+              </div>
+              <div style="flex:1; min-width:0;">
+                <p style="font-size:var(--pm-text-sm); font-weight:700; color:var(--pm-text);">Debit / credit card</p>
+                <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted);">VISA, Mastercard</p>
+              </div>
+            </button>
+
+            <button type="button" class="pm-payment-tile" [class.is-selected]="paymentMethod() === 'cash'" (click)="paymentMethod.set('cash')">
+              <div class="pm-payment-tile-icon" style="background:linear-gradient(135deg,var(--pm-warning),#9A6A00);">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>
+              </div>
+              <div style="flex:1; min-width:0;">
+                <p style="font-size:var(--pm-text-sm); font-weight:700; color:var(--pm-text);">Cash on delivery</p>
+                <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted);">Pay when your order arrives</p>
+              </div>
+            </button>
+
+          </div>
+
+          @if (error()) {
+            <div style="background:var(--pm-danger-soft); border:1px solid rgba(185,28,28,0.2); border-radius:var(--pm-radius); padding:0.75rem 1rem; font-size:var(--pm-text-sm); color:var(--pm-danger); margin-top:1rem;">
+              {{ error() }}
+            </div>
+          }
+
+          <div class="pm-trust-inline" style="margin-top:1.25rem;">
+            <span class="pm-trust-inline-item">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              Secure checkout
+            </span>
+            <span class="pm-trust-inline-item">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg>
+              30-day returns
+            </span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  } @else {
+    <div class="pm-empty pm-panel" style="padding:3.5rem 1.5rem;">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 1rem; opacity:0.3;" aria-hidden="true"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+      <p style="font-size:var(--pm-text-sm); font-weight:600; color:var(--pm-text);">Nothing to pay yet</p>
+      <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted); margin-top:0.375rem;">
+        Send a request to a printer first. Once it's accepted, it shows up here for payment.
+      </p>
+      <a routerLink="/marketplace" class="pm-btn pm-btn-primary pm-btn-sm" style="margin-top:1rem; display:inline-flex;">Browse marketplace →</a>
+    </div>
+  }
 </div>

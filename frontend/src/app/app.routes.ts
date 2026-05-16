@@ -18,6 +18,9 @@ import { PrinterDashboardPageComponent } from './pages/printer-dashboard.page';
 import { PrinterProfilePageComponent } from './pages/printer-profile.page';
 import { AdminDashboardPageComponent } from './pages/admin-dashboard.page';
 import { AdminProfilePageComponent } from './pages/admin-profile.page';
+import { UploadDesignPageComponent } from './pages/upload-design.page';
+import { VerificationPendingPageComponent } from './pages/verification-pending.page';
+import { NotificationsPageComponent } from './pages/notifications.page';
 import { NotFoundPageComponent } from './pages/not-found.page';
 import { authRoleGuard } from './guards/auth-role.guard';
 
@@ -32,11 +35,14 @@ export const routes: Routes = [
       { path: 'design/:id', component: DesignDetailPageComponent },
       { path: 'login', component: LoginPageComponent },
       { path: 'register', component: RegisterPageComponent },
+      { path: 'verification-pending', component: VerificationPendingPageComponent },
+      { path: 'upload-design', component: UploadDesignPageComponent, canActivate: [authRoleGuard()] },
       { path: 'customize/:id', component: CustomizePageComponent, canActivate: [authRoleGuard()] },
       { path: 'printers/:id', component: PrinterSelectionPageComponent, canActivate: [authRoleGuard()] },
       { path: 'checkout', component: CheckoutPageComponent, canActivate: [authRoleGuard()] },
       { path: 'cart', component: CheckoutPageComponent, canActivate: [authRoleGuard()] },
       { path: 'tracking/:orderId', component: OrderTrackingPageComponent, canActivate: [authRoleGuard()] },
+      { path: 'notifications', component: NotificationsPageComponent, canActivate: [authRoleGuard()] },
       { path: 'dashboard', component: CustomerDashboardPageComponent, canActivate: [authRoleGuard()] },
       { path: 'profile', component: CustomerProfilePageComponent, canActivate: [authRoleGuard()] },
       { path: 'designer-dashboard', component: DesignerDashboardPageComponent, canActivate: [authRoleGuard(['designer'])] },

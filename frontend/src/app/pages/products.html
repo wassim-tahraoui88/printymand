@@ -1,46 +1,101 @@
 <div class="pm-page">
 
-  <!-- Filter bar -->
+  <!-- ── PAGE HEADER ─────────────────────────────────────── -->
+  <div>
+    <p class="pm-kicker mb-1">Catalog</p>
+    <h1 class="pm-display" style="font-size:clamp(1.875rem, 4vw, 2.75rem); color:var(--pm-text);">
+      Product catalog
+    </h1>
+    <p style="font-size:var(--pm-text-base); color:var(--pm-text-muted); margin-top:0.375rem;">
+      {{ products().length }} product{{ products().length === 1 ? '' : 's' }} — each backed by a verified Tunisian printer.
+    </p>
+  </div>
+
+  <!-- ── FILTER BAR ──────────────────────────────────────── -->
   <div class="pm-panel" style="padding:1.25rem;">
-    <div class="grid gap-3 lg:grid-cols-[1.6fr_1fr_auto]">
-      <label class="pm-field">
-        <span class="pm-label">Search</span>
+    <div class="grid gap-3 md:grid-cols-[1fr_auto]">
+
+      <!-- Left: search + category pills -->
+      <div class="grid gap-3">
+
+        <!-- Search -->
         <div style="position:relative;">
-          <svg style="position:absolute; left:0.75rem; top:50%; transform:translateY(-50%); opacity:0.4;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          <input class="pm-input" style="padding-left:2.25rem;" [ngModel]="search()" (ngModelChange)="search.set($event)" placeholder="Search products or printers…" />
+          <svg style="position:absolute; left:0.875rem; top:50%; transform:translateY(-50%); opacity:0.38; pointer-events:none;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input
+            class="pm-input w-full"
+            style="padding-left:2.5rem;"
+            [ngModel]="search()"
+            (ngModelChange)="search.set($event)"
+            placeholder="Search products or printers…"
+            aria-label="Search products"
+          />
         </div>
-      </label>
-      <label class="pm-field">
-        <span class="pm-label">Category</span>
-        <select class="pm-select" [ngModel]="category()" (ngModelChange)="category.set($event)">
-          @for (entry of categories(); track entry) {
-            <option [value]="entry">{{ entry }}</option>
+
+        <!-- Category pills -->
+        <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+          <button
+            type="button"
+            class="pm-btn pm-btn-sm"
+            [class.pm-btn-primary]="category() === 'All'"
+            [class.pm-btn-secondary]="category() !== 'All'"
+            (click)="category.set('All')"
+          >All</button>
+          @for (cat of categories().slice(1); track cat) {
+            <button
+              type="button"
+              class="pm-btn pm-btn-sm"
+              [class.pm-btn-primary]="category() === cat"
+              [class.pm-btn-secondary]="category() !== cat"
+              (click)="category.set(cat)"
+            >{{ cat }}</button>
           }
-        </select>
-      </label>
-      <div class="flex items-end">
-        <button type="button" class="pm-btn pm-btn-secondary" (click)="search.set(''); category.set('All')">Reset</button>
+        </div>
+      </div>
+
+      <!-- Right: sort + clear -->
+      <div class="flex flex-wrap items-end gap-2">
+        <label class="pm-field" style="min-width:160px;">
+          <span class="pm-label">Sort by</span>
+          <select class="pm-select" [ngModel]="sort()" (ngModelChange)="sort.set($event)">
+            @for (opt of sortOptions; track opt.value) {
+              <option [value]="opt.value">{{ opt.label }}</option>
+            }
+          </select>
+        </label>
+
+        @if (activeFilterCount() > 0) {
+          <button
+            type="button"
+            class="pm-btn pm-btn-secondary pm-btn-sm self-end"
+            (click)="clearFilters()"
+            style="white-space:nowrap;"
+          >
+            Clear
+            <span class="pm-chip" style="background:var(--pm-primary-soft); color:var(--pm-primary); border-color:rgba(199,74,43,0.2);">{{ activeFilterCount() }}</span>
+          </button>
+        }
       </div>
     </div>
   </div>
 
-  <!-- Header -->
-  <div>
-    <p class="pm-kicker mb-1">Catalog</p>
-    <h1 class="pm-heading font-bold text-3xl" style="color:var(--pm-text);">Product catalog</h1>
-    <p class="text-sm mt-1" style="color:var(--pm-text-muted);">{{ products().length }} products — each backed by a verified Tunisian printer.</p>
-  </div>
-
+  <!-- ── RESULTS GRID ─────────────────────────────────────── -->
   @if (products().length) {
-    <div class="pm-grid-3">
+    <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       @for (product of products(); track product.id) {
         <app-product-card [product]="product" />
       }
     </div>
   } @else {
-    <div class="pm-empty">
-      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 1rem; opacity:0.3;"><path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
-      No products matched that search.
+    <div class="pm-empty" role="status">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 1rem; opacity:0.28;" aria-hidden="true">
+        <path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
+        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+      </svg>
+      <p style="font-size:var(--pm-text-base); font-weight:600; color:var(--pm-text);">No products match your search</p>
+      <p style="font-size:var(--pm-text-sm); margin-top:0.5rem;">
+        Try different keywords or
+        <button type="button" class="pm-btn pm-btn-ghost pm-btn-sm" style="display:inline-flex;" (click)="clearFilters()">clear all filters</button>.
+      </p>
     </div>
   }
 

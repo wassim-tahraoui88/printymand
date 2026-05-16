@@ -3,12 +3,11 @@ import { Component, computed, input } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import type { Design } from '../models/types';
 import { ImageWithFallbackComponent } from './image-with-fallback.component';
-import { DesignerBadgeComponent } from './rank-badge.component';
 
 @Component({
   selector: 'app-design-card',
   standalone: true,
-  imports: [CommonModule, RouterModule, ImageWithFallbackComponent, DesignerBadgeComponent],
+  imports: [CommonModule, RouterModule, ImageWithFallbackComponent],
   templateUrl: './design-card.html',
 })
 export class DesignCardComponent {

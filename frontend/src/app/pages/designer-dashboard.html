@@ -1,206 +1,387 @@
-<app-dashboard-shell
-  eyebrow="Designer"
-  title="Designer studio"
-  description="Upload designs, assign products, tune placement, track analytics, and manage payouts."
->
-  <div dashboard-actions>
-    <a class="pm-btn pm-btn-secondary text-sm" routerLink="/designer-profile">Profile settings</a>
-  </div>
+<div class="pm-dashboard">
 
-  <div class="pm-grid-4">
-    <app-stat-card label="Active designs" [value]="totals().designs.toString()" hint="portfolio" />
-    <app-stat-card label="Orders" [value]="totals().orders.toString()" hint="line items sold" />
-    <app-stat-card label="Earnings" [value]="totals().earnings.toFixed(0) + ' TND'" hint="estimated" />
-    <app-stat-card label="Avg conversion" [value]="(totals().avgConversion * 100).toFixed(1) + '%'" hint="across designs" />
-  </div>
+  <!-- Sidebar -->
+  <app-dashboard-sidebar
+    [nav]="nav"
+    [activeTab]="activeTab()"
+    roleLabel="Designer"
+    [mobileOpen]="sidebarOpen()"
+    (tabChange)="activeTab.set($event)"
+    (mobileClose)="sidebarOpen.set(false)"
+  />
 
-  <div class="grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
+  <!-- Main -->
+  <div class="pm-dashboard-main">
 
-    <!-- Upload form -->
-    <div class="pm-panel" style="padding:1.5rem;">
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="font-bold text-lg" style="color:var(--pm-text);">{{ designForm().id ? 'Edit design' : 'Upload design' }}</h2>
-        <span class="pm-chip">{{ designForm().id ? 'Editing' : 'New' }}</span>
+    <!-- Section header -->
+    <div class="pm-dash-header">
+      <button type="button" class="pm-sidebar-mobile-btn" style="align-items:center; justify-content:center; background:transparent; cursor:pointer;" (click)="sidebarOpen.set(true)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <div style="flex:1; min-width:0;">
+        @switch (activeTab()) {
+          @case ('overview')  { <h1 class="pm-heading" style="font-size:var(--pm-text-lg); font-weight:800; color:var(--pm-text);">Overview</h1> }
+          @case ('designs')   { <h1 class="pm-heading" style="font-size:var(--pm-text-lg); font-weight:800; color:var(--pm-text);">Designs</h1> }
+          @case ('analytics') { <h1 class="pm-heading" style="font-size:var(--pm-text-lg); font-weight:800; color:var(--pm-text);">Analytics</h1> }
+          @case ('payouts')   { <h1 class="pm-heading" style="font-size:var(--pm-text-lg); font-weight:800; color:var(--pm-text);">Payouts</h1> }
+          @case ('profile')   { <h1 class="pm-heading" style="font-size:var(--pm-text-lg); font-weight:800; color:var(--pm-text);">Profile</h1> }
+        }
       </div>
-      <div class="grid gap-3">
-        <label class="pm-field">
-          <span class="pm-label">Title</span>
-          <input class="pm-input" [ngModel]="designForm().title" (ngModelChange)="designForm.set({ ...designForm(), title: $event })" placeholder="Give your design a name" />
-        </label>
-        <label class="pm-field">
-          <span class="pm-label">Category</span>
-          <input class="pm-input" [ngModel]="designForm().category" (ngModelChange)="designForm.set({ ...designForm(), category: $event })" placeholder="e.g. Typography, Culture" />
-        </label>
-        <label class="pm-field">
-          <span class="pm-label">Description</span>
-          <textarea class="pm-textarea" style="min-height:80px;" [ngModel]="designForm().description" (ngModelChange)="designForm.set({ ...designForm(), description: $event })" placeholder="Describe your design…"></textarea>
-        </label>
-        <label class="pm-field">
-          <span class="pm-label">Price (TND)</span>
-          <input class="pm-input" type="number" [ngModel]="designForm().price" (ngModelChange)="designForm.set({ ...designForm(), price: +$event })" />
-        </label>
-        <label class="pm-field">
-          <span class="pm-label">Image URL</span>
-          <input class="pm-input" [ngModel]="designForm().image" (ngModelChange)="designForm.set({ ...designForm(), image: $event })" placeholder="https://…" />
-        </label>
-        <label class="pm-field">
-          <span class="pm-label">Or upload file</span>
-          <input class="pm-input" type="file" accept="image/*" (change)="onDesignFileChange($event)" />
-        </label>
-        <button type="button" class="pm-btn pm-btn-primary text-sm" (click)="saveDesign()">
-          {{ designForm().id ? 'Update design' : 'Upload design' }}
-        </button>
-      </div>
+      <span class="pm-chip">{{ user()?.name ?? 'Designer' }}</span>
     </div>
 
-    <!-- Portfolio -->
-    <div class="pm-panel" style="padding:1.5rem;">
-      <h2 class="font-bold text-lg mb-4" style="color:var(--pm-text);">Portfolio</h2>
-      <div class="grid gap-4">
-        @for (design of designs(); track design.id) {
-          <div style="border:1px solid var(--pm-border); border-radius:var(--pm-radius); padding:1rem; background:var(--pm-surface-alt);">
-            <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-              <div class="min-w-0">
-                <div class="flex items-center gap-2 flex-wrap">
-                  <p class="font-semibold" style="color:var(--pm-text);">{{ design.title }}</p>
-                  <span class="pm-chip" [style.background]="design.status === 'ACTIVE' ? 'var(--pm-success-soft)' : 'var(--pm-surface-alt)'"
-                        [style.color]="design.status === 'ACTIVE' ? 'var(--pm-success)' : 'var(--pm-text-muted)'">{{ design.status }}</span>
-                </div>
-                <p class="text-xs mt-1" style="color:var(--pm-text-muted);">{{ design.category }} · {{ design.price }} TND · {{ design.sales }} sales</p>
-              </div>
-              <div class="flex gap-2 shrink-0">
-                <button type="button" class="pm-btn pm-btn-secondary text-xs" (click)="editDesign(design.id)">Edit</button>
-                <button type="button" class="pm-btn pm-btn-secondary text-xs" (click)="toggleArchive(design.id, design.status === 'ARCHIVED')">
-                  {{ design.status === 'ARCHIVED' ? 'Restore' : 'Archive' }}
-                </button>
-              </div>
-            </div>
+    <!-- Section body -->
+    <div class="pm-dash-body">
 
-            <!-- Product assignments -->
-            <div style="border-top:1px solid var(--pm-border); margin-top:0.875rem; padding-top:0.875rem;">
-              <p class="text-xs font-bold tracking-widest uppercase mb-2" style="color:var(--pm-text-muted);">Assigned products</p>
-              <div class="grid gap-1.5 sm:grid-cols-2">
-                @for (product of workflow.products(); track product.id) {
-                  <label class="flex items-center gap-2 text-xs" style="color:var(--pm-text-muted); cursor:pointer;">
-                    <input type="checkbox" [checked]="design.assignedProductIds.includes(product.id)"
-                      (change)="updateAssignment(design.id, product.id, $any($event.target).checked)" />
-                    {{ product.name }} · {{ product.printerName }}
-                  </label>
-                }
-              </div>
+      <!-- ── OVERVIEW ──────────────────────────────────── -->
+      @if (activeTab() === 'overview') {
 
-              @for (productId of design.assignedProductIds; track productId) {
-                @if (workflow.getProductById(productId); as product) {
-                  <div style="background:var(--pm-surface); border:1px solid var(--pm-border); border-radius:10px; padding:0.75rem; margin-top:0.75rem;">
-                    <p class="text-xs font-semibold mb-2" style="color:var(--pm-text);">{{ product.name }} — placement defaults</p>
-                    <div class="grid gap-2 grid-cols-2 sm:grid-cols-4">
-                      <label class="pm-field">
-                        <span class="pm-label">X</span>
-                        <input class="pm-input" type="number"
-                          [ngModel]="workflow.getDesignConfig(design.id, product.id)?.defaultPlacement?.x ?? 50"
-                          (ngModelChange)="updatePlacement(design.id, product.id, 'x', +$event)" />
-                      </label>
-                      <label class="pm-field">
-                        <span class="pm-label">Y</span>
-                        <input class="pm-input" type="number"
-                          [ngModel]="workflow.getDesignConfig(design.id, product.id)?.defaultPlacement?.y ?? 50"
-                          (ngModelChange)="updatePlacement(design.id, product.id, 'y', +$event)" />
-                      </label>
-                      <label class="pm-field">
-                        <span class="pm-label">Scale</span>
-                        <input class="pm-input" type="number" step="0.01"
-                          [ngModel]="workflow.getDesignConfig(design.id, product.id)?.defaultPlacement?.scale ?? 0.4"
-                          (ngModelChange)="updatePlacement(design.id, product.id, 'scale', +$event)" />
-                      </label>
-                      <label class="pm-field">
-                        <span class="pm-label">Colors</span>
-                        <input class="pm-input"
-                          [ngModel]="(workflow.getDesignConfig(design.id, product.id)?.availableColors ?? product.colors).join(', ')"
-                          (ngModelChange)="updateAvailableColors(design.id, product.id, $event)" />
-                      </label>
-                    </div>
+        <div class="pm-stat-grid">
+          <div class="pm-stat-card">
+            <span class="pm-stat-label">Total earnings</span>
+            <span class="pm-stat-value">{{ totals().earnings }} <span style="font-size:var(--pm-text-sm); font-weight:600;">TND</span></span>
+          </div>
+          <div class="pm-stat-card">
+            <span class="pm-stat-label">Active designs</span>
+            <span class="pm-stat-value">{{ totals().designs }}</span>
+          </div>
+          <div class="pm-stat-card">
+            <span class="pm-stat-label">Orders fulfilled</span>
+            <span class="pm-stat-value">{{ totals().orders }}</span>
+          </div>
+          <div class="pm-stat-card">
+            <span class="pm-stat-label">Avg conversion</span>
+            <span class="pm-stat-value">{{ totals().avgConversion | number:'1.1-1' }}%</span>
+          </div>
+        </div>
+
+        <!-- Top designs -->
+        <div class="pm-panel" style="padding:1.5rem;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.25rem;">
+            <h2 class="pm-heading" style="font-size:var(--pm-text-base); font-weight:700; color:var(--pm-text);">Your designs</h2>
+            <button type="button" class="pm-btn pm-btn-ghost pm-btn-sm" (click)="activeTab.set('designs')">Manage →</button>
+          </div>
+          @if (designs().length) {
+            <div style="display:grid; gap:0.625rem;">
+              @for (design of designs().slice(0, 5); track design.id) {
+                <div style="display:flex; align-items:center; gap:1rem; padding:0.75rem 1rem; background:var(--pm-surface-alt); border:1px solid var(--pm-border); border-radius:var(--pm-radius);">
+                  <div style="width:2.75rem; height:2.75rem; border-radius:6px; overflow:hidden; flex-shrink:0; background:var(--pm-border);">
+                    <img [src]="design.image" [alt]="design.title" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.display='none'" />
                   </div>
-                }
+                  <div style="flex:1; min-width:0;">
+                    <p style="font-size:var(--pm-text-sm); font-weight:700; color:var(--pm-text);">{{ design.title }}</p>
+                    <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted);">{{ design.category }}</p>
+                  </div>
+                  <span class="pm-chip" [style]="design.status === 'ACTIVE' ? 'background:var(--pm-success-soft); color:var(--pm-success);' : ''">{{ design.status }}</span>
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="pm-empty">
+              <p style="font-size:var(--pm-text-sm); color:var(--pm-text-muted);">No designs yet. Upload your first one.</p>
+              <button type="button" class="pm-btn pm-btn-primary pm-btn-sm" style="margin-top:1rem;" (click)="activeTab.set('designs')">Upload design →</button>
+            </div>
+          }
+        </div>
+
+        <!-- Recent payouts -->
+        @if (payouts().length) {
+          <div class="pm-panel" style="padding:1.5rem;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.25rem;">
+              <h2 class="pm-heading" style="font-size:var(--pm-text-base); font-weight:700; color:var(--pm-text);">Recent payouts</h2>
+              <button type="button" class="pm-btn pm-btn-ghost pm-btn-sm" (click)="activeTab.set('payouts')">View all →</button>
+            </div>
+            <div style="display:grid; gap:0.5rem;">
+              @for (payout of payouts().slice(0, 3); track payout.id) {
+                <div style="display:flex; align-items:center; gap:1rem; padding:0.625rem 0.875rem; background:var(--pm-surface-alt); border:1px solid var(--pm-border); border-radius:var(--pm-radius);">
+                  <div style="flex:1;">
+                    <p style="font-size:var(--pm-text-sm); font-weight:600; color:var(--pm-text);">Ref: {{ payout.reference }}</p>
+                    <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted);">Due {{ payout.dueDate }}</p>
+                  </div>
+                  <span class="pm-heading" style="font-size:var(--pm-text-base); font-weight:800; color:var(--pm-text);">{{ payout.amount }} TND</span>
+                  <span class="pm-chip">{{ payout.status }}</span>
+                </div>
               }
             </div>
           </div>
         }
-        @if (!designs().length) {
-          <div class="pm-empty">No designs uploaded yet.</div>
+      }
+
+      <!-- ── DESIGNS (2-step upload wizard) ─────────────── -->
+      @if (activeTab() === 'designs') {
+
+        <!-- Step indicator -->
+        <div class="pm-panel" style="padding:1rem 1.5rem; display:flex; align-items:center; gap:1rem;">
+          <span class="pm-chip" [style.background]="wizardStep() === 1 ? 'var(--pm-primary-soft)' : 'var(--pm-surface-alt)'" [style.color]="wizardStep() === 1 ? 'var(--pm-primary)' : 'var(--pm-text-muted)'">1 · Upload artwork</span>
+          <span style="color:var(--pm-text-soft);">→</span>
+          <span class="pm-chip" [style.background]="wizardStep() === 2 ? 'var(--pm-primary-soft)' : 'var(--pm-surface-alt)'" [style.color]="wizardStep() === 2 ? 'var(--pm-primary)' : 'var(--pm-text-muted)'">2 · Products &amp; customization</span>
+        </div>
+
+        @if (uploadError()) {
+          <div style="background:var(--pm-danger-soft); border:1px solid rgba(185,28,28,0.2); border-radius:var(--pm-radius); padding:0.75rem 1rem; font-size:var(--pm-text-sm); color:var(--pm-danger);">{{ uploadError() }}</div>
         }
-      </div>
-    </div>
-  </div>
 
-  <div class="grid gap-6 lg:grid-cols-[1fr_0.85fr] lg:items-start">
-
-    <!-- Analytics -->
-    <div class="pm-panel" style="padding:1.5rem;">
-      <h2 class="font-bold text-lg mb-4" style="color:var(--pm-text);">Analytics</h2>
-      <div style="overflow:auto;">
-        <table class="pm-table">
-          <thead>
-            <tr>
-              <th>Design</th>
-              <th>Sales</th>
-              <th>Views</th>
-              <th>Conversion</th>
-              <th>Revenue</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (entry of analytics(); track entry.designId) {
-              <tr>
-                <td><span class="font-medium" style="color:var(--pm-text);">{{ workflow.getDesignById(entry.designId)?.title }}</span></td>
-                <td>{{ entry.sales }}</td>
-                <td>{{ entry.views }}</td>
-                <td>{{ (entry.conversion * 100).toFixed(1) }}%</td>
-                <td><span class="font-semibold" style="color:var(--pm-text);">{{ entry.revenue.toFixed(0) }} TND</span></td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- Earnings & profile -->
-    <div class="pm-panel" style="padding:1.5rem;">
-      <h2 class="font-bold text-lg mb-4" style="color:var(--pm-text);">Earnings & profile</h2>
-
-      @if (payouts().length) {
-        <div class="grid gap-2 mb-4">
-          @for (payout of payouts(); track payout.id) {
-            <div style="border:1px solid var(--pm-border); border-radius:var(--pm-radius); padding:0.875rem; background:var(--pm-surface-alt); display:flex; align-items:center; justify-content:space-between; gap:1rem;">
-              <div>
-                <p class="font-semibold text-sm" style="color:var(--pm-text);">{{ payout.amount }} TND</p>
-                <p class="text-xs mt-0.5" style="color:var(--pm-text-muted);">{{ payout.reference }} · due {{ payout.dueDate }}</p>
+        <!-- STEP 1 -->
+        @if (wizardStep() === 1) {
+          <div class="pm-panel" style="padding:1.5rem;">
+            <h2 class="pm-heading" style="font-size:var(--pm-text-base); font-weight:700; color:var(--pm-text); margin-bottom:1.25rem;">
+              {{ designForm().id ? 'Edit design' : 'Upload new design' }}
+            </h2>
+            <div style="display:grid; gap:1rem; max-width:600px;">
+              <div class="grid gap-4 sm:grid-cols-2">
+                <label class="pm-field">
+                  <span class="pm-label">Title</span>
+                  <input class="pm-input" type="text" [ngModel]="designForm().title" (ngModelChange)="designForm.set({...designForm(), title: $event})" placeholder="Design title" />
+                </label>
+                <label class="pm-field">
+                  <span class="pm-label">Category</span>
+                  <select class="pm-select" [ngModel]="designForm().category" (ngModelChange)="designForm.set({...designForm(), category: $event})">
+                    @for (cat of ['Culture','Sport','Art','Minimalist','Typography','Nature','Tech','Humor']; track cat) {
+                      <option [value]="cat">{{ cat }}</option>
+                    }
+                  </select>
+                </label>
               </div>
-              <span class="pm-chip">{{ payout.status }}</span>
+              <label class="pm-field">
+                <span class="pm-label">Default description</span>
+                <textarea class="pm-input" rows="2" [ngModel]="designForm().description" (ngModelChange)="designForm.set({...designForm(), description: $event})" style="resize:vertical;"></textarea>
+              </label>
+              <label class="pm-field">
+                <span class="pm-label">Artwork file (PNG/SVG, max 1 MB)</span>
+                <input class="pm-input" type="file" accept="image/*" (change)="onDesignFileChange($event)" style="padding:0.375rem;" />
+              </label>
+
+              <div style="background:var(--pm-surface-alt); border:1px solid var(--pm-border); border-radius:var(--pm-radius); padding:0.875rem 1rem;">
+                <p style="font-size:var(--pm-text-sm); color:var(--pm-text); font-weight:600;">Royalty per sale: {{ royaltyPerSale() }} TND</p>
+                <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted); margin-top:0.25rem; line-height:1.6;">
+                  The platform sets a fixed royalty per sale. Printers set the base price and the platform adds its margin.
+                </p>
+              </div>
+
+              @if (designForm().image) {
+                <img [src]="designForm().image" alt="Preview" style="width:6rem; height:6rem; object-fit:cover; border-radius:var(--pm-radius); border:1px solid var(--pm-border);" />
+              }
+              <div>
+                <button type="button" class="pm-btn pm-btn-primary" (click)="goToStep2()">Next: products &amp; customization →</button>
+              </div>
             </div>
+          </div>
+        }
+
+        <!-- STEP 2: product checkboxes → per-product customization sections -->
+        @if (wizardStep() === 2) {
+          <div class="pm-panel" style="padding:1.5rem;">
+            <h2 class="pm-heading" style="font-size:var(--pm-text-base); font-weight:700; color:var(--pm-text); margin-bottom:0.5rem;">
+              Choose products &amp; customize per product
+            </h2>
+            <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted); margin-bottom:1.25rem;">
+              Tick each product your design can be printed on. A customization section opens for each — set the placement, colors and copy for that product.
+            </p>
+
+            <div style="display:grid; gap:1rem;">
+              @for (product of allProducts(); track product.id) {
+                <div style="border:1px solid var(--pm-border); border-radius:var(--pm-radius); overflow:hidden;">
+                  <label style="display:flex; align-items:center; gap:0.625rem; padding:0.875rem 1rem; background:var(--pm-surface-alt); cursor:pointer;">
+                    <input type="checkbox" [checked]="configFor(product.id).selected" (change)="toggleProduct(product.id, $any($event.target).checked)" />
+                    <span style="font-size:var(--pm-text-sm); font-weight:700; color:var(--pm-text);">{{ product.name }}</span>
+                    <span style="font-size:var(--pm-text-xs); color:var(--pm-text-muted);">· {{ product.category }}</span>
+                  </label>
+
+                  @if (configFor(product.id).selected) {
+                    <div style="padding:1.25rem; display:grid; gap:1.25rem; lg:grid-template-columns:280px 1fr;" class="grid lg:grid-cols-[280px_1fr]">
+                      <!-- Live preview -->
+                      <div style="position:relative; aspect-ratio:1; border:1px solid var(--pm-border); border-radius:var(--pm-radius); overflow:hidden; background:var(--pm-surface-alt);">
+                        <img [src]="product.images[0] || designForm().image" [alt]="product.name" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.display='none'" />
+                        <div
+                          style="position:absolute; transform:translate(-50%,-50%);"
+                          [style.left.%]="configFor(product.id).x"
+                          [style.top.%]="configFor(product.id).y"
+                        >
+                          <img [src]="designForm().image" alt="design" [style.width.rem]="3.5 * configFor(product.id).scale * 2" style="object-fit:contain; border:1px dashed var(--pm-primary); background:rgba(255,255,255,0.7); padding:2px;" />
+                        </div>
+                      </div>
+
+                      <!-- Per-product settings -->
+                      <div style="display:grid; gap:0.875rem;">
+                        <label class="pm-field">
+                          <span class="pm-label">Title for this product</span>
+                          <input class="pm-input" type="text" [ngModel]="configFor(product.id).title" (ngModelChange)="patchConfig(product.id, { title: $event })" [placeholder]="designForm().title" />
+                        </label>
+                        <label class="pm-field">
+                          <span class="pm-label">Description for this product</span>
+                          <textarea class="pm-input" rows="2" [ngModel]="configFor(product.id).description" (ngModelChange)="patchConfig(product.id, { description: $event })" [placeholder]="designForm().description" style="resize:vertical;"></textarea>
+                        </label>
+                        <label class="pm-field">
+                          <span class="pm-label">Available colors (comma separated)</span>
+                          <input class="pm-input" type="text" [ngModel]="configFor(product.id).colors" (ngModelChange)="patchConfig(product.id, { colors: $event })" />
+                        </label>
+                        <div class="grid gap-4 sm:grid-cols-3">
+                          <label class="pm-field">
+                            <span class="pm-label">X: {{ configFor(product.id).x }}%</span>
+                            <input class="pm-range" type="range" min="15" max="85" step="1" [value]="configFor(product.id).x" (input)="patchConfig(product.id, { x: +$any($event.target).value })" />
+                          </label>
+                          <label class="pm-field">
+                            <span class="pm-label">Y: {{ configFor(product.id).y }}%</span>
+                            <input class="pm-range" type="range" min="15" max="85" step="1" [value]="configFor(product.id).y" (input)="patchConfig(product.id, { y: +$any($event.target).value })" />
+                          </label>
+                          <label class="pm-field">
+                            <span class="pm-label">Scale: {{ (configFor(product.id).scale * 100).toFixed(0) }}%</span>
+                            <input class="pm-range" type="range" min="0.1" max="1" step="0.01" [value]="configFor(product.id).scale" (input)="patchConfig(product.id, { scale: +$any($event.target).value })" />
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+
+            <div style="display:flex; gap:0.75rem; border-top:1px solid var(--pm-border); margin-top:1.25rem; padding-top:1.25rem;">
+              <button type="button" class="pm-btn pm-btn-secondary" (click)="backToStep1()">← Back</button>
+              <button type="button" class="pm-btn pm-btn-primary" style="flex:1; justify-content:center;" (click)="publishDesign()">
+                {{ designForm().id ? 'Save design' : 'Publish design' }}
+              </button>
+            </div>
+            <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted); margin-top:0.75rem;">
+              Published designs are reviewed by an admin before appearing in the marketplace.
+            </p>
+          </div>
+        }
+
+        <!-- Portfolio list -->
+        @if (designs().length) {
+          <div style="display:grid; gap:1rem;">
+            @for (design of designs(); track design.id) {
+              <div class="pm-panel" style="padding:1.25rem 1.5rem;">
+                <div style="display:flex; align-items:flex-start; gap:1rem; flex-wrap:wrap;">
+                  <div style="width:4rem; height:4rem; border-radius:8px; overflow:hidden; flex-shrink:0; background:var(--pm-border);">
+                    <img [src]="design.image" [alt]="design.title" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.display='none'" />
+                  </div>
+                  <div style="flex:1; min-width:0;">
+                    <p style="font-size:var(--pm-text-base); font-weight:700; color:var(--pm-text);">{{ design.title }}</p>
+                    <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted);">{{ design.category }} · {{ design.assignedProductIds.length }} product(s)</p>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:0.5rem; flex-shrink:0; flex-wrap:wrap;">
+                    <span class="pm-chip">{{ design.status }}</span>
+                    <span class="pm-chip">{{ design.moderation ?? 'APPROVED' }}</span>
+                    <button type="button" class="pm-btn pm-btn-ghost pm-btn-sm" (click)="editDesign(design.id)">Edit</button>
+                    <button type="button" class="pm-btn pm-btn-ghost pm-btn-sm" (click)="toggleArchive(design.id, design.status === 'ARCHIVED')">
+                      {{ design.status === 'ARCHIVED' ? 'Restore' : 'Archive' }}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      }
+
+      <!-- ── ANALYTICS ──────────────────────────────────── -->
+      @if (activeTab() === 'analytics') {
+        @if (analytics().length) {
+          <div class="pm-panel" style="padding:0; overflow:hidden;">
+            <table style="width:100%; border-collapse:collapse; font-size:var(--pm-text-sm);">
+              <thead>
+                <tr style="border-bottom:1px solid var(--pm-border); background:var(--pm-surface-alt);">
+                  <th style="text-align:left; padding:0.875rem 1.25rem; font-size:var(--pm-text-xs); font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--pm-text-muted);">Design</th>
+                  <th style="text-align:right; padding:0.875rem 1.25rem; font-size:var(--pm-text-xs); font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--pm-text-muted);">Views</th>
+                  <th style="text-align:right; padding:0.875rem 1.25rem; font-size:var(--pm-text-xs); font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--pm-text-muted);">Orders</th>
+                  <th style="text-align:right; padding:0.875rem 1.25rem; font-size:var(--pm-text-xs); font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--pm-text-muted);">Conversion</th>
+                  <th style="text-align:right; padding:0.875rem 1.25rem; font-size:var(--pm-text-xs); font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--pm-text-muted);">Revenue</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of analytics(); track row.designId) {
+                  <tr style="border-bottom:1px solid var(--pm-border);">
+                    <td style="padding:0.875rem 1.25rem; color:var(--pm-text); font-weight:600;">{{ workflow.getDesignById(row.designId)?.title ?? row.designId }}</td>
+                    <td style="padding:0.875rem 1.25rem; text-align:right; color:var(--pm-text-muted);">{{ row.views }}</td>
+                    <td style="padding:0.875rem 1.25rem; text-align:right; color:var(--pm-text-muted);">{{ row.sales }}</td>
+                    <td style="padding:0.875rem 1.25rem; text-align:right; color:var(--pm-text-muted);">{{ row.conversion | number:'1.1-1' }}%</td>
+                    <td style="padding:0.875rem 1.25rem; text-align:right; font-weight:700; color:var(--pm-text);">{{ row.revenue | number:'1.0-0' }} TND</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <div class="pm-empty pm-panel" style="padding:3rem 1.5rem;">
+            <p style="font-size:var(--pm-text-sm); color:var(--pm-text-muted);">No analytics data yet.</p>
+          </div>
+        }
+      }
+
+      <!-- ── PAYOUTS ─────────────────────────────────────── -->
+      @if (activeTab() === 'payouts') {
+
+        <!-- Balance + request (spec "Earnings & Performance") -->
+        <div class="pm-panel" style="padding:1.5rem;">
+          <div style="display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:1rem;">
+            <div>
+              <p class="pm-stat-label">Available balance</p>
+              <p class="pm-heading" style="font-size:var(--pm-text-2xl); font-weight:800; color:var(--pm-text);">{{ payoutBalance() }} TND</p>
+              <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted); margin-top:0.25rem;">
+                Minimum payout: {{ payoutThreshold() }} TND · Royalty per sale: {{ royaltyPerSale() }} TND
+              </p>
+            </div>
+            <div style="text-align:right;">
+              <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted);">Level</p>
+              <p class="pm-heading" style="font-size:var(--pm-text-lg); font-weight:800; color:var(--pm-text);">{{ level() }}</p>
+              <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted);">Sales score: {{ salesScore() }}</p>
+            </div>
+            <button type="button" class="pm-btn pm-btn-primary" [disabled]="!canRequestPayout()" (click)="requestPayout()">
+              Request payout
+            </button>
+          </div>
+          @if (payoutMsg()) {
+            <p style="font-size:var(--pm-text-sm); color:var(--pm-text-muted); margin-top:0.875rem;">{{ payoutMsg() }}</p>
           }
+        </div>
+
+        @if (payouts().length) {
+          <div style="display:grid; gap:0.875rem;">
+            @for (payout of payouts(); track payout.id) {
+              <div class="pm-panel" style="padding:1.25rem 1.5rem; display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
+                <div style="flex:1; min-width:0;">
+                  <p style="font-size:var(--pm-text-base); font-weight:700; color:var(--pm-text);">Ref: {{ payout.reference }}</p>
+                  <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted);">Due {{ payout.dueDate }}</p>
+                </div>
+                <span class="pm-heading" style="font-size:var(--pm-text-xl); font-weight:800; color:var(--pm-text);">{{ payout.amount }} TND</span>
+                <span class="pm-chip">{{ payout.status }}</span>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="pm-empty pm-panel" style="padding:3rem 1.5rem;">
+            <p style="font-size:var(--pm-text-sm); color:var(--pm-text-muted);">No payouts yet.</p>
+          </div>
+        }
+      }
+
+      <!-- ── PROFILE ─────────────────────────────────────── -->
+      @if (activeTab() === 'profile') {
+        <div class="pm-panel" style="padding:1.5rem;">
+          <h2 class="pm-heading" style="font-size:var(--pm-text-base); font-weight:700; color:var(--pm-text); margin-bottom:1.25rem;">Designer profile</h2>
+          <div style="display:grid; gap:1rem; max-width:560px;">
+            <label class="pm-field">
+              <span class="pm-label">Display name</span>
+              <input class="pm-input" type="text" [value]="user()?.name ?? ''" (change)="auth.updateProfile({name: $any($event.target).value})" />
+            </label>
+            <label class="pm-field">
+              <span class="pm-label">Bio</span>
+              <textarea class="pm-input" rows="3" [value]="user()?.designerProfile?.bio ?? ''" (change)="auth.updateDesignerProfile({bio: $any($event.target).value})" style="resize:vertical;"></textarea>
+            </label>
+            <label class="pm-field">
+              <span class="pm-label">Portfolio links (one per line)</span>
+              <textarea class="pm-input" rows="4" [ngModel]="profileLinks()" (ngModelChange)="profileLinks.set($event)" placeholder="https://…" style="resize:vertical;"></textarea>
+            </label>
+            <div>
+              <button type="button" class="pm-btn pm-btn-primary" (click)="saveProfile()">Save profile</button>
+            </div>
+          </div>
         </div>
       }
 
-      <div style="border-top:1px solid var(--pm-border); padding-top:1rem;" class="grid gap-3">
-        <label class="pm-field">
-          <span class="pm-label">Profile picture URL</span>
-          <input class="pm-input" [ngModel]="user()?.designerProfile?.profilePicture" (ngModelChange)="auth.updateDesignerProfile({ profilePicture: $event })" />
-        </label>
-        <label class="pm-field">
-          <span class="pm-label">Banner URL</span>
-          <input class="pm-input" [ngModel]="user()?.designerProfile?.banner" (ngModelChange)="auth.updateDesignerProfile({ banner: $event })" />
-        </label>
-        <label class="pm-field">
-          <span class="pm-label">Bio</span>
-          <textarea class="pm-textarea" style="min-height:80px;" [ngModel]="user()?.designerProfile?.bio" (ngModelChange)="auth.updateDesignerProfile({ bio: $event })"></textarea>
-        </label>
-        <label class="pm-field">
-          <span class="pm-label">Portfolio links (one per line)</span>
-          <textarea class="pm-textarea" style="min-height:80px;" [ngModel]="profileLinks()" (ngModelChange)="profileLinks.set($event)"></textarea>
-        </label>
-        <button type="button" class="pm-btn pm-btn-primary text-sm" (click)="saveProfile()">Save profile</button>
-      </div>
     </div>
   </div>
 
-</app-dashboard-shell>
+</div>

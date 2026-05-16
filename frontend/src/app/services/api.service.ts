@@ -1,6 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { environment } from '../../environments/environment';
 import type {
   ApiDesign,
   ApiOrder,
@@ -22,7 +23,8 @@ import type {
 @Injectable({ providedIn: 'root' })
 export class ApiService {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = '/api/v1';
+  /** Backend base URL — configured per environment (see src/environments). */
+  private readonly baseUrl = environment.apiBaseUrl;
 
   private buildParams(params?: Record<string, string | number | undefined>): HttpParams {
     let httpParams = new HttpParams();
@@ -126,7 +128,101 @@ export class ApiService {
     return firstValueFrom(this.http.get<AuthResponse['user']>(`${this.baseUrl}/auth/me`, this.requestOptions()));
   }
 
-  submitReview(orderId: number | string, review: ReviewPayload): Promise<{ success: boolean }> {
+  submitReview(orderId: number | string, review: ReviewPayload & { target?: string; designId?: number; printerId?: number }): Promise<{ success: boolean }> {
     return firstValueFrom(this.http.post<{ success: boolean }>(`${this.baseUrl}/reviews/${orderId}`, review, this.requestOptions()));
+  }
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // Backend integration contract (spec "Order Flow (Revised)" + ER model).
+  // These map 1:1 to PlatformStoreService mutations. When the NestJS backend is
+  // ready, set environment.useRealApi=true and implement these endpoints; the
+  // mock store already calls the relevant ones in try/catch.
+  // ───────────────────────────────────────────────────────────────────────────
+
+  /** Spec step 1-2: submit an order request (no payment yet). */
+  submitOrderRequest(payload: PlaceOrderPayload): Promise<{ orderId: number | string }> {
+    return firstValueFrom(this.http.post<{ orderId: number | string }>(`${this.baseUrl}/order-requests`, payload, this.requestOptions()));
+  }
+
+  /** Spec step 3: printer accepts a request. */
+  acceptOrderRequest(orderId: number | string): Promise<{ success: boolean }> {
+    return firstValueFrom(this.http.post<{ success: boolean }>(`${this.baseUrl}/order-requests/${orderId}/accept`, {}, this.requestOptions()));
+  }
+
+  /** Spec step 3: printer rejects a request. */
+  rejectOrderRequest(orderId: number | string, reason?: string): Promise<{ success: boolean }> {
+    return firstValueFrom(this.http.post<{ success: boolean }>(`${this.baseUrl}/order-requests/${orderId}/reject`, { reason }, this.requestOptions()));
+  }
+
+  /** Customer cancels a request before the printer decides. */
+  cancelOrderRequest(orderId: number | string): Promise<{ success: boolean }> {
+    return firstValueFrom(this.http.post<{ success: boolean }>(`${this.baseUrl}/order-requests/${orderId}/cancel`, {}, this.requestOptions()));
+  }
+
+  /** Spec step 4-5: pay an accepted order. */
+  payOrder(orderId: number | string): Promise<{ success: boolean }> {
+    return firstValueFrom(this.http.post<{ success: boolean }>(`${this.baseUrl}/orders/${orderId}/pay`, {}, this.requestOptions()));
+  }
+
+  /** Printer fulfillment progression (Confirmed → Printing → Shipped → Delivered). */
+  updateOrderLineStatus(orderId: number | string, lineId: number, status: string): Promise<{ success: boolean }> {
+    return firstValueFrom(this.http.patch<{ success: boolean }>(`${this.baseUrl}/orders/${orderId}/lines/${lineId}`, { status }, this.requestOptions()));
+  }
+
+  // ── Profiles ──
+  saveDesignerProfile(payload: unknown): Promise<{ success: boolean }> {
+    return firstValueFrom(this.http.put<{ success: boolean }>(`${this.baseUrl}/profiles/designer`, payload, this.requestOptions()));
+  }
+  savePrinterProfile(payload: unknown): Promise<{ success: boolean }> {
+    return firstValueFrom(this.http.put<{ success: boolean }>(`${this.baseUrl}/profiles/printer`, payload, this.requestOptions()));
+  }
+  saveCustomerProfile(payload: unknown): Promise<{ success: boolean }> {
+    return firstValueFrom(this.http.put<{ success: boolean }>(`${this.baseUrl}/profiles/customer`, payload, this.requestOptions()));
+  }
+  setPrinterAvailability(status: string): Promise<{ success: boolean }> {
+    return firstValueFrom(this.http.patch<{ success: boolean }>(`${this.baseUrl}/profiles/printer/availability`, { status }, this.requestOptions()));
+  }
+
+  // ── Printer products (offerings) ──
+  savePrinterProduct(payload: unknown): Promise<{ success: boolean }> {
+    return firstValueFrom(this.http.post<{ success: boolean }>(`${this.baseUrl}/printer-products`, payload, this.requestOptions()));
+  }
+  deletePrinterProduct(productId: number): Promise<{ success: boolean }> {
+    return firstValueFrom(this.http.delete<{ success: boolean }>(`${this.baseUrl}/printer-products/${productId}`, this.requestOptions()));
+  }
+
+  // ── Designs & moderation ──
+  saveDesign(payload: unknown): Promise<{ id: number }> {
+    return firstValueFrom(this.http.post<{ id: number }>(`${this.baseUrl}/designs`, payload, this.requestOptions()));
+  }
+  moderateDesign(designId: number, decision: string, reason?: string): Promise<{ success: boolean }> {
+    return firstValueFrom(this.http.post<{ success: boolean }>(`${this.baseUrl}/admin/designs/${designId}/moderate`, { decision, reason }, this.requestOptions()));
+  }
+
+  // ── Payouts ──
+  requestDesignerPayout(): Promise<{ success: boolean }> {
+    return firstValueFrom(this.http.post<{ success: boolean }>(`${this.baseUrl}/payouts/designer/request`, {}, this.requestOptions()));
+  }
+  getPayouts(): Promise<unknown> {
+    return firstValueFrom(this.http.get(`${this.baseUrl}/payouts`, this.requestOptions()));
+  }
+
+  // ── Notifications ──
+  getNotifications(): Promise<unknown> {
+    return firstValueFrom(this.http.get(`${this.baseUrl}/notifications`, this.requestOptions()));
+  }
+  markNotificationRead(id: number): Promise<{ success: boolean }> {
+    return firstValueFrom(this.http.patch<{ success: boolean }>(`${this.baseUrl}/notifications/${id}/read`, {}, this.requestOptions()));
+  }
+
+  // ── Admin ──
+  setAccountStatus(userId: number, status: string): Promise<{ success: boolean }> {
+    return firstValueFrom(this.http.patch<{ success: boolean }>(`${this.baseUrl}/admin/users/${userId}/status`, { status }, this.requestOptions()));
+  }
+  updatePlatformSettings(payload: unknown): Promise<{ success: boolean }> {
+    return firstValueFrom(this.http.put<{ success: boolean }>(`${this.baseUrl}/admin/platform-settings`, payload, this.requestOptions()));
+  }
+  toggleFeatured(targetType: string, targetId: number): Promise<{ success: boolean }> {
+    return firstValueFrom(this.http.post<{ success: boolean }>(`${this.baseUrl}/admin/featured`, { targetType, targetId }, this.requestOptions()));
   }
 }

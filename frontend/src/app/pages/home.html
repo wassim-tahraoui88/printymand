@@ -1,100 +1,412 @@
-<div class="pm-page">
+<!-- ============================================================
+     HOME PAGE — Printymand
+     Each section is full-bleed width; inner content constrained by .pm-container
+     ============================================================ -->
 
-  <!-- HERO -->
-  <section class="pm-hero" style="padding: 3rem 2.5rem;">
-    <div class="grid gap-10 lg:grid-cols-[1fr_auto] lg:items-center">
-      <div style="position:relative; z-index:1;">
-        <span class="pm-kicker mb-4 block">Tunisia's first print-on-demand platform</span>
-        <h1 class="pm-heading font-extrabold leading-[1.08] tracking-tight text-white" style="font-size:clamp(2.2rem, 5vw, 3.6rem); max-width:700px;">
-          Design it. Print it.<br />
-          <span style="opacity:0.75;">Ship it across Tunisia.</span>
-        </h1>
-        <p class="mt-5 leading-7 text-white/70" style="max-width:520px; font-size:1rem;">
-          Connect with talented designers, choose your products, and get them printed by verified local printers. 100% Tunisian, end-to-end.
+<!-- ── 1. EDITORIAL HERO ─────────────────────────────────── -->
+<section class="pm-home-hero" aria-label="Hero">
+  <div class="pm-container" style="position:relative; z-index:1;">
+    <div class="grid items-center gap-10 lg:grid-cols-[1fr_360px] xl:grid-cols-[1fr_420px] lg:gap-12">
+
+      <!-- Left: copy -->
+      <div>
+        <p class="pm-kicker mb-5" style="color:rgba(232,162,58,0.85); letter-spacing:0.18em;">
+          Tunisia's first print-on-demand platform
         </p>
-        <div class="flex flex-wrap gap-3 mt-8">
-          <a class="pm-btn pm-btn-primary" style="min-height:3rem; padding:0 1.6rem; font-size:0.95rem;" [routerLink]="primaryLink()">{{ primaryLabel() }}</a>
-          <a class="pm-btn" style="min-height:3rem; padding:0 1.4rem; font-size:0.95rem; background:rgba(255,255,255,0.1); color:#fff; border-color:rgba(255,255,255,0.2); backdrop-filter:blur(8px);" routerLink="/marketplace">Browse designs</a>
-          <a class="pm-btn" style="min-height:3rem; padding:0 1.4rem; font-size:0.95rem; background:rgba(255,255,255,0.1); color:#fff; border-color:rgba(255,255,255,0.2); backdrop-filter:blur(8px);" routerLink="/products">Browse products</a>
+
+        <h1 class="pm-display text-white" style="font-size:clamp(2.75rem, 6vw, 4.75rem); max-width:580px;">
+          Design it.<br />
+          Print it.<br />
+          <span style="color:var(--pm-secondary);">Worn in Tunisia.</span>
+        </h1>
+
+        <p class="mt-6 text-white/65" style="max-width:460px; font-size:var(--pm-text-lg); line-height:1.7;">
+          Connect with local designers, pick your product, and have it printed by a verified Tunisian print shop. End-to-end, 100% local.
+        </p>
+
+        <div class="flex flex-wrap items-center gap-3 mt-9">
+          <a class="pm-btn pm-btn-primary pm-btn-lg" [routerLink]="primaryLink()">
+            {{ primaryLabel() }}
+          </a>
+          <a class="pm-btn pm-btn-glass pm-btn-lg" routerLink="/marketplace">
+            Browse designs
+          </a>
+        </div>
+
+        <!-- Inline stat strip -->
+        <div class="flex flex-wrap items-center gap-6 mt-10 pt-8" style="border-top:1px solid rgba(255,255,255,0.11);">
+          <div>
+            <p class="pm-display text-white" style="font-size:1.875rem; line-height:1.1;">{{ platformOverview().users }}</p>
+            <p style="font-size:var(--pm-text-xs); font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:rgba(255,255,255,0.42); margin-top:0.2rem;">Designers</p>
+          </div>
+
+          <span class="pm-divider-vertical" style="border-color:rgba(255,255,255,0.11);"></span>
+
+          <div>
+            <p class="pm-display text-white" style="font-size:1.875rem; line-height:1.1;">{{ platformOverview().orders }}</p>
+            <p style="font-size:var(--pm-text-xs); font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:rgba(255,255,255,0.42); margin-top:0.2rem;">Orders fulfilled</p>
+          </div>
+
+          <span class="pm-divider-vertical" style="border-color:rgba(255,255,255,0.11);"></span>
+
+          <div>
+            <p class="pm-display pm-gradient-text" style="font-size:1.875rem; line-height:1.1;">{{ platformOverview().revenue }} TND</p>
+            <p style="font-size:var(--pm-text-xs); font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:rgba(255,255,255,0.42); margin-top:0.2rem;">Platform GMV</p>
+          </div>
         </div>
       </div>
 
-      <!-- Stats column -->
-      <div class="grid gap-3 lg:w-56 shrink-0" style="position:relative; z-index:1;">
-        @for (stat of [
-          { label: 'Designers', val: platformOverview().users, unit: 'creators' },
-          { label: 'Orders placed', val: platformOverview().orders, unit: 'fulfilled' },
-          { label: 'Revenue', val: platformOverview().revenue + ' TND', unit: 'platform GMV' }
-        ]; track stat.label) {
-          <div style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); border-radius:14px; padding:1rem 1.1rem; backdrop-filter:blur(12px);">
-            <p style="font-size:0.7rem; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:rgba(255,255,255,0.55);">{{ stat.label }}</p>
-            <p class="pm-heading font-bold text-white" style="font-size:1.6rem; margin-top:0.25rem; letter-spacing:-0.02em;">{{ stat.val }}</p>
-            <p style="font-size:0.72rem; color:rgba(255,255,255,0.45); margin-top:0.1rem;">{{ stat.unit }}</p>
-          </div>
-        }
-      </div>
-    </div>
-  </section>
+      <!-- Right: design mosaic — hidden below lg, proper grid column above -->
+      @if (featuredDesigns().length >= 2) {
+        <div class="hidden lg:grid grid-cols-2 gap-2.5" style="position:relative; z-index:1;">
+          @for (design of featuredDesigns().slice(0, 4); track design.id; let i = $index) {
+            <a
+              [routerLink]="['/design', design.id]"
+              class="group relative block overflow-hidden"
+              style="aspect-ratio:1; border:1px solid rgba(255,255,255,0.1);"
+              [style.border-radius]="i === 0 ? '16px 4px 4px 4px' :
+                                     i === 1 ? '4px 16px 4px 4px' :
+                                     i === 2 ? '4px 4px 4px 16px' :
+                                               '4px 4px 16px 4px'"
+            >
+              <app-image-with-fallback
+                [src]="design.image"
+                [alt]="design.title"
+                [imgClass]="'w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.06]'"
+              />
+              <div style="position:absolute; inset:0; background:linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 55%); display:flex; flex-direction:column; justify-content:flex-end; padding:0.875rem;">
+                <p style="font-size:var(--pm-text-xs); font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:rgba(255,255,255,0.5);">{{ design.category }}</p>
+                <p class="line-clamp-1 pm-heading" style="font-size:var(--pm-text-sm); font-weight:700; color:#fff; margin-top:0.15rem;">{{ design.title }}</p>
+              </div>
+            </a>
+          }
+        </div>
+      }
 
-  <!-- FEATURED DESIGNS -->
-  <section class="pm-section">
-    <div class="flex items-end justify-between gap-4">
-      <div>
-        <p class="pm-kicker mb-1">Marketplace</p>
-        <h2 class="pm-heading font-bold text-2xl" style="color:var(--pm-text);">Featured designs</h2>
-        <p class="text-sm mt-1" style="color:var(--pm-text-muted);">Hand-picked by our team — ready for customization.</p>
-      </div>
-      <a class="pm-btn pm-btn-secondary text-sm" routerLink="/marketplace">View all →</a>
     </div>
-    <div class="pm-grid-3">
+  </div>
+</section>
+
+<!-- ── 2. TRUST STRIP ─────────────────────────────────────── -->
+<div class="pm-trust-strip" role="region" aria-label="Platform guarantees">
+  <div class="pm-container">
+    <div class="pm-trust-strip-inner">
+
+      <span class="pm-trust-item">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg>
+        Free returns inside Tunisia
+      </span>
+
+      <span class="pm-trust-sep" aria-hidden="true"></span>
+
+      <span class="pm-trust-item">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Pay with D17, card, or cash
+      </span>
+
+      <span class="pm-trust-sep" aria-hidden="true"></span>
+
+      <span class="pm-trust-item">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Verified local printers
+      </span>
+
+      <span class="pm-trust-sep" aria-hidden="true"></span>
+
+      <span class="pm-trust-item">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        4.8 ★ average rating
+      </span>
+
+      <span class="pm-trust-sep" aria-hidden="true"></span>
+
+      <span class="pm-trust-item">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        100% Tunisian, end-to-end
+      </span>
+
+    </div>
+  </div>
+</div>
+
+<!-- ── 3. FEATURED DESIGNS ────────────────────────────────── -->
+<section style="padding-block: 5rem;" aria-label="Featured designs">
+  <div class="pm-container">
+
+    <div class="flex flex-wrap items-end justify-between gap-4 mb-10">
+      <div>
+        <p class="pm-kicker mb-2">Marketplace</p>
+        <h2 class="pm-display" style="font-size:clamp(1.75rem, 3.5vw, 2.625rem); color:var(--pm-text);">Featured designs</h2>
+        <p class="mt-2" style="font-size:var(--pm-text-base); color:var(--pm-text-muted); max-width:400px; line-height:1.6;">
+          Hand-picked by our team — each one ready to customize and order.
+        </p>
+      </div>
+      <a class="pm-btn pm-btn-secondary" routerLink="/marketplace">
+        All designs
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </a>
+    </div>
+
+    <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
       @for (design of featuredDesigns(); track design.id) {
         <app-design-card [design]="design" />
       }
     </div>
-  </section>
 
-  <!-- FEATURED PRODUCTS -->
-  <section class="pm-section">
-    <div class="flex items-end justify-between gap-4">
+  </div>
+</section>
+
+<!-- ── 4. SHOP BY MOOD ───────────────────────────────────── -->
+<section class="pm-section-warm" aria-label="Browse by mood">
+  <div class="pm-container">
+
+    <div class="flex flex-wrap items-end justify-between gap-4 mb-8">
       <div>
-        <p class="pm-kicker mb-1">Catalog</p>
-        <h2 class="pm-heading font-bold text-2xl" style="color:var(--pm-text);">Printer-backed products</h2>
-        <p class="text-sm mt-1" style="color:var(--pm-text-muted);">Every product is offered by a verified Tunisian print shop.</p>
+        <p class="pm-kicker mb-2">Browse by mood</p>
+        <h2 class="pm-display" style="font-size:clamp(1.75rem, 3.5vw, 2.625rem); color:var(--pm-text);">Find your style</h2>
       </div>
-      <a class="pm-btn pm-btn-secondary text-sm" routerLink="/products">View products →</a>
+      <a class="pm-btn pm-btn-secondary" routerLink="/marketplace" style="font-size:var(--pm-text-sm);">All categories →</a>
     </div>
-    <div class="pm-grid-3">
-      @for (product of featuredProducts(); track product.id) {
-        <app-product-card [product]="product" />
+
+    <div class="pm-mood-grid">
+      @for (mood of moodCategories; track mood.label) {
+        <a
+          class="pm-mood-tile"
+          [routerLink]="['/marketplace']"
+          [queryParams]="{ category: mood.category }"
+          [attr.aria-label]="'Browse ' + mood.label + ' designs'"
+        >
+          <span class="pm-mood-tile-icon" aria-hidden="true">{{ mood.icon }}</span>
+          <span class="pm-mood-tile-label">{{ mood.label }}</span>
+        </a>
       }
     </div>
-  </section>
 
-  <!-- ROLE CARDS -->
-  <section class="pm-grid-3">
-    <article class="pm-panel" style="border-top:3px solid var(--pm-primary);">
-      <p class="pm-kicker mb-2">Customer</p>
-      <h3 class="pm-heading font-bold text-lg mb-2" style="color:var(--pm-text);">Order, track & review</h3>
-      <p class="text-sm leading-6 mb-4" style="color:var(--pm-text-muted);">Browse the marketplace, configure your perfect item, and track delivery through every step.</p>
-      <a class="pm-btn pm-btn-secondary self-start text-sm" routerLink="/dashboard">Open workspace →</a>
-    </article>
+  </div>
+</section>
 
-    <article class="pm-panel" style="border-top:3px solid var(--pm-secondary);">
-      <p class="pm-kicker mb-2" style="color:var(--pm-secondary);">Designer</p>
-      <h3 class="pm-heading font-bold text-lg mb-2" style="color:var(--pm-text);">Upload, sell & earn</h3>
-      <p class="text-sm leading-6 mb-4" style="color:var(--pm-text-muted);">Upload your artwork, assign it to products, and earn royalties on every sale.</p>
-      <a class="pm-btn pm-btn-secondary self-start text-sm" routerLink="/designer-dashboard">Open studio →</a>
-    </article>
+<!-- ── 5. MAKER SPOTLIGHT ─────────────────────────────────── -->
+<section style="padding-block: 5rem;" aria-label="Meet the makers">
+  <div class="pm-container">
 
-    <article class="pm-panel" style="border-top:3px solid var(--pm-accent);">
-      <p class="pm-kicker mb-2" style="color:var(--pm-accent);">Printer & Admin</p>
-      <h3 class="pm-heading font-bold text-lg mb-2" style="color:var(--pm-text);">Fulfill & moderate</h3>
-      <p class="text-sm leading-6 mb-4" style="color:var(--pm-text-muted);">Manage your print catalog, fulfill incoming orders, and keep the platform running smoothly.</p>
-      <div class="flex flex-wrap gap-2">
-        <a class="pm-btn pm-btn-secondary text-sm" routerLink="/printer-dashboard">Printer ops</a>
-        <a class="pm-btn pm-btn-secondary text-sm" routerLink="/admin">Admin panel</a>
+    <div class="mb-10">
+      <p class="pm-kicker mb-2">Behind the platform</p>
+      <h2 class="pm-display" style="font-size:clamp(1.75rem, 3.5vw, 2.625rem); color:var(--pm-text);">Meet the makers</h2>
+      <p class="mt-2" style="font-size:var(--pm-text-base); color:var(--pm-text-muted); max-width:480px; line-height:1.6;">
+        Real designers and verified print shops in Tunisia — people behind every order.
+      </p>
+    </div>
+
+    <div class="grid gap-6 md:grid-cols-2">
+
+      <!-- Featured designer card -->
+      @if (featuredDesigns().length) {
+        <article class="pm-maker-card">
+          <div class="pm-maker-banner">
+            <app-image-with-fallback
+              [src]="featuredDesigns()[0].image"
+              [alt]="'Work by ' + featuredDesigns()[0].designer"
+              [imgClass]="'w-full h-full object-cover opacity-60 mix-blend-luminosity'"
+            />
+            <div style="position:absolute; inset:0; background:linear-gradient(135deg, rgba(44,27,8,0.75), rgba(90,40,16,0.45)); pointer-events:none;"></div>
+            <span class="pm-chip absolute top-3 left-3" style="background:rgba(255,255,255,0.12); color:#fff; border-color:rgba(255,255,255,0.2); backdrop-filter:blur(8px);">
+              Designer
+            </span>
+          </div>
+
+          <div class="pm-maker-body">
+            <div class="flex items-end gap-3">
+              <div class="pm-maker-avatar" [attr.aria-label]="featuredDesigns()[0].designer">
+                {{ featuredDesigns()[0].designer.charAt(0).toUpperCase() }}
+              </div>
+              <div style="padding-bottom:0.2rem;">
+                <p class="pm-heading font-bold" style="font-size:var(--pm-text-lg); color:var(--pm-text); line-height:1.25;">
+                  {{ featuredDesigns()[0].designer }}
+                </p>
+                <p style="font-size:var(--pm-text-xs); color:var(--pm-primary); font-weight:700; text-transform:uppercase; letter-spacing:0.08em; margin-top:0.1rem;">
+                  {{ featuredDesigns()[0].designerRank }} Designer · {{ featuredDesigns()[0].category }}
+                </p>
+              </div>
+            </div>
+
+            <p class="line-clamp-2" style="font-size:var(--pm-text-sm); color:var(--pm-text-muted); line-height:1.7;">
+              {{ featuredDesigns()[0].description }}
+            </p>
+
+            <div class="flex items-center justify-between pt-3" style="border-top:1px solid var(--pm-border);">
+              <div style="font-size:var(--pm-text-xs); color:var(--pm-text-muted);">
+                <span class="font-semibold" style="color:var(--pm-text);">{{ featuredDesigns()[0].sales }}</span> sales ·&nbsp;
+                <span class="pm-stars">{{ featuredDesigns()[0].rating.toFixed(1) }} ★</span>
+              </div>
+              <a
+                class="pm-btn pm-btn-secondary pm-btn-sm"
+                [routerLink]="['/marketplace']"
+                [queryParams]="{ search: featuredDesigns()[0].designer }"
+              >
+                View designs
+              </a>
+            </div>
+          </div>
+        </article>
+      }
+
+      <!-- Featured printer card -->
+      @if (featuredPrinter()) {
+        <article class="pm-maker-card">
+          <div class="pm-maker-banner">
+            <app-image-with-fallback
+              [src]="featuredPrinter()!.images[0] ?? ''"
+              [alt]="featuredPrinter()!.businessName"
+              [imgClass]="'w-full h-full object-cover opacity-55 mix-blend-luminosity'"
+            />
+            <div style="position:absolute; inset:0; background:linear-gradient(135deg, rgba(14,20,30,0.8), rgba(30,40,60,0.5)); pointer-events:none;"></div>
+            <span class="pm-chip absolute top-3 left-3" style="background:rgba(255,255,255,0.12); color:#fff; border-color:rgba(255,255,255,0.2); backdrop-filter:blur(8px);">
+              {{ featuredPrinter()!.rank }} Printer
+            </span>
+          </div>
+
+          <div class="pm-maker-body">
+            <div class="flex items-end gap-3">
+              <div class="pm-maker-avatar" style="background:var(--pm-surface-alt); color:var(--pm-text-muted);" [attr.aria-label]="featuredPrinter()!.businessName">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                  <path d="M6 9V3h12v6"/>
+                  <rect x="6" y="14" width="12" height="8" rx="1"/>
+                </svg>
+              </div>
+              <div style="padding-bottom:0.2rem;">
+                <p class="pm-heading font-bold" style="font-size:var(--pm-text-lg); color:var(--pm-text); line-height:1.25;">
+                  {{ featuredPrinter()!.businessName }}
+                </p>
+                <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted); margin-top:0.1rem;">
+                  📍 {{ featuredPrinter()!.location }}
+                </p>
+              </div>
+            </div>
+
+            <p style="font-size:var(--pm-text-sm); color:var(--pm-text-muted); line-height:1.7;">
+              A verified Tunisian print shop with
+              <strong style="color:var(--pm-text);">{{ featuredPrinter()!.deliveryDays }}-day delivery</strong>
+              and a
+              <strong style="color:var(--pm-text);">{{ (featuredPrinter()!.fulfillmentRate * 100).toFixed(0) }}%</strong>
+              fulfillment rate.
+            </p>
+
+            <div class="flex items-center justify-between pt-3" style="border-top:1px solid var(--pm-border);">
+              <div style="font-size:var(--pm-text-xs); color:var(--pm-text-muted);">
+                <span class="pm-stars">{{ featuredPrinter()!.rating.toFixed(1) }} ★</span>
+                <span class="ml-1">({{ featuredPrinter()!.reviews }} reviews)</span>
+              </div>
+              <a class="pm-btn pm-btn-secondary pm-btn-sm" routerLink="/products">View products</a>
+            </div>
+          </div>
+        </article>
+      }
+
+    </div>
+  </div>
+</section>
+
+<!-- ── 6. HOW IT WORKS ───────────────────────────────────── -->
+<div class="pm-section-warm" role="region" aria-label="How it works">
+  <div class="pm-container">
+    <div class="grid gap-10 md:grid-cols-[auto_1fr] md:items-center md:gap-16">
+
+      <div>
+        <p class="pm-kicker mb-2">Simple process</p>
+        <h2 class="pm-display" style="font-size:clamp(1.75rem, 3vw, 2.25rem); color:var(--pm-text); max-width:200px; line-height:1.1;">
+          How it works
+        </h2>
       </div>
-    </article>
-  </section>
 
+      <ol class="pm-how-steps" style="list-style:none; margin:0; padding:0;">
+        <li class="pm-how-step">
+          <span class="pm-how-step-num" aria-hidden="true">1</span>
+          <div class="pm-how-step-content">
+            <p class="pm-heading font-bold" style="font-size:var(--pm-text-base); color:var(--pm-text);">Browse &amp; choose</p>
+            <p style="font-size:var(--pm-text-sm); color:var(--pm-text-muted); margin-top:0.3rem; line-height:1.65;">
+              Pick a design from Tunisian artists in our marketplace.
+            </p>
+          </div>
+        </li>
+        <li class="pm-how-step">
+          <span class="pm-how-step-num" aria-hidden="true">2</span>
+          <div class="pm-how-step-content">
+            <p class="pm-heading font-bold" style="font-size:var(--pm-text-base); color:var(--pm-text);">Customize your product</p>
+            <p style="font-size:var(--pm-text-sm); color:var(--pm-text-muted); margin-top:0.3rem; line-height:1.65;">
+              Place the design, select color and size — see a live preview.
+            </p>
+          </div>
+        </li>
+        <li class="pm-how-step">
+          <span class="pm-how-step-num" aria-hidden="true">3</span>
+          <div class="pm-how-step-content">
+            <p class="pm-heading font-bold" style="font-size:var(--pm-text-base); color:var(--pm-text);">Printed &amp; shipped to you</p>
+            <p style="font-size:var(--pm-text-sm); color:var(--pm-text-muted); margin-top:0.3rem; line-height:1.65;">
+              A verified local print shop handles production and delivery.
+            </p>
+          </div>
+        </li>
+      </ol>
+
+    </div>
+  </div>
 </div>
+
+<!-- ── 7. FOR MAKERS CTA ──────────────────────────────────── -->
+<section class="pm-section-dark" aria-label="Join as a maker">
+  <div class="pm-container">
+    <div class="grid gap-10 md:grid-cols-2 md:gap-14 md:items-center">
+
+      <div>
+        <p class="pm-kicker mb-3" style="color:rgba(232,162,58,0.85);">Join the platform</p>
+        <h2 class="pm-display text-white" style="font-size:clamp(1.75rem, 3.5vw, 2.875rem); line-height:1.08;">
+          Are you a designer<br />or a print shop?
+        </h2>
+        <p class="mt-5 leading-7" style="font-size:var(--pm-text-base); color:rgba(255,255,255,0.58); max-width:400px;">
+          Upload your artwork and earn royalties on every sale — or list your print shop and fulfil orders from customers across Tunisia.
+        </p>
+      </div>
+
+      <div class="grid gap-4 sm:grid-cols-2">
+
+        <!-- Designer CTA -->
+        <article style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.11); border-radius:var(--pm-radius-lg); padding:1.5rem; display:grid; gap:1rem;">
+          <div style="width:2.5rem; height:2.5rem; border-radius:10px; background:var(--pm-primary-soft); border:1px solid rgba(199,74,43,0.4); display:flex; align-items:center; justify-content:center;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--pm-primary)" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+              <path d="M12 19l7-7 3 3-7 7-3-3z"/>
+              <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/>
+              <circle cx="11" cy="11" r="2"/>
+            </svg>
+          </div>
+          <div>
+            <p class="pm-heading font-bold text-white" style="font-size:var(--pm-text-lg);">Designer</p>
+            <p style="font-size:var(--pm-text-sm); color:rgba(255,255,255,0.52); margin-top:0.375rem; line-height:1.65;">
+              Upload artwork, set your price, earn royalties on every sale.
+            </p>
+          </div>
+          <a class="pm-btn pm-btn-glass pm-btn-sm self-start" routerLink="/register">Start selling →</a>
+        </article>
+
+        <!-- Printer CTA -->
+        <article style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.11); border-radius:var(--pm-radius-lg); padding:1.5rem; display:grid; gap:1rem;">
+          <div style="width:2.5rem; height:2.5rem; border-radius:10px; background:var(--pm-secondary-soft); border:1px solid rgba(232,162,58,0.4); display:flex; align-items:center; justify-content:center;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--pm-secondary)" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+              <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+              <path d="M6 9V3h12v6"/>
+              <rect x="6" y="14" width="12" height="8" rx="1"/>
+            </svg>
+          </div>
+          <div>
+            <p class="pm-heading font-bold text-white" style="font-size:var(--pm-text-lg);">Print shop</p>
+            <p style="font-size:var(--pm-text-sm); color:rgba(255,255,255,0.52); margin-top:0.375rem; line-height:1.65;">
+              List your shop, receive orders, fulfill them on your schedule.
+            </p>
+          </div>
+          <a class="pm-btn pm-btn-glass pm-btn-sm self-start" routerLink="/register">Partner with us →</a>
+        </article>
+
+      </div>
+    </div>
+  </div>
+</section>

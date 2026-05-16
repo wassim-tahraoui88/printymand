@@ -1,0 +1,72 @@
+<!-- Mobile backdrop -->
+@if (mobileOpen()) {
+  <div class="pm-sidebar-backdrop" (click)="mobileClose.emit()"></div>
+}
+
+<!-- Sidebar -->
+<aside class="pm-sidebar" [class.is-collapsed]="collapsed()" [class.is-mobile-open]="mobileOpen()">
+
+  <!-- Brand row -->
+  <div class="pm-sidebar-brand">
+    <div class="pm-sidebar-logo" style="display:flex; align-items:center; justify-content:center; flex-shrink:0;">P</div>
+    <span class="pm-sidebar-brand-name" style="font-family:'Plus Jakarta Sans'; font-weight:800; font-size:var(--pm-text-sm); color:var(--pm-text); white-space:nowrap; overflow:hidden;">
+      Printymand
+    </span>
+    <button
+      type="button"
+      class="pm-sidebar-collapse-btn"
+      style="display:flex; align-items:center; justify-content:center; flex-shrink:0; background:transparent; cursor:pointer;"
+      (click)="toggleCollapse()"
+      [title]="collapsed() ? 'Expand sidebar' : 'Collapse sidebar'"
+    >
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+        @if (collapsed()) {
+          <polyline points="9 18 15 12 9 6"></polyline>
+        } @else {
+          <polyline points="15 18 9 12 15 6"></polyline>
+        }
+      </svg>
+    </button>
+  </div>
+
+  <!-- Role label -->
+  <div class="pm-sidebar-role">{{ roleLabel() }}</div>
+
+  <!-- Nav -->
+  <nav class="pm-sidebar-nav" aria-label="Dashboard navigation">
+    @for (section of nav(); track section.title ?? $index) {
+
+      @if (section.title) {
+        <div class="pm-sidebar-section-title" style="padding:0.625rem 0.375rem 0.25rem;">
+          {{ section.title }}
+        </div>
+      }
+
+      @for (item of section.items; track item.id) {
+        <button
+          type="button"
+          class="pm-sidebar-item"
+          [class.is-active]="activeTab() === item.id"
+          (click)="select(item.id)"
+          [title]="collapsed() ? item.label : ''"
+        >
+          <!-- Icon -->
+          <svg class="pm-sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
+            <path [attr.d]="item.icon" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+
+          <!-- Label -->
+          <span class="pm-sidebar-label">{{ item.label }}</span>
+
+          <!-- Badge -->
+          @if (item.badge != null && item.badge !== 0) {
+            <span class="pm-sidebar-badge" style="display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+              {{ item.badge }}
+            </span>
+          }
+        </button>
+      }
+    }
+  </nav>
+
+</aside>

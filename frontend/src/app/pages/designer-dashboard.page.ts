@@ -2,38 +2,154 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-import { DashboardShellComponent } from '../components/dashboard-shell.component';
-import { StatCardComponent } from '../components/stat-card.component';
+import { DashboardSidebarComponent, DashboardNavSection } from '../components/dashboard-sidebar.component';
 import { AuthService } from '../services/auth.service';
 import { WorkflowService } from '../services/workflow.service';
 
 @Component({
   selector: 'app-designer-dashboard-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, DashboardShellComponent, StatCardComponent],
+  imports: [CommonModule, FormsModule, RouterModule, DashboardSidebarComponent],
   templateUrl: './designer-dashboard.html',
 })
 export class DesignerDashboardPageComponent {
   readonly auth = inject(AuthService);
   readonly workflow = inject(WorkflowService);
 
+  readonly activeTab = signal('overview');
+  readonly sidebarOpen = signal(false);
+
+  readonly nav: DashboardNavSection[] = [
+    {
+      items: [
+        { id: 'overview',  label: 'Overview',  icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
+        { id: 'designs',   label: 'Designs',   icon: 'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z' },
+        { id: 'analytics', label: 'Analytics', icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
+        { id: 'payouts',   label: 'Payouts',   icon: 'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z' },
+        { id: 'profile',   label: 'Profile',   icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z' },
+      ],
+    },
+  ];
+
   readonly user = computed(() => this.auth.user());
   readonly designs = computed(() => (this.user() ? this.workflow.designsForDesigner(this.user()!.id) : []));
   readonly analytics = computed(() => (this.user() ? this.workflow.designerAnalytics(this.user()!.id) : []));
   readonly totals = computed(() => (this.user() ? this.workflow.designerTotals(this.user()!.id) : { earnings: 0, designs: 0, orders: 0, avgConversion: 0 }));
-  readonly payouts = computed(() => this.workflow.payouts().filter((entry) => entry.designerId === this.user()?.id));
+  readonly payouts = computed(() => this.workflow.payouts().filter((p) => p.designerId === this.user()?.id));
+
+  // ── Upload wizard ──────────────────────────────────────────────
+  // Step 1: upload artwork (≤ 1 MB). Step 2: pick compatible products and
+  // customize the design per product (placement, colors, copy).
+  readonly MAX_IMAGE_BYTES = 1024 * 1024;
+  readonly wizardStep = signal<1 | 2>(1);
+  readonly uploadError = signal('');
+
+  // Spec: the designer does NOT set price.
   readonly designForm = signal({
     id: 0,
     title: '',
     image: '',
     category: 'Culture',
     description: '',
-    price: 18,
   });
-  readonly profileLinks = signal((this.user()?.designerProfile?.portfolioLinks ?? []).map((link) => link.url).join('\n'));
 
+  /** Per-product designer customization keyed by product id. */
+  readonly productConfigs = signal<
+    Record<number, { selected: boolean; x: number; y: number; scale: number; colors: string; title: string; description: string }>
+  >({});
+
+  readonly allProducts = computed(() => this.workflow.products());
+
+  private blankConfig() {
+    return { selected: false, x: 50, y: 48, scale: 0.42, colors: 'white, black', title: '', description: '' };
+  }
+
+  configFor(productId: number) {
+    return this.productConfigs()[productId] ?? this.blankConfig();
+  }
+
+  patchConfig(productId: number, patch: Partial<ReturnType<DesignerDashboardPageComponent['blankConfig']>>): void {
+    const current = this.configFor(productId);
+    this.productConfigs.set({ ...this.productConfigs(), [productId]: { ...current, ...patch } });
+  }
+
+  toggleProduct(productId: number, checked: boolean): void {
+    this.patchConfig(productId, { selected: checked });
+  }
+
+  readonly selectedProductIds = computed(() =>
+    Object.entries(this.productConfigs())
+      .filter(([, c]) => c.selected)
+      .map(([id]) => Number(id)),
+  );
+
+  goToStep2(): void {
+    if (!this.designForm().image) {
+      this.uploadError.set('Please upload your artwork before continuing.');
+      return;
+    }
+    this.uploadError.set('');
+    this.wizardStep.set(2);
+  }
+
+  backToStep1(): void {
+    this.wizardStep.set(1);
+  }
+
+  publishDesign(): void {
+    const user = this.user();
+    if (!user) return;
+    const f = this.designForm();
+    if (!this.selectedProductIds().length) {
+      this.uploadError.set('Select at least one product this design can be printed on.');
+      this.wizardStep.set(2);
+      return;
+    }
+    const created = this.workflow.addOrUpdateDesign(
+      { id: f.id || undefined, title: f.title, image: f.image, category: f.category, description: f.description },
+      user.id,
+    );
+    const ids = this.selectedProductIds();
+    this.workflow.assignProductsToDesign(created.id, ids);
+    for (const pid of ids) {
+      const c = this.configFor(pid);
+      this.workflow.saveDesignProductConfiguration(created.id, {
+        productId: pid,
+        defaultPlacement: { x: c.x, y: c.y, scale: c.scale },
+        availableColors: c.colors.split(',').map((v) => v.trim()).filter(Boolean),
+        title: c.title.trim() || undefined,
+        description: c.description.trim() || undefined,
+      });
+    }
+    // Reset wizard
+    this.designForm.set({ id: 0, title: '', image: '', category: 'Culture', description: '' });
+    this.productConfigs.set({});
+    this.wizardStep.set(1);
+    this.uploadError.set('');
+    this.payoutMsg.set('');
+  }
+
+  /** Platform-fixed royalty the designer earns per sale (read-only, spec §5). */
+  readonly royaltyPerSale = computed(() => this.workflow.platformSettings().designerRoyalty);
+  readonly payoutThreshold = computed(() => this.workflow.platformSettings().payoutThreshold);
+  readonly payoutBalance = computed(() => this.user()?.designerProfile?.payoutBalance ?? 0);
+  readonly salesScore = computed(() => this.user()?.designerProfile?.salesScore ?? 0);
+  readonly level = computed(() => this.user()?.designerRank ?? 'Novice');
+  readonly canRequestPayout = computed(() => this.payoutBalance() >= this.payoutThreshold());
+  readonly payoutMsg = signal('');
+
+  requestPayout(): void {
+    const user = this.user();
+    if (!user) return;
+    const res = this.workflow.requestDesignerPayout(user.id);
+    this.payoutMsg.set(res.success ? 'Payout requested. It will be processed within 7 days.' : res.error ?? 'Unable to request payout.');
+  }
+
+  readonly profileLinks = signal((this.user()?.designerProfile?.portfolioLinks ?? []).map((l) => l.url).join('\n'));
+
+  /** Load an existing design into the wizard for editing. */
   editDesign(designId: number): void {
-    const design = this.designs().find((entry) => entry.id === designId);
+    const design = this.designs().find((d) => d.id === designId);
     if (!design) return;
     this.designForm.set({
       id: design.id,
@@ -41,87 +157,51 @@ export class DesignerDashboardPageComponent {
       image: design.image,
       category: design.category,
       description: design.description,
-      price: design.price,
     });
+    const configs: Record<number, ReturnType<DesignerDashboardPageComponent['blankConfig']>> = {};
+    for (const pid of design.assignedProductIds) {
+      const cfg = design.productConfigurations.find((c) => c.productId === pid);
+      configs[pid] = {
+        selected: true,
+        x: cfg?.defaultPlacement.x ?? 50,
+        y: cfg?.defaultPlacement.y ?? 48,
+        scale: cfg?.defaultPlacement.scale ?? 0.42,
+        colors: (cfg?.availableColors ?? this.workflow.getProductById(pid)?.colors ?? ['white']).join(', '),
+        title: cfg?.title ?? '',
+        description: cfg?.description ?? '',
+      };
+    }
+    this.productConfigs.set(configs);
+    this.activeTab.set('designs');
+    this.wizardStep.set(1);
+    this.uploadError.set('');
   }
 
+  /** Step 1: validate the artwork is ≤ 1 MB before accepting it. */
   async onDesignFileChange(event: Event): Promise<void> {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (!file) return;
+    if (file.size > this.MAX_IMAGE_BYTES) {
+      this.uploadError.set(`Image is too large (${(file.size / 1024 / 1024).toFixed(2)} MB). Maximum is 1 MB.`);
+      this.designForm.set({ ...this.designForm(), image: '' });
+      return;
+    }
+    this.uploadError.set('');
     const result = await readFileAsDataUrl(file);
     this.designForm.set({ ...this.designForm(), image: result });
-  }
-
-  saveDesign(): void {
-    const user = this.user();
-    if (!user) return;
-    const current = this.designForm();
-    const created = this.workflow.addOrUpdateDesign(
-      {
-        id: current.id || undefined,
-        title: current.title,
-        image: current.image,
-        category: current.category,
-        description: current.description,
-        price: current.price,
-      },
-      user.id,
-    );
-
-    this.workflow.assignProductsToDesign(created.id, created.assignedProductIds.length ? created.assignedProductIds : this.workflow.products().slice(0, 2).map((product) => product.id));
-    this.designForm.set({ id: 0, title: '', image: '', category: 'Culture', description: '', price: 18 });
   }
 
   toggleArchive(designId: number, archived: boolean): void {
     this.workflow.setDesignStatus(designId, archived ? 'ACTIVE' : 'ARCHIVED');
   }
 
-  updateAssignment(designId: number, productId: number, checked: boolean): void {
-    const design = this.designs().find((entry) => entry.id === designId);
-    if (!design) return;
-    const nextIds = checked
-      ? Array.from(new Set([...design.assignedProductIds, productId]))
-      : design.assignedProductIds.filter((id) => id !== productId);
-    this.workflow.assignProductsToDesign(designId, nextIds);
-  }
-
-  updatePlacement(designId: number, productId: number, field: 'x' | 'y' | 'scale', value: number): void {
-    const existing = this.workflow.getDesignConfig(designId, productId) ?? {
-      productId,
-      defaultPlacement: { x: 50, y: 50, scale: 0.4 },
-      availableColors: this.workflow.getProductById(productId)?.colors ?? ['white'],
-    };
-    this.workflow.saveDesignProductConfiguration(designId, {
-      ...existing,
-      defaultPlacement: {
-        ...existing.defaultPlacement,
-        [field]: value,
-      },
-    });
-  }
-
-  updateAvailableColors(designId: number, productId: number, raw: string): void {
-    const existing = this.workflow.getDesignConfig(designId, productId) ?? {
-      productId,
-      defaultPlacement: { x: 50, y: 50, scale: 0.4 },
-      availableColors: [],
-    };
-    this.workflow.saveDesignProductConfiguration(designId, {
-      ...existing,
-      availableColors: raw
-        .split(',')
-        .map((value) => value.trim())
-        .filter(Boolean),
-    });
-  }
-
   saveProfile(): void {
     this.auth.updateDesignerProfile({
       portfolioLinks: this.profileLinks()
         .split('\n')
-        .map((url, index) => url.trim())
+        .map((url) => url.trim())
         .filter(Boolean)
-        .map((url, index) => ({ id: `link-${index}`, label: `Link ${index + 1}`, url })),
+        .map((url, i) => ({ id: `link-${i}`, label: `Link ${i + 1}`, url })),
     });
   }
 }

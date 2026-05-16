@@ -10,6 +10,45 @@
       <a class="pm-btn pm-btn-secondary text-sm" routerLink="/dashboard">← Dashboard</a>
     </div>
 
+    <!-- Approval / payment status banner -->
+    <div class="pm-panel" style="padding:1.25rem 1.5rem; display:flex; flex-wrap:wrap; align-items:center; gap:1rem; justify-content:space-between;">
+      <div style="min-width:0;">
+        <p class="text-xs font-bold tracking-widest uppercase" style="color:var(--pm-text-muted);">Current stage</p>
+        <p class="pm-heading" style="font-size:1.25rem; font-weight:800; color:var(--pm-text); margin-top:0.2rem;">{{ stage() }}</p>
+
+        @if (stage() === 'Requested') {
+          <p class="text-sm mt-1" style="color:var(--pm-text-muted);">Waiting for the printer to accept your request. You'll be able to pay once it's accepted.</p>
+        }
+        @if (stage() === 'Awaiting payment') {
+          <p class="text-sm mt-1" style="color:var(--pm-text-muted);">Your request was accepted. Complete payment to confirm the order.</p>
+        }
+        @if (stage() === 'Rejected') {
+          <p class="text-sm mt-1" style="color:var(--pm-danger);">{{ o.rejectionReason ?? 'The printer rejected this request.' }}</p>
+        }
+        @if (stage() === 'Cancelled') {
+          <p class="text-sm mt-1" style="color:var(--pm-text-muted);">You cancelled this request.</p>
+        }
+      </div>
+
+      <div class="flex flex-wrap gap-3">
+        @if (canPay()) {
+          <button type="button" class="pm-btn pm-btn-primary" [disabled]="busy()" (click)="pay()">
+            {{ busy() ? 'Processing…' : 'Pay ' + o.total + ' TND →' }}
+          </button>
+        }
+        @if (canCancel()) {
+          <button type="button" class="pm-btn pm-btn-secondary" (click)="cancel()">Cancel request</button>
+        }
+        @if (stage() === 'Rejected' || stage() === 'Cancelled') {
+          <a class="pm-btn pm-btn-secondary" routerLink="/marketplace">Browse marketplace →</a>
+        }
+      </div>
+    </div>
+
+    @if (error()) {
+      <div style="background:var(--pm-danger-soft); border:1px solid rgba(185,28,28,0.2); border-radius:var(--pm-radius); padding:0.875rem 1rem; font-size:0.875rem; color:var(--pm-danger);">{{ error() }}</div>
+    }
+
     <!-- Timeline -->
     <div class="pm-panel" style="padding:1.5rem;">
       <p class="text-xs font-bold tracking-widest uppercase mb-4" style="color:var(--pm-text-muted);">Order progress</p>

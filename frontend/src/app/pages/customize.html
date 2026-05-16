@@ -1,27 +1,41 @@
 @if (design(); as d) {
-  <div class="pm-page">
+  <div class="pm-studio">
 
-    <div>
-      <p class="pm-kicker mb-1">Customization studio</p>
-      <h1 class="pm-heading font-bold text-3xl" style="color:var(--pm-text);">Customize — {{ d.title }}</h1>
-      <p class="text-sm mt-1" style="color:var(--pm-text-muted);">Drag the design on the preview, choose color, size, and scale.</p>
+    <!-- ── Studio header bar ───────────────────── -->
+    <div class="pm-studio-bar">
+      <a [routerLink]="['/design', d.id]" class="pm-back-link">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        {{ d.title }}
+      </a>
+      <span class="pm-divider-vertical" style="height:1.125rem;"></span>
+      @if (customizationLocked()) {
+        <p style="font-size:var(--pm-text-sm); color:var(--pm-text-muted);">This designer's artwork is preserved as intended — only product, color and size can be chosen.</p>
+      } @else {
+        <p style="font-size:var(--pm-text-sm); color:var(--pm-text-muted);">Drag the design to reposition. Pinch or use the slider to scale.</p>
+      }
+      <span style="flex:1;"></span>
+      @if (selectedProduct()) {
+        <span class="pm-chip">{{ selectedProduct()!.name }}</span>
+      }
     </div>
 
-    <div class="grid gap-6 lg:grid-cols-[1fr_1fr] lg:items-start">
+    <!-- ── Studio body ─────────────────────────── -->
+    <div class="pm-studio-body">
 
-      <!-- Preview canvas -->
-      <div class="pm-panel" style="padding:1.5rem;">
-        <div class="flex items-center justify-between mb-4">
+      <!-- LEFT / TOP: Canvas preview -->
+      <div class="pm-panel" style="padding:1.25rem;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem; gap:0.75rem; flex-wrap:wrap;">
           <div>
-            <p class="text-sm font-semibold" style="color:var(--pm-text);">{{ selectedProduct()?.name ?? 'Select a product' }}</p>
-            <p class="text-xs mt-0.5" style="color:var(--pm-text-muted);">Drag to reposition the design</p>
+            <p style="font-size:var(--pm-text-sm); font-weight:700; color:var(--pm-text);">{{ selectedProduct()?.name ?? 'Select a product' }}</p>
+            <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted); margin-top:0.1rem;">Drag the design overlay to reposition</p>
           </div>
-          <button type="button" class="pm-btn pm-btn-secondary text-sm" (click)="resetPlacement()">Reset</button>
+          @if (!customizationLocked()) {
+            <button type="button" class="pm-btn pm-btn-secondary pm-btn-sm" (click)="resetPlacement()">Reset position</button>
+          }
         </div>
 
         <div
-          class="relative mx-auto overflow-hidden"
-          style="aspect-ratio:1; width:100%; max-width:480px; border-radius:var(--pm-radius-lg); border:1px solid var(--pm-border); background:var(--pm-surface-alt); cursor:crosshair;"
+          style="position:relative; margin:0 auto; overflow:hidden; aspect-ratio:1; width:100%; max-width:520px; border-radius:var(--pm-radius-lg); border:1px solid var(--pm-border); background:var(--pm-surface-alt); cursor:crosshair;"
           (pointermove)="onCanvasMove($event, previewCanvas)"
           (pointerup)="endDrag($event)"
           (pointerleave)="endDrag($event)"
@@ -33,96 +47,126 @@
             [imgClass]="'h-full w-full object-cover'"
           />
           <div
-            class="absolute flex min-h-20 min-w-20 cursor-grab items-center justify-center rounded-xl"
-            style="border:2px dashed var(--pm-primary); background:rgba(255,255,255,0.88); padding:0.5rem; box-shadow:0 8px 24px rgba(0,0,0,0.18); backdrop-filter:blur(4px);"
+            style="position:absolute; display:flex; min-height:5rem; min-width:5rem; cursor:grab; align-items:center; justify-content:center; border-radius:var(--pm-radius); border:2px dashed var(--pm-primary); background:rgba(255,255,255,0.88); padding:0.5rem; box-shadow:0 8px 24px rgba(0,0,0,0.18); backdrop-filter:blur(4px);"
             [style.left.%]="position().x"
             [style.top.%]="position().y"
+            [style.cursor]="customizationLocked() ? 'default' : 'grab'"
             [style.transform]="'translate(-50%, -50%) scale(' + scale() + ')'"
             (pointerdown)="startDrag($event, previewCanvas)"
           >
-            <img [src]="d.image" [alt]="d.title" style="width:4.5rem; height:4.5rem; object-fit:cover; border-radius:8px;" />
+            <img [src]="d.image" [alt]="d.title" style="width:4.5rem; height:4.5rem; object-fit:cover; border-radius:6px;" />
           </div>
         </div>
       </div>
 
-      <!-- Controls -->
-      <div class="pm-panel" style="padding:1.5rem;">
-        <div class="grid gap-4">
+      <!-- RIGHT / BOTTOM: Controls -->
+      <div class="pm-studio-controls">
 
-          <div class="grid gap-3 sm:grid-cols-2">
-            <label class="pm-field">
-              <span class="pm-label">Product</span>
-              <select class="pm-select" [ngModel]="selectedProductId()" (ngModelChange)="onProductChange($event)">
-                @for (p of availableProducts(); track p.id) {
-                  <option [ngValue]="p.id">{{ p.name }} · {{ p.printerName }}</option>
-                }
-              </select>
-            </label>
-            <label class="pm-field">
-              <span class="pm-label">Size</span>
-              <select class="pm-select" [ngModel]="selectedSize()" (ngModelChange)="selectedSize.set($event)">
-                @for (size of selectedProduct()?.sizes ?? []; track size) {
-                  <option [value]="size">{{ size }}</option>
-                }
-              </select>
-            </label>
-          </div>
-
-          <div class="pm-field">
-            <span class="pm-label">Color</span>
-            <div class="flex flex-wrap gap-2 mt-1">
-              @for (color of selectedProduct()?.colors ?? []; track color) {
-                <button
-                  type="button"
-                  class="pm-color-chip"
-                  [style.outline]="selectedColor() === color ? '2px solid var(--pm-primary)' : 'none'"
-                  [style.outlineOffset]="'2px'"
-                  (click)="selectedColor.set(color)"
-                >
-                  <span class="pm-swatch" [style.background]="color"></span>
-                  {{ color }}
-                </button>
-              }
-            </div>
-          </div>
-
-          <div class="grid gap-3 grid-cols-3">
-            <label class="pm-field">
-              <span class="pm-label">X (%)</span>
-              <input class="pm-input" type="number" [ngModel]="position().x" (ngModelChange)="position.set({ x: +$event, y: position().y })" />
-            </label>
-            <label class="pm-field">
-              <span class="pm-label">Y (%)</span>
-              <input class="pm-input" type="number" [ngModel]="position().y" (ngModelChange)="position.set({ x: position().x, y: +$event })" />
-            </label>
-            <label class="pm-field">
-              <span class="pm-label">Scale</span>
-              <input class="pm-input" type="number" step="0.01" min="0.1" max="1" [ngModel]="scale()" (ngModelChange)="scale.set(+$event)" />
-            </label>
-          </div>
-
+        <!-- Product selector -->
+        <div class="pm-panel" style="padding:1.125rem;">
           <label class="pm-field">
-            <span class="pm-label">Scale slider</span>
-            <input class="pm-range" type="range" min="0.1" max="1" step="0.01" [value]="scale()" (input)="updateScale($event)" />
+            <span class="pm-label">Product</span>
+            <select class="pm-select" [ngModel]="selectedProductId()" (ngModelChange)="onProductChange($event)">
+              @for (p of availableProducts(); track p.id) {
+                <option [ngValue]="p.id">{{ p.name }}</option>
+              }
+            </select>
           </label>
+        </div>
 
-          <details style="background:var(--pm-surface-alt); border:1px solid var(--pm-border); border-radius:var(--pm-radius); padding:0.875rem;">
-            <summary class="text-xs font-semibold cursor-pointer" style="color:var(--pm-text-muted);">Cart payload preview</summary>
-            <pre style="margin-top:0.75rem; overflow:auto; border-radius:8px; background:var(--pm-bg); border:1px solid var(--pm-border); padding:0.75rem; font-size:0.72rem; color:var(--pm-text-muted); line-height:1.6;">{{ workflow.createCartPayloadFromDraft({ designId: d.id, productId: selectedProduct()!.id, selectedColor: selectedColor(), selectedSize: selectedSize(), selectedPrinterId: null, placement: { x: position().x, y: position().y, scale: scale() } }) | json }}</pre>
-          </details>
+        <!-- Color + size -->
+        <div class="pm-panel" style="padding:1.125rem; display:grid; gap:1.125rem;">
 
-          @if (error()) {
-            <div style="background:var(--pm-danger-soft); border:1px solid rgba(185,28,28,0.2); border-radius:10px; padding:0.75rem 1rem; font-size:0.85rem; color:var(--pm-danger);">{{ error() }}</div>
+          <!-- Color -->
+          @if (selectedProduct()?.colors?.length) {
+            <div class="pm-field">
+              <span class="pm-label">
+                Color — <span style="font-weight:400; text-transform:none; letter-spacing:0; color:var(--pm-text);">{{ selectedColor() }}</span>
+              </span>
+              <div style="display:flex; flex-wrap:wrap; gap:0.4rem; margin-top:0.375rem;">
+                @for (color of selectedProduct()!.colors; track color) {
+                  <button
+                    type="button"
+                    class="pm-color-chip"
+                    [style.outline]="selectedColor() === color ? '2px solid var(--pm-primary)' : 'none'"
+                    [style.outline-offset]="'2px'"
+                    (click)="selectedColor.set(color)"
+                  >
+                    <span class="pm-swatch" [style.background]="color"></span>
+                    {{ color }}
+                  </button>
+                }
+              </div>
+            </div>
           }
 
-          <div class="flex justify-end gap-3 pt-2" style="border-top:1px solid var(--pm-border);">
-            <a class="pm-btn pm-btn-secondary" [routerLink]="['/design', d.id]">← Back</a>
-            <button type="button" class="pm-btn pm-btn-primary" (click)="continueToPrinterSelection()">Choose printer →</button>
-          </div>
-
+          <!-- Size -->
+          @if (selectedProduct()?.sizes?.length) {
+            <div class="pm-field">
+              <span class="pm-label">Size</span>
+              <div style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:0.375rem;">
+                @for (size of selectedProduct()!.sizes; track size) {
+                  <button
+                    type="button"
+                    class="pm-size-btn"
+                    [class.is-selected]="selectedSize() === size"
+                    (click)="selectedSize.set(size)"
+                  >{{ size }}</button>
+                }
+              </div>
+            </div>
+          }
         </div>
-      </div>
 
+        <!-- Customization-locked notice (designer marketplace design) -->
+        @if (customizationLocked()) {
+          <div style="background:var(--pm-secondary-soft); border:1px solid rgba(232,158,28,0.25); border-radius:var(--pm-radius); padding:0.875rem 1rem; font-size:var(--pm-text-sm); color:var(--pm-text-muted); line-height:1.6;">
+            This is a designer marketplace design. To protect the artist's work, its
+            placement and scale are fixed. You can still pick the product, color and size.
+            Want full freedom? <a routerLink="/upload-design" style="color:var(--pm-primary); font-weight:600;">Upload your own design →</a>
+          </div>
+        }
+
+        <!-- Scale slider -->
+        <div class="pm-panel" style="padding:1.125rem;" [style.display]="customizationLocked() ? 'none' : 'block'">
+          <label class="pm-field">
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+              <span class="pm-label">Design scale</span>
+              <span style="font-size:var(--pm-text-xs); font-weight:600; color:var(--pm-primary);">{{ (scale() * 100).toFixed(0) }}%</span>
+            </div>
+            <input
+              class="pm-range"
+              type="range"
+              min="0.1"
+              max="1"
+              step="0.01"
+              [value]="scale()"
+              (input)="updateScale($event)"
+              style="margin-top:0.5rem;"
+            />
+            <div style="display:flex; justify-content:space-between; font-size:var(--pm-text-xs); color:var(--pm-text-soft); margin-top:0.25rem;">
+              <span>Small</span><span>Large</span>
+            </div>
+          </label>
+        </div>
+
+        <!-- Error -->
+        @if (error()) {
+          <div style="background:var(--pm-danger-soft); border:1px solid rgba(185,28,28,0.2); border-radius:var(--pm-radius); padding:0.75rem 1rem; font-size:var(--pm-text-sm); color:var(--pm-danger);">
+            {{ error() }}
+          </div>
+        }
+
+        <!-- CTAs -->
+        <div style="display:flex; gap:0.75rem; border-top:1px solid var(--pm-border); padding-top:1.125rem;">
+          <a class="pm-btn pm-btn-secondary" style="flex:0 0 auto;" [routerLink]="['/design', d.id]">← Back</a>
+          <button type="button" class="pm-btn pm-btn-primary" style="flex:1; justify-content:center;" (click)="continueToPrinterSelection()">
+            Choose printer →
+          </button>
+        </div>
+
+      </div>
     </div>
+
   </div>
 }

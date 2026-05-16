@@ -1,5 +1,5 @@
 import { Injectable, computed, effect, inject, signal } from '@angular/core';
-import { demoAccounts, designCategories, seedDesigns, seedOrders, seedPayouts, seedPrinters, seedProducts, seedReviews, seedUsers } from '../data/mock';
+import { demoAccounts, designCategories, seedDesigns, seedOfferings, seedOrders, seedPayouts, seedPrinters, seedProducts, seedReviews, seedUsers } from '../data/mock';
 import type {
   Address,
   AnalyticsPoint,
@@ -14,25 +14,61 @@ import type {
   DesignProductConfiguration,
   DesignerProfile,
   DesignerRank,
+  AccountStatus,
+  AppNotification,
+  FeaturedContent,
+  ModerationLogEntry,
+  NotificationType,
   Order,
   OrderLine,
   OrderLineStatus,
   PayoutRecord,
   PaymentMethod,
   PaymentPreference,
+  PaymentStatus,
   PlaceOrderPayload,
+  PlatformSettings,
+  PrinterAvailability,
   PrinterPartner,
+  PrinterPayoutRecord,
+  PrinterProductOffering,
   PrinterProfile,
   PrinterRank,
   Product,
   Review,
   ReviewPayload,
+  ReviewTarget,
   User,
   UserRole,
 } from '../models/types';
 import { ApiService } from './api.service';
 
-const STORAGE_KEY = 'printymand_platform_state_v3';
+const STORAGE_KEY = 'printymand_platform_state_v6';
+
+const DEFAULT_PLATFORM_SETTINGS: PlatformSettings = {
+  // Spec example: printer 30 TND + platform 10 TND = 40 TND final price.
+  margin: 10,
+  // Platform-fixed designer royalty per sale (designer cannot change it).
+  designerRoyalty: 5,
+  // Minimum accrued balance before a designer can request a payout.
+  payoutThreshold: 50,
+  categories: ['Culture', 'Typography', 'Minimal', 'Nature', 'Streetwear', 'Retro'],
+};
+
+/** Spec "Designer Roles": level auto-derived from cumulative sales score. */
+function designerLevelForScore(score: number): DesignerRank {
+  if (score >= 120) return 'Elite';
+  if (score >= 60) return 'Artisan';
+  if (score >= 20) return 'Rising';
+  return 'Novice';
+}
+
+/** Spec "Printer roles": level auto-derived from fulfillment score. */
+function printerLevelForScore(score: number): PrinterRank {
+  if (score >= 120) return 'Premium';
+  if (score >= 50) return 'Gold';
+  return 'Verified';
+}
 
 interface StoredCredential {
   email: string;
@@ -48,12 +84,18 @@ interface PlatformState {
   credentials: StoredCredential[];
   printers: PrinterPartner[];
   products: Product[];
+  offerings: PrinterProductOffering[];
   designs: Design[];
   cartItems: CartItem[];
   orders: Order[];
   reviews: Review[];
   payouts: PayoutRecord[];
+  printerPayouts: PrinterPayoutRecord[];
+  notifications: AppNotification[];
+  featured: FeaturedContent[];
+  moderationLog: ModerationLogEntry[];
   customizationDraft: CustomizationDraft | null;
+  platformSettings: PlatformSettings;
 }
 
 type AddressInput = Omit<Address, 'id'> & Partial<Pick<Address, 'id'>>;
@@ -69,10 +111,24 @@ export class PlatformStoreService {
   readonly users = computed(() => this.state().users);
   readonly designs = computed(() => this.state().designs);
   readonly products = computed(() => this.state().products);
+  readonly offerings = computed(() => this.state().offerings);
   readonly printers = computed(() => this.state().printers);
   readonly orders = computed(() => this.state().orders);
   readonly reviews = computed(() => this.state().reviews);
   readonly payouts = computed(() => this.state().payouts);
+  readonly printerPayouts = computed(() => this.state().printerPayouts);
+  readonly notifications = computed(() => this.state().notifications);
+  readonly featured = computed(() => this.state().featured);
+  readonly moderationLog = computed(() => this.state().moderationLog);
+  readonly platformSettings = computed(() => this.state().platformSettings);
+  readonly currentUserNotifications = computed(() => {
+    const u = this.currentUser();
+    return u ? this.state().notifications.filter((n) => n.userId === u.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt)) : [];
+  });
+  readonly currentAwaitingPaymentOrders = computed(() => {
+    const u = this.currentUser();
+    return u ? this.awaitingPaymentOrdersForUser(u.id) : [];
+  });
   readonly customizationDraft = computed(() => this.state().customizationDraft);
   readonly categories = computed(() => designCategories.slice());
   readonly currentCart = computed(() => {
@@ -115,8 +171,12 @@ export class PlatformStoreService {
     if (!user) {
       return { success: false, error: 'Account data is unavailable. Please refresh and try again.' };
     }
-    if (user.suspended) {
+    const status = user.accountStatus ?? (user.suspended ? 'SUSPENDED' : 'ACTIVE');
+    if (status === 'SUSPENDED') {
       return { success: false, error: 'This account is suspended. Contact Printymand support.' };
+    }
+    if (status === 'BANNED') {
+      return { success: false, error: 'This account has been banned for policy violations.' };
     }
 
     this.patchState({ currentUserId: user.id });
@@ -155,6 +215,9 @@ export class PlatformStoreService {
       email: input.email.trim().toLowerCase(),
       address: input.address.trim(),
       role: input.role,
+      // Spec: admin verifies printer/designer identity at signup. Customers are
+      // active immediately; designers/printers start pending verification.
+      accountStatus: input.role === 'customer' ? 'ACTIVE' : 'PENDING_VERIFICATION',
     });
     const nextPrinter = input.role === 'printer' ? createPrinterPartner({ id: this.takeNextId(), user: createdUser }) : null;
 
@@ -404,10 +467,44 @@ export class PlatformStoreService {
   }
 
   toggleUserSuspended(userId: number): void {
+    const user = this.getUserById(userId);
+    const currentlySuspended = (user?.accountStatus ?? (user?.suspended ? 'SUSPENDED' : 'ACTIVE')) === 'SUSPENDED';
+    this.setAccountStatus(userId, currentlySuspended ? 'ACTIVE' : 'SUSPENDED');
+  }
+
+  /** Admin moves an account through the verification lifecycle. */
+  setAccountStatus(userId: number, status: AccountStatus): void {
     this.state.update((current) => ({
       ...current,
-      currentUserId: current.currentUserId === userId ? null : current.currentUserId,
-      users: current.users.map((user) => (user.id === userId ? { ...user, suspended: !user.suspended } : user)),
+      // Force-logout the affected user if they are no longer permitted to be active.
+      currentUserId:
+        current.currentUserId === userId && (status === 'SUSPENDED' || status === 'BANNED')
+          ? null
+          : current.currentUserId,
+      users: current.users.map((user) =>
+        user.id === userId
+          ? { ...user, accountStatus: status, suspended: status === 'SUSPENDED' || status === 'BANNED' }
+          : user,
+      ),
+    }));
+    const messages: Record<AccountStatus, string> = {
+      ACTIVE: 'Your account has been verified and is now active.',
+      PENDING_VERIFICATION: 'Your account is pending verification.',
+      SUSPENDED: 'Your account has been suspended.',
+      BANNED: 'Your account has been banned for policy violations.',
+    };
+    this.notify(userId, 'account_status', messages[status]);
+  }
+
+  /** Printer availability toggle (spec "Availability System (Critical)"). */
+  setPrinterAvailability(printerUserId: number, availability: PrinterAvailability): void {
+    const printer = this.getPrinterByUserId(printerUserId);
+    if (!printer) return;
+    this.state.update((current) => ({
+      ...current,
+      printers: current.printers.map((entry) =>
+        entry.id === printer.id ? { ...entry, availability } : entry,
+      ),
     }));
   }
 
@@ -476,44 +573,262 @@ export class PlatformStoreService {
     }));
   }
 
-  async placeOrder(userId: number, payload: PlaceOrderPayload): Promise<Order | null> {
+  /**
+   * Spec "Order Flow (Revised)" step 1-2: the customer submits an ORDER REQUEST.
+   * No payment is taken yet — the order is created in REQUESTED state and the
+   * printer must accept it before the customer can pay.
+   */
+  async submitOrderRequest(userId: number, payload: PlaceOrderPayload): Promise<Order | null> {
     const cart = this.cartForUser(userId);
     if (!cart.items.length) return null;
 
     const orderId = `PMD-${Date.now()}`;
+    let order: Order;
     try {
       const response = await this.api.placeOrder(payload);
       this.patchState({ backendMode: 'hybrid' });
-      const normalizedOrderId = response.orderId ?? orderId;
-      return this.finalizeLocalOrder(userId, payload, normalizedOrderId);
+      order = this.finalizeLocalOrder(userId, payload, response.orderId ?? orderId);
     } catch {
       this.patchState({ backendMode: 'hybrid' });
-      return this.finalizeLocalOrder(userId, payload, orderId);
+      order = this.finalizeLocalOrder(userId, payload, orderId);
     }
+
+    // Notify the printer(s) of the incoming request and confirm to the customer.
+    const printerUserIds = new Set<number>();
+    order.lines.forEach((line) => {
+      const printer = line.printerId ? this.getPrinterById(line.printerId) : null;
+      if (printer) printerUserIds.add(printer.userId);
+    });
+    printerUserIds.forEach((pid) =>
+      this.notify(pid, 'order_requested', `New order request ${order.id} is awaiting your decision.`, '/printer-dashboard'),
+    );
+    this.notify(userId, 'order_requested', `Request ${order.id} sent. Waiting for printer acceptance.`, `/tracking/${order.id}`);
+    return order;
   }
 
-  async startPayment(orderId: number | string): Promise<string> {
+  /**
+   * New flow: the customer/user picks design + product + printer and sends the
+   * request directly from printer selection (no cart). One order, one line,
+   * REQUESTED. Payment only happens later, from the cart, after acceptance.
+   */
+  submitDraftOrderRequest(userId: number, shippingAddress?: string): Order | null {
+    const draft = this.state().customizationDraft;
+    if (!draft || !draft.selectedPrinterId) return null;
+    const design = this.getDesignById(draft.designId);
+    const product = this.getProductById(draft.productId);
+    const printer = this.getPrinterById(draft.selectedPrinterId);
+    if (!design || !product || !printer) return null;
+
+    const user = this.getUserById(userId);
+    const margin = this.state().platformSettings.margin;
+    const royalty = design.isUserUpload ? 0 : this.state().platformSettings.designerRoyalty;
+    // Price comes from the chosen printer's offering for this global product.
+    const printerBase = this.offeringPrice(printer.id, product.id);
+    const orderId = `PMD-${Date.now()}`;
+    const line: OrderLine = {
+      id: this.takeNextId(),
+      designId: design.id,
+      designTitle: design.title,
+      designImage: design.image,
+      productId: product.id,
+      productName: product.name,
+      productImage: product.images[0] ?? '/placeholder-image.svg',
+      printerId: printer.id,
+      printerName: printer.businessName,
+      color: draft.selectedColor,
+      size: draft.selectedSize,
+      x: draft.placement.x,
+      y: draft.placement.y,
+      scale: draft.placement.scale,
+      price: printerBase + margin,
+      printerAmount: printerBase,
+      platformFee: margin,
+      designerRoyalty: royalty,
+      status: 'Pending',
+    };
+    const order: Order = {
+      id: orderId,
+      userId,
+      createdAt: new Date().toISOString().slice(0, 10),
+      trackingCode: `PMD-${String(orderId).slice(-6)}`,
+      total: line.price,
+      paymentMethod: 'd17',
+      paymentStatus: 'unpaid',
+      requestStatus: 'REQUESTED',
+      shippingAddress:
+        shippingAddress ||
+        user?.customerProfile?.savedAddresses.find((a) => a.isDefault)?.line1 ||
+        user?.address ||
+        '',
+      lines: [line],
+    };
+
+    void this.api.submitOrderRequest({ paymentMethod: 'd17', shippingAddress: order.shippingAddress }).catch(() => undefined);
+    this.patchState({ backendMode: 'hybrid' });
+
+    this.state.update((current) => ({
+      ...current,
+      orders: [order, ...current.orders],
+      customizationDraft: null,
+    }));
+
+    this.notify(printer.userId, 'order_requested', `New order request ${order.id} is awaiting your decision.`, '/printer-dashboard');
+    this.notify(userId, 'order_requested', `Request ${order.id} sent to ${printer.businessName}. Waiting for acceptance.`, `/tracking/${order.id}`);
+    return order;
+  }
+
+  /** Orders the customer can pay now (printer accepted, not yet paid). */
+  awaitingPaymentOrdersForUser(userId: number): Order[] {
+    return this.state()
+      .orders.filter((o) => o.userId === userId && o.requestStatus === 'ACCEPTED' && o.paymentStatus !== 'paid')
+      .sort(sortByDateDesc);
+  }
+
+  /** Spec step 3: printer accepts the request → order becomes binding, customer may pay. */
+  acceptOrderRequest(orderId: number | string): { success: boolean; error?: string } {
+    const order = this.getOrderById(orderId);
+    if (!order) return { success: false, error: 'Order not found.' };
+    if (order.requestStatus !== 'REQUESTED') {
+      return { success: false, error: 'This request has already been processed.' };
+    }
+    this.state.update((current) => ({
+      ...current,
+      orders: current.orders.map((entry) =>
+        entry.id === order.id ? { ...entry, requestStatus: 'ACCEPTED' } : entry,
+      ),
+    }));
+    this.notify(order.userId, 'order_accepted', `Your request ${order.id} was accepted. Go to your cart to pay.`, '/cart');
+    return { success: true };
+  }
+
+  /** Spec step 3: printer rejects the request → order is cancelled, no payment. */
+  rejectOrderRequest(orderId: number | string, reason?: string): { success: boolean; error?: string } {
+    const order = this.getOrderById(orderId);
+    if (!order) return { success: false, error: 'Order not found.' };
+    if (order.requestStatus !== 'REQUESTED') {
+      return { success: false, error: 'This request has already been processed.' };
+    }
+    this.state.update((current) => ({
+      ...current,
+      orders: current.orders.map((entry) =>
+        entry.id === order.id
+          ? {
+              ...entry,
+              requestStatus: 'REJECTED',
+              rejectionReason: reason?.trim() || 'The printer is unable to fulfill this request.',
+              lines: entry.lines.map((line) => ({ ...line, status: 'Rejected' as OrderLineStatus })),
+            }
+          : entry,
+      ),
+    }));
+    this.notify(order.userId, 'order_rejected', `Your request ${order.id} was rejected. ${reason?.trim() || ''}`.trim(), `/tracking/${order.id}`);
+    return { success: true };
+  }
+
+  /** Customer cancels while still awaiting a printer decision (allowed only pre-acceptance). */
+  cancelOrderRequest(orderId: number | string, userId: number): { success: boolean; error?: string } {
+    const order = this.getOrderById(orderId);
+    if (!order || order.userId !== userId) return { success: false, error: 'Order not found.' };
+    if (order.requestStatus !== 'REQUESTED') {
+      return { success: false, error: 'Cancellation after the printer accepts is not allowed.' };
+    }
+    this.state.update((current) => ({
+      ...current,
+      orders: current.orders.map((entry) =>
+        entry.id === order.id ? { ...entry, requestStatus: 'CANCELLED' } : entry,
+      ),
+    }));
+    return { success: true };
+  }
+
+  /**
+   * Spec step 4-5: the customer pays an ACCEPTED order. Payment is only possible
+   * after printer acceptance; on success the order is Confirmed and fulfillment begins.
+   */
+  async payForOrder(orderId: number | string): Promise<{ success: boolean; error?: string }> {
+    const order = this.getOrderById(orderId);
+    if (!order) return { success: false, error: 'Order not found.' };
+    if (order.requestStatus !== 'ACCEPTED') {
+      return { success: false, error: 'You can only pay once the printer has accepted your request.' };
+    }
+    if (order.paymentStatus === 'paid') return { success: true };
+
     try {
-      const response = await this.api.initiatePayment(orderId);
-      this.markOrderPaymentStatus(orderId, 'processing');
-      return response.paymentUrl;
+      await this.api.initiatePayment(orderId);
+      this.patchState({ backendMode: 'hybrid' });
     } catch {
       this.patchState({ backendMode: 'hybrid' });
-      this.markOrderPaymentStatus(orderId, 'paid');
-      return `/tracking/${orderId}?payment=paid`;
     }
+
+    this.state.update((current) => ({
+      ...current,
+      orders: current.orders.map((entry) =>
+        entry.id === order.id
+          ? {
+              ...entry,
+              paymentStatus: 'paid',
+              lines: entry.lines.map((line) =>
+                line.status === 'Pending' ? { ...line, status: 'Confirmed' as OrderLineStatus } : line,
+              ),
+            }
+          : entry,
+      ),
+    }));
+    const printerUserIds = new Set<number>();
+    order.lines.forEach((line) => {
+      const printer = line.printerId ? this.getPrinterById(line.printerId) : null;
+      if (printer) printerUserIds.add(printer.userId);
+    });
+    printerUserIds.forEach((pid) =>
+      this.notify(pid, 'order_paid', `Order ${order.id} is paid — start fulfillment.`, '/printer-dashboard'),
+    );
+    this.notify(order.userId, 'order_paid', `Payment received for order ${order.id}. It is now confirmed.`, `/tracking/${order.id}`);
+    return { success: true };
   }
 
-  markOrderPaymentStatus(orderId: number | string, status: 'processing' | 'paid'): void {
+  setOrderShippingAddress(orderId: number | string, address: string): void {
+    this.state.update((current) => ({
+      ...current,
+      orders: current.orders.map((o) => (o.id === orderId ? { ...o, shippingAddress: address } : o)),
+    }));
+  }
+
+  setOrderPaymentMethod(orderId: number | string, method: PaymentMethod): void {
+    this.state.update((current) => ({
+      ...current,
+      orders: current.orders.map((o) => (o.id === orderId ? { ...o, paymentMethod: method } : o)),
+    }));
+  }
+
+  markOrderPaymentStatus(orderId: number | string, status: PaymentStatus): void {
     this.state.update((current) => ({
       ...current,
       orders: current.orders.map((order) => (order.id === orderId ? { ...order, paymentStatus: status } : order)),
     }));
   }
 
-  async submitReview(orderId: number | string, customerId: number, review: ReviewPayload): Promise<{ success: boolean; error?: string }> {
-    if (this.state().reviews.some((entry) => entry.orderId === orderId && entry.customerId === customerId)) {
-      return { success: false, error: 'A review has already been submitted for this order.' };
+  /**
+   * Spec "Feedback & History": after delivery the customer rates BOTH the design
+   * and the printer. One review per (order, target).
+   */
+  async submitReview(
+    orderId: number | string,
+    customerId: number,
+    review: ReviewPayload & { target: ReviewTarget; designId?: number; printerId?: number },
+  ): Promise<{ success: boolean; error?: string }> {
+    const order = this.getOrderById(orderId);
+    if (!order || order.userId !== customerId) {
+      return { success: false, error: 'Order not found.' };
+    }
+    if (this.getOrderStatus(order) !== 'Delivered') {
+      return { success: false, error: 'You can only review an order after it is delivered.' };
+    }
+    if (
+      this.state().reviews.some(
+        (entry) => entry.orderId === orderId && entry.customerId === customerId && entry.target === review.target,
+      )
+    ) {
+      return { success: false, error: `You already reviewed the ${review.target} for this order.` };
     }
 
     try {
@@ -530,17 +845,35 @@ export class PlatformStoreService {
       rating: review.rating,
       comment: review.comment.trim(),
       createdAt: new Date().toISOString().slice(0, 10),
+      target: review.target,
+      designId: review.designId,
+      printerId: review.printerId,
     };
 
     this.state.update((current) => ({
       ...current,
       reviews: [nextReview, ...current.reviews],
+      // Reflect the rating on the rated design / printer aggregate.
+      designs:
+        review.target === 'design' && review.designId
+          ? current.designs.map((d) =>
+              d.id === review.designId ? { ...d, rating: Math.round(((d.rating + review.rating) / 2) * 10) / 10 } : d,
+            )
+          : current.designs,
+      printers:
+        review.target === 'printer' && review.printerId
+          ? current.printers.map((p) =>
+              p.id === review.printerId
+                ? { ...p, rating: Math.round(((p.rating + review.rating) / 2) * 10) / 10, reviews: p.reviews + 1 }
+                : p,
+            )
+          : current.printers,
     }));
 
     return { success: true };
   }
 
-  addOrUpdateDesign(input: Partial<Design> & Pick<Design, 'title' | 'image' | 'category' | 'description' | 'price'>, designerId: number): Design {
+  addOrUpdateDesign(input: Partial<Design> & Pick<Design, 'title' | 'image' | 'category' | 'description'>, designerId: number): Design {
     const designer = this.getUserById(designerId);
     const existing = input.id ? this.getDesignById(input.id) : null;
     const nextDesign: Design = {
@@ -559,8 +892,17 @@ export class PlatformStoreService {
       views: existing?.views ?? 0,
       engagementRate: existing?.engagementRate ?? 0,
       conversionRate: existing?.conversionRate ?? 0,
-      price: input.price,
+      // Legacy field retained but no longer designer-controlled pricing input.
+      price: input.price ?? existing?.price ?? 0,
       status: input.status ?? existing?.status ?? 'ACTIVE',
+      // New designer uploads await admin moderation before reaching the marketplace.
+      moderation: existing?.moderation ?? 'PENDING',
+      nsfw: input.nsfw ?? existing?.nsfw ?? false,
+      // Designer marketplace designs are always preserved as intended; only the
+      // customer's own uploads are customizable. Designer has no say here.
+      customizationAllowed: false,
+      isUserUpload: existing?.isUserUpload ?? false,
+      uploadedByUserId: existing?.uploadedByUserId,
       assignedProductIds: input.assignedProductIds ?? existing?.assignedProductIds ?? [],
       productConfigurations: input.productConfigurations ?? existing?.productConfigurations ?? [],
       createdAt: existing?.createdAt ?? new Date().toISOString().slice(0, 10),
@@ -577,11 +919,154 @@ export class PlatformStoreService {
     return nextDesign;
   }
 
+  /**
+   * Spec: a customer may upload their own artwork for personal printing. Such a
+   * design is fully customizable, is owned by the customer, and never appears in
+   * the public marketplace.
+   */
+  createUploadedDesign(userId: number, input: { title: string; image: string }): Design {
+    const owner = this.getUserById(userId);
+    const allProductIds = this.state().products.map((product) => product.id);
+    const nextDesign: Design = {
+      id: this.takeNextId(),
+      title: input.title || 'My uploaded design',
+      image: input.image,
+      designerId: userId,
+      designer: owner?.name ?? 'You',
+      designerRank: 'Novice',
+      designerAvatar: owner?.avatar ?? '/placeholder-image.svg',
+      category: 'Custom',
+      description: 'Customer-uploaded artwork for personal printing.',
+      tags: [],
+      rating: 0,
+      sales: 0,
+      views: 0,
+      engagementRate: 0,
+      conversionRate: 0,
+      price: 0,
+      status: 'ACTIVE',
+      moderation: 'APPROVED',
+      nsfw: false,
+      customizationAllowed: true,
+      isUserUpload: true,
+      uploadedByUserId: userId,
+      assignedProductIds: allProductIds,
+      productConfigurations: [],
+      createdAt: new Date().toISOString().slice(0, 10),
+      updatedAt: new Date().toISOString().slice(0, 10),
+    };
+    this.state.update((current) => ({ ...current, designs: [nextDesign, ...current.designs] }));
+    return nextDesign;
+  }
+
+  /** Admin updates platform-wide pricing policy (margin / fixed designer royalty). */
+  updatePlatformSettings(updates: Partial<PlatformSettings>): void {
+    this.state.update((current) => ({
+      ...current,
+      platformSettings: { ...current.platformSettings, ...updates },
+    }));
+  }
+
   setDesignStatus(designId: number, status: Design['status']): void {
     this.state.update((current) => ({
       ...current,
       designs: current.designs.map((design) => (design.id === designId ? { ...design, status, updatedAt: new Date().toISOString().slice(0, 10) } : design)),
     }));
+  }
+
+  /** Admin reviews an uploaded design (spec: approve/reject/remove). */
+  moderateDesign(adminId: number, designId: number, decision: 'APPROVED' | 'REJECTED', reason?: string): void {
+    const design = this.getDesignById(designId);
+    if (!design) return;
+    this.state.update((current) => ({
+      ...current,
+      designs: current.designs.map((d) =>
+        d.id === designId
+          ? { ...d, moderation: decision, status: decision === 'REJECTED' ? 'REMOVED' : d.status, updatedAt: new Date().toISOString().slice(0, 10) }
+          : d,
+      ),
+      moderationLog: [
+        {
+          id: `mod-${this.takeNextId()}`,
+          adminId,
+          targetType: 'design',
+          targetId: designId,
+          action: decision,
+          reason,
+          createdAt: new Date().toISOString(),
+        },
+        ...current.moderationLog,
+      ],
+    }));
+    this.notify(
+      design.designerId,
+      'design_moderated',
+      `Your design "${design.title}" was ${decision === 'APPROVED' ? 'approved and is now live' : 'rejected'}.`,
+      '/designer-dashboard',
+    );
+  }
+
+  /** Admin features/unfeatures a design, designer, or printer on the marketplace. */
+  toggleFeatured(adminId: number, targetType: FeaturedContent['targetType'], targetId: number): void {
+    this.state.update((current) => {
+      const existing = current.featured.find((f) => f.targetType === targetType && f.targetId === targetId);
+      return {
+        ...current,
+        featured: existing
+          ? current.featured.filter((f) => f !== existing)
+          : [
+              { id: `feat-${this.takeNextId()}`, targetType, targetId, createdAt: new Date().toISOString() },
+              ...current.featured,
+            ],
+        moderationLog: [
+          {
+            id: `mod-${this.takeNextId()}`,
+            adminId,
+            targetType,
+            targetId,
+            action: existing ? 'UNFEATURE' : 'FEATURE',
+            createdAt: new Date().toISOString(),
+          },
+          ...current.moderationLog,
+        ],
+      };
+    });
+  }
+
+  isFeatured(targetType: FeaturedContent['targetType'], targetId: number): boolean {
+    return this.state().featured.some((f) => f.targetType === targetType && f.targetId === targetId);
+  }
+
+  /** Spec "Earnings & Performance": designer requests a payout once threshold is met. */
+  requestDesignerPayout(userId: number): { success: boolean; error?: string } {
+    const user = this.getUserById(userId);
+    if (!user || user.role !== 'designer') return { success: false, error: 'Designer account required.' };
+    const profile = { ...createDefaultDesignerProfile(user), ...user.designerProfile };
+    const threshold = this.state().platformSettings.payoutThreshold;
+    const balance = profile.payoutBalance ?? 0;
+    if (balance < threshold) {
+      return { success: false, error: `You need at least ${threshold} TND to request a payout.` };
+    }
+    const amount = balance;
+    this.state.update((current) => ({
+      ...current,
+      users: current.users.map((u) =>
+        u.id === userId ? { ...u, designerProfile: { ...profile, payoutBalance: 0 } } : u,
+      ),
+      payouts: [
+        {
+          id: `pay-${this.takeNextId()}`,
+          designerId: userId,
+          amount,
+          status: 'requested',
+          dueDate: new Date(Date.now() + 7 * 864e5).toISOString().slice(0, 10),
+          reference: `PO-${Date.now().toString().slice(-6)}`,
+        },
+        ...current.payouts,
+      ],
+    }));
+    this.notify(userId, 'payout', `Payout request of ${amount} TND submitted.`, '/designer-dashboard');
+    return { success: true };
   }
 
   assignProductsToDesign(designId: number, productIds: number[]): void {
@@ -611,16 +1096,18 @@ export class PlatformStoreService {
     }));
   }
 
-  addOrUpdateProduct(input: Partial<Product> & Pick<Product, 'name' | 'category' | 'description' | 'basePrice' | 'colors' | 'sizes' | 'images' | 'availability' | 'leadTimeDays'>, printerUserId: number): Product {
-    const printerPartner = this.getPrinterByUserId(printerUserId);
-    const printerUser = this.getUserById(printerUserId);
-    const createdPrinter = !printerPartner && printerUser ? createPrinterPartner({ id: this.takeNextId(), user: printerUser }) : null;
-    const resolvedPrinter = printerPartner ?? createdPrinter;
+  /**
+   * ADMIN-ONLY: create/edit a GLOBAL product type. The platform owns the catalog
+   * (name, category, placeholder images, sizes/colors). Printers never call this.
+   */
+  addOrUpdateGlobalProduct(
+    input: Partial<Product> & Pick<Product, 'name' | 'category' | 'description' | 'basePrice' | 'colors' | 'sizes' | 'images'>,
+  ): Product {
     const existing = input.id ? this.getProductById(input.id) : null;
     const nextProduct: Product = {
       id: input.id ?? this.takeNextId(),
-      printerId: resolvedPrinter?.id ?? 0,
-      printerName: resolvedPrinter?.businessName ?? printerUser?.name ?? 'Printer',
+      printerId: 0,
+      printerName: 'Printymand',
       name: input.name,
       category: input.category,
       description: input.description,
@@ -628,22 +1115,108 @@ export class PlatformStoreService {
       colors: input.colors,
       sizes: input.sizes,
       images: input.images,
-      availability: input.availability,
-      leadTimeDays: input.leadTimeDays,
+      availability: input.availability ?? existing?.availability ?? 'ACTIVE',
+      leadTimeDays: input.leadTimeDays ?? existing?.leadTimeDays ?? 3,
       rating: existing?.rating ?? 0,
       totalOrders: existing?.totalOrders ?? 0,
-      assignedDesignIds: input.assignedDesignIds ?? existing?.assignedDesignIds ?? [],
+      assignedDesignIds: existing?.assignedDesignIds ?? [],
     };
-
     this.state.update((current) => ({
       ...current,
-      printers: createdPrinter ? [createdPrinter, ...current.printers] : current.printers,
       products: existing
         ? current.products.map((product) => (product.id === nextProduct.id ? nextProduct : product))
-        : [nextProduct, ...current.products],
+        : [...current.products, nextProduct],
     }));
-
     return nextProduct;
+  }
+
+  /** ADMIN-ONLY: remove a global product type and any printer offerings for it. */
+  removeGlobalProduct(productId: number): void {
+    this.state.update((current) => ({
+      ...current,
+      products: current.products.filter((p) => p.id !== productId),
+      offerings: current.offerings.filter((o) => o.productId !== productId),
+      designs: current.designs.map((d) => ({
+        ...d,
+        assignedProductIds: d.assignedProductIds.filter((id) => id !== productId),
+      })),
+    }));
+  }
+
+  // ── Printer offerings (opt-in + pricing for global products) ──
+
+  offeringsForPrinterUser(printerUserId: number): PrinterProductOffering[] {
+    const printer = this.getPrinterByUserId(printerUserId);
+    if (!printer) return [];
+    return this.state().offerings.filter((o) => o.printerId === printer.id);
+  }
+
+  getOffering(printerId: number, productId: number): PrinterProductOffering | undefined {
+    return this.state().offerings.find((o) => o.printerId === printerId && o.productId === productId);
+  }
+
+  /** Printer's production price for a global product (falls back to reference price). */
+  offeringPrice(printerId: number, productId: number): number {
+    const offering = this.getOffering(printerId, productId);
+    if (offering) return offering.basePrice;
+    return this.getProductById(productId)?.basePrice ?? 0;
+  }
+
+  /** Printers that currently offer a given global product (available offering). */
+  printersForProduct(productId: number): PrinterPartner[] {
+    const printerIds = new Set(
+      this.state().offerings.filter((o) => o.productId === productId && o.available).map((o) => o.printerId),
+    );
+    return this.state().printers.filter((p) => printerIds.has(p.id));
+  }
+
+  /** Printer opts into / prices / toggles a global product. Cannot create products. */
+  setPrinterOffering(printerUserId: number, productId: number, basePrice: number, available: boolean): void {
+    const printer = this.getPrinterByUserId(printerUserId);
+    if (!printer || !this.getProductById(productId)) return;
+    this.state.update((current) => {
+      const existing = current.offerings.find((o) => o.printerId === printer.id && o.productId === productId);
+      if (existing) {
+        return {
+          ...current,
+          offerings: current.offerings.map((o) =>
+            o === existing ? { ...o, basePrice, available } : o,
+          ),
+        };
+      }
+      return {
+        ...current,
+        offerings: [
+          {
+            id: this.takeNextId(),
+            printerId: printer.id,
+            productId,
+            basePrice,
+            available,
+            createdAt: new Date().toISOString().slice(0, 10),
+          },
+          ...current.offerings,
+        ],
+      };
+    });
+  }
+
+  /** Printer stops offering a global product entirely. */
+  removePrinterOffering(printerUserId: number, productId: number): void {
+    const printer = this.getPrinterByUserId(printerUserId);
+    if (!printer) return;
+    this.state.update((current) => ({
+      ...current,
+      offerings: current.offerings.filter(
+        (o) => !(o.printerId === printer.id && o.productId === productId),
+      ),
+    }));
+  }
+
+  printerPayoutsForUser(printerUserId: number): PrinterPayoutRecord[] {
+    const printer = this.getPrinterByUserId(printerUserId);
+    if (!printer) return [];
+    return this.state().printerPayouts.filter((p) => p.printerId === printer.id);
   }
 
   setOrderLineStatus(orderId: number | string, lineId: number, status: OrderLineStatus): void {
@@ -658,10 +1231,16 @@ export class PlatformStoreService {
           : order,
       ),
     }));
+    const order = this.getOrderById(orderId);
+    if (order) {
+      this.notify(order.userId, 'order_status', `Order ${order.id}: an item is now "${status}".`, `/tracking/${order.id}`);
+      this.settleOrderIfDelivered(orderId);
+    }
   }
 
   advanceOrderLineStatus(orderId: number | string, lineId: number): void {
-    const steps: OrderLineStatus[] = ['Pending', 'Accepted', 'Printing', 'Shipped', 'Delivered'];
+    // Post-payment fulfillment progression only (spec: Confirmed → Printing → Shipped → Delivered).
+    const steps: OrderLineStatus[] = ['Confirmed', 'Printing', 'Shipped', 'Delivered'];
     this.state.update((current) => ({
       ...current,
       orders: current.orders.map((order) =>
@@ -680,6 +1259,12 @@ export class PlatformStoreService {
           : order,
       ),
     }));
+    const order = this.getOrderById(orderId);
+    if (order) {
+      const line = order.lines.find((l) => l.id === lineId);
+      if (line) this.notify(order.userId, 'order_status', `Order ${order.id}: "${line.designTitle}" is now ${line.status}.`, `/tracking/${order.id}`);
+      this.settleOrderIfDelivered(orderId);
+    }
   }
 
   getUserById(userId: number): User | undefined {
@@ -714,9 +1299,14 @@ export class PlatformStoreService {
     return this.state().designs.filter((design) => design.designerId === designerId);
   }
 
+  /** Global products this printer has opted into (has an offering for). */
   productsForPrinterUser(printerUserId: number): Product[] {
     const printer = this.getPrinterByUserId(printerUserId);
-    return printer ? this.state().products.filter((product) => product.printerId === printer.id) : [];
+    if (!printer) return [];
+    const offered = new Set(
+      this.state().offerings.filter((o) => o.printerId === printer.id).map((o) => o.productId),
+    );
+    return this.state().products.filter((p) => offered.has(p.id));
   }
 
   ordersForCustomer(userId: number): Order[] {
@@ -741,6 +1331,30 @@ export class PlatformStoreService {
     );
   }
 
+  /** Orders awaiting this printer's accept/reject decision (spec step 3). */
+  ordersAwaitingPrinter(printerUserId: number): Order[] {
+    const printer = this.getPrinterByUserId(printerUserId);
+    if (!printer) return [];
+    return this.state()
+      .orders.filter(
+        (order) => order.requestStatus === 'REQUESTED' && order.lines.some((line) => line.printerId === printer.id),
+      )
+      .sort(sortByDateDesc);
+  }
+
+  /** Accepted + paid orders this printer must fulfill (post-payment progression). */
+  fulfillmentLinesForPrinter(printerUserId: number): Array<OrderLine & { orderId: number | string; customer: User | undefined }> {
+    const printer = this.getPrinterByUserId(printerUserId);
+    if (!printer) return [];
+    return this.state()
+      .orders.filter((order) => order.requestStatus === 'ACCEPTED' && order.paymentStatus === 'paid')
+      .flatMap((order) =>
+        order.lines
+          .filter((line) => line.printerId === printer.id)
+          .map((line) => ({ ...line, orderId: order.id, customer: this.getUserById(order.userId) })),
+      );
+  }
+
   linesForDesigner(designerId: number): Array<OrderLine & { orderId: number | string }> {
     const designIds = new Set(this.designsForDesigner(designerId).map((design) => design.id));
     return this.state().orders.flatMap((order) =>
@@ -756,7 +1370,9 @@ export class PlatformStoreService {
         const product = this.getProductById(item.productId);
         if (!design || !product) return null;
         const printer = item.printerId ? this.getPrinterById(item.printerId) ?? null : null;
-        const lineTotal = design.price + product.basePrice + (printer ? Math.round(product.basePrice * 0.18) : 0);
+        // Spec pricing: customer pays printer base price + fixed platform margin.
+        // The designer does NOT influence price.
+        const lineTotal = product.basePrice + this.state().platformSettings.margin;
         return {
           id: item.id,
           design,
@@ -780,20 +1396,39 @@ export class PlatformStoreService {
     };
   }
 
-  getOrderStatus(order: Order): OrderLineStatus {
+  /**
+   * Customer-facing order stage reflecting the approval-gated lifecycle:
+   * Requested → Awaiting payment (accepted) → Confirmed → Printing → Shipped → Delivered,
+   * plus the Rejected / Cancelled terminal states.
+   */
+  getOrderStatus(order: Order): string {
+    if (order.requestStatus === 'REJECTED') return 'Rejected';
+    if (order.requestStatus === 'CANCELLED') return 'Cancelled';
+    if (order.requestStatus === 'REQUESTED') return 'Requested';
+    if (order.paymentStatus !== 'paid') return 'Awaiting payment';
     const statuses = order.lines.map((line) => line.status);
-    if (statuses.every((status) => status === 'Rejected')) return 'Rejected';
-    if (statuses.every((status) => status === 'Delivered')) return 'Delivered';
+    if (statuses.length && statuses.every((status) => status === 'Delivered')) return 'Delivered';
     if (statuses.some((status) => status === 'Shipped')) return 'Shipped';
     if (statuses.some((status) => status === 'Printing')) return 'Printing';
-    if (statuses.some((status) => status === 'Accepted')) return 'Accepted';
-    return 'Pending';
+    return 'Confirmed';
   }
 
   buildOrderTimeline(order: Order): Array<{ label: string; done: boolean }> {
-    const status = this.getOrderStatus(order);
-    const orderSteps: OrderLineStatus[] = ['Pending', 'Accepted', 'Printing', 'Shipped', 'Delivered'];
-    const activeIndex = orderSteps.indexOf(status);
+    const orderSteps = ['Requested', 'Accepted', 'Paid', 'Printing', 'Shipped', 'Delivered'];
+    if (order.requestStatus === 'REJECTED' || order.requestStatus === 'CANCELLED') {
+      // Only the initial "Requested" step is considered done for a terminated request.
+      return orderSteps.map((label, index) => ({ label, done: index === 0 }));
+    }
+    const stage = this.getOrderStatus(order);
+    const stageToIndex: Record<string, number> = {
+      Requested: 0,
+      'Awaiting payment': 1,
+      Confirmed: 2,
+      Printing: 3,
+      Shipped: 4,
+      Delivered: 5,
+    };
+    const activeIndex = stageToIndex[stage] ?? 0;
     return orderSteps.map((label, index) => ({ label, done: index <= activeIndex }));
   }
 
@@ -801,7 +1436,8 @@ export class PlatformStoreService {
     const lines = this.linesForDesigner(designerId);
     return this.designsForDesigner(designerId).map((design) => {
       const designLines = lines.filter((line) => line.designId === design.id && line.status !== 'Rejected');
-      const revenue = designLines.reduce((sum, line) => sum + line.price * 0.28, 0);
+      // Spec: designer earns a platform-fixed royalty per sale (not a cut of price).
+      const revenue = designLines.length * this.state().platformSettings.designerRoyalty;
       return {
         designId: design.id,
         sales: designLines.length,
@@ -853,7 +1489,20 @@ export class PlatformStoreService {
   }
 
   availableDesignsForProduct(productId: number): Design[] {
-    return this.state().designs.filter((design) => design.assignedProductIds.includes(Number(productId)) && design.status === 'ACTIVE');
+    return this.state().designs.filter(
+      (design) =>
+        design.assignedProductIds.includes(Number(productId)) &&
+        design.status === 'ACTIVE' &&
+        (design.moderation ?? 'APPROVED') === 'APPROVED' &&
+        !design.isUserUpload,
+    );
+  }
+
+  /** Marketplace listing: only admin-approved designs, excluding personal uploads. */
+  marketplaceDesigns(): Design[] {
+    return this.state().designs.filter(
+      (design) => !design.isUserUpload && (design.moderation ?? 'APPROVED') === 'APPROVED',
+    );
   }
 
   private finalizeLocalOrder(userId: number, payload: PlaceOrderPayload, orderId: number | string): Order {
@@ -866,7 +1515,7 @@ export class PlatformStoreService {
         const product = this.getProductById(item.productId);
         const printer = item.printerId ? this.getPrinterById(item.printerId) : null;
         if (!design || !product) return null;
-        return {
+        const line: OrderLine = {
           id: this.takeNextId(),
           designId: design.id,
           designTitle: design.title,
@@ -881,11 +1530,17 @@ export class PlatformStoreService {
           x: item.x,
           y: item.y,
           scale: item.scale,
-          price: design.price + product.basePrice + (printer ? Math.round(product.basePrice * 0.18) : 0),
+          price: (printer ? this.offeringPrice(printer.id, product.id) : product.basePrice) + this.state().platformSettings.margin,
+          // Money split (spec §2): printer production + platform fee + designer royalty
+          // (royalty funded from the platform margin; 0 for customer-uploaded designs).
+          printerAmount: printer ? this.offeringPrice(printer.id, product.id) : product.basePrice,
+          platformFee: this.state().platformSettings.margin,
+          designerRoyalty: design.isUserUpload ? 0 : this.state().platformSettings.designerRoyalty,
           status: 'Pending',
         };
+        return line;
       })
-      .filter((line): line is OrderLine => !!line);
+      .filter((line): line is OrderLine => line !== null);
 
     const createdOrder: Order = {
       id: orderId,
@@ -894,7 +1549,9 @@ export class PlatformStoreService {
       trackingCode: `PMD-${String(orderId).slice(-6)}`,
       total: lines.reduce((sum, line) => sum + line.price, 0),
       paymentMethod: payload.paymentMethod,
-      paymentStatus: payload.paymentMethod === 'cash' ? 'pending' : 'processing',
+      // Approval-gated: no payment until the printer accepts the request.
+      paymentStatus: 'unpaid',
+      requestStatus: 'REQUESTED',
       shippingAddress,
       lines,
     };
@@ -906,6 +1563,112 @@ export class PlatformStoreService {
     }));
 
     return createdOrder;
+  }
+
+  /** Create an in-app notification for a user (spec: notify on each status change). */
+  private notify(userId: number, type: NotificationType, message: string, link?: string): void {
+    const notification: AppNotification = {
+      id: this.takeNextId(),
+      userId,
+      type,
+      message,
+      link,
+      read: false,
+      createdAt: new Date().toISOString(),
+    };
+    this.state.update((current) => ({ ...current, notifications: [notification, ...current.notifications] }));
+  }
+
+  markNotificationRead(notificationId: number): void {
+    this.state.update((current) => ({
+      ...current,
+      notifications: current.notifications.map((n) => (n.id === notificationId ? { ...n, read: true } : n)),
+    }));
+  }
+
+  markAllNotificationsRead(userId: number): void {
+    this.state.update((current) => ({
+      ...current,
+      notifications: current.notifications.map((n) => (n.userId === userId ? { ...n, read: true } : n)),
+    }));
+  }
+
+  /**
+   * Settle an order once all its lines are Delivered: credit designer royalties,
+   * release printer payouts, bump performance scores and recompute levels.
+   */
+  private settleOrderIfDelivered(orderId: number | string): void {
+    const order = this.getOrderById(orderId);
+    if (!order || order.requestStatus !== 'ACCEPTED' || order.paymentStatus !== 'paid') return;
+    if (!order.lines.length || !order.lines.every((line) => line.status === 'Delivered')) return;
+    if (this.state().printerPayouts.some((p) => String(p.orderId) === String(orderId))) return; // already settled
+
+    const now = new Date().toISOString();
+    const printerPayouts: PrinterPayoutRecord[] = [];
+    const designerCredits = new Map<number, number>();
+    let printerScoreUserId: number | null = null;
+
+    for (const line of order.lines) {
+      const royalty = line.designerRoyalty ?? 0;
+      const design = this.getDesignById(line.designId);
+      if (design && !design.isUserUpload && royalty > 0) {
+        designerCredits.set(design.designerId, (designerCredits.get(design.designerId) ?? 0) + royalty);
+      }
+      const printer = line.printerId ? this.getPrinterById(line.printerId) : null;
+      if (printer) {
+        printerScoreUserId = printer.userId;
+        printerPayouts.push({
+          id: `pp-${this.takeNextId()}`,
+          printerId: printer.id,
+          orderId: order.id,
+          amount: line.printerAmount ?? 0,
+          status: 'paid',
+          releasedAt: now,
+        });
+      }
+    }
+
+    this.state.update((current) => ({
+      ...current,
+      printerPayouts: [...printerPayouts, ...current.printerPayouts],
+      users: current.users.map((user) => {
+        // Designer: accrue royalty balance + sales score, recompute level.
+        if (designerCredits.has(user.id)) {
+          const profile = { ...createDefaultDesignerProfile(user), ...user.designerProfile };
+          const salesScore = (profile.salesScore ?? 0) + designerCredits.size + 1;
+          return {
+            ...user,
+            designerRank: designerLevelForScore(salesScore),
+            designerProfile: {
+              ...profile,
+              payoutBalance: (profile.payoutBalance ?? 0) + (designerCredits.get(user.id) ?? 0),
+              salesScore,
+            },
+          };
+        }
+        // Printer: bump fulfillment score, recompute level.
+        if (printerScoreUserId === user.id) {
+          const profile = { ...createDefaultPrinterProfile(user), ...user.printerProfile };
+          const fulfillmentScore = (profile.fulfillmentScore ?? 0) + 5;
+          return {
+            ...user,
+            printerRank: printerLevelForScore(fulfillmentScore),
+            printerProfile: { ...profile, fulfillmentScore },
+          };
+        }
+        return user;
+      }),
+      printers: current.printers.map((p) =>
+        p.userId === printerScoreUserId
+          ? { ...p, revenue: p.revenue + order.lines.reduce((s, l) => s + (l.printerAmount ?? 0), 0), rank: printerLevelForScore((this.getUserById(p.userId)?.printerProfile?.fulfillmentScore ?? 0) + 5) }
+          : p,
+      ),
+    }));
+
+    // Notify designers about accrued royalties.
+    designerCredits.forEach((amount, designerId) => {
+      this.notify(designerId, 'payout', `You earned ${amount} TND in royalties from order ${order.id}.`);
+    });
   }
 
   private syncApiUser(apiUser: NonNullable<Awaited<ReturnType<ApiService['getMe']>>>): void {
@@ -953,22 +1716,39 @@ export class PlatformStoreService {
       }),
       printers: seedPrinters,
       products: seedProducts,
+      offerings: seedOfferings,
       designs: seedDesigns,
       cartItems: [],
       orders: seedOrders,
-      reviews: seedReviews,
+      reviews: seedReviews.map(normalizeReview),
       payouts: seedPayouts,
+      printerPayouts: [],
+      notifications: [],
+      featured: [],
+      moderationLog: [],
       customizationDraft: null,
+      platformSettings: { ...DEFAULT_PLATFORM_SETTINGS },
     };
+    fallback.designs = fallback.designs.map(normalizeDesign);
+    fallback.orders = fallback.orders.map(normalizeOrder);
 
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return fallback;
-      const parsed = JSON.parse(raw) as PlatformState;
+      const parsed = JSON.parse(raw) as Partial<PlatformState>;
       return {
         ...fallback,
         ...parsed,
+        platformSettings: { ...DEFAULT_PLATFORM_SETTINGS, ...parsed.platformSettings },
+        offerings: parsed.offerings ?? fallback.offerings,
+        printerPayouts: parsed.printerPayouts ?? [],
+        notifications: parsed.notifications ?? [],
+        featured: parsed.featured ?? [],
+        moderationLog: parsed.moderationLog ?? [],
         users: Array.isArray(parsed.users) ? parsed.users.map((user) => ensureRoleDefaults(user)) : fallback.users,
+        designs: Array.isArray(parsed.designs) ? parsed.designs.map(normalizeDesign) : fallback.designs,
+        orders: Array.isArray(parsed.orders) ? parsed.orders.map(normalizeOrder) : fallback.orders,
+        reviews: Array.isArray(parsed.reviews) ? parsed.reviews.map(normalizeReview) : fallback.reviews,
       };
     } catch {
       return fallback;
@@ -986,6 +1766,7 @@ function createUserForRole(input: {
   email: string;
   address: string;
   role: UserRole;
+  accountStatus?: AccountStatus;
 }): User {
   return ensureRoleDefaults({
     id: input.id,
@@ -993,6 +1774,7 @@ function createUserForRole(input: {
     email: input.email,
     role: input.role,
     address: input.address,
+    accountStatus: input.accountStatus ?? 'ACTIVE',
     joinDate: new Date().toISOString().slice(0, 10),
     avatar: seedUsers[0]?.avatar ?? '/placeholder-image.svg',
   });
@@ -1001,6 +1783,9 @@ function createUserForRole(input: {
 function ensureRoleDefaults(user: User): User {
   const baseUser: User = {
     ...user,
+    // Default existing/seed accounts to ACTIVE so demos keep working; only freshly
+    // registered designers/printers are explicitly set to PENDING_VERIFICATION.
+    accountStatus: user.accountStatus ?? (user.suspended ? 'SUSPENDED' : 'ACTIVE'),
     customerProfile: user.role === 'customer' ? { ...createDefaultCustomerProfile(user), ...user.customerProfile } : user.customerProfile,
     designerProfile: user.role === 'designer' ? { ...createDefaultDesignerProfile(user), ...user.designerProfile } : user.designerProfile,
     printerProfile: user.role === 'printer' ? { ...createDefaultPrinterProfile(user), ...user.printerProfile } : user.printerProfile,
@@ -1046,6 +1831,8 @@ function createDefaultDesignerProfile(user: User): DesignerProfile {
     payoutAccount: '',
     profilePicture: user.avatar ?? '/placeholder-image.svg',
     portfolioLinks: [],
+    salesScore: 0,
+    payoutBalance: 0,
   };
 }
 
@@ -1058,7 +1845,10 @@ function createDefaultPrinterProfile(user: User): PrinterProfile {
     governorate: 'Tunis',
     about: '',
     productionMethods: [],
+    printingMethods: ['DTF'],
     coverageZones: [],
+    fulfillmentScore: 0,
+    processingDays: 3,
   };
 }
 
@@ -1080,6 +1870,7 @@ function createPrinterPartner(input: { id: number; user: User }): PrinterPartner
     deliveryDays: 3,
     location: input.user.printerProfile?.governorate ?? 'Tunis',
     images: [input.user.avatar ?? '/placeholder-image.svg'],
+    availability: 'available',
   };
 }
 
@@ -1094,4 +1885,42 @@ function buildTrend(sales: number, views: number): AnalyticsPoint[] {
 
 function sortByDateDesc(a: Order, b: Order): number {
   return b.createdAt.localeCompare(a.createdAt);
+}
+
+/** Backfill ER-aligned fields on legacy/seed designs. */
+function normalizeDesign(design: Design): Design {
+  return {
+    ...design,
+    moderation: design.moderation ?? 'APPROVED',
+    nsfw: design.nsfw ?? false,
+    customizationAllowed: design.customizationAllowed ?? false,
+    isUserUpload: design.isUserUpload ?? false,
+  };
+}
+
+/** Backfill the money split + request lifecycle on legacy/seed orders. */
+function normalizeOrder(order: Order): Order {
+  return {
+    ...order,
+    requestStatus: order.requestStatus ?? 'ACCEPTED',
+    paymentStatus: order.paymentStatus ?? 'paid',
+    lines: order.lines.map((line) => {
+      if (line.printerAmount !== undefined && line.platformFee !== undefined && line.designerRoyalty !== undefined) {
+        return line;
+      }
+      const platformFee = line.platformFee ?? Math.min(10, line.price);
+      const designerRoyalty = line.designerRoyalty ?? Math.min(5, Math.max(0, line.price - platformFee));
+      return {
+        ...line,
+        platformFee,
+        designerRoyalty,
+        printerAmount: line.printerAmount ?? Math.max(0, line.price - platformFee - designerRoyalty),
+      };
+    }),
+  };
+}
+
+/** Backfill the review target (legacy reviews were design reviews). */
+function normalizeReview(review: Review): Review {
+  return { ...review, target: review.target ?? 'design' };
 }

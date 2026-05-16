@@ -13,9 +13,45 @@
       </div>
     </div>
 
+    <!-- Filters (spec: availability, rank, delivery time, price, location) -->
+    <div class="pm-panel" style="padding:1rem 1.25rem; display:flex; flex-wrap:wrap; gap:1rem; align-items:flex-end;">
+      <label class="pm-field" style="margin:0;">
+        <span class="pm-label">Rank</span>
+        <select class="pm-select" [ngModel]="rankFilter()" (ngModelChange)="rankFilter.set($event)">
+          <option value="all">All ranks</option>
+          <option value="Verified">Verified</option>
+          <option value="Gold">Gold</option>
+          <option value="Premium">Premium</option>
+        </select>
+      </label>
+      <label class="pm-field" style="margin:0;">
+        <span class="pm-label">Location</span>
+        <select class="pm-select" [ngModel]="locationFilter()" (ngModelChange)="locationFilter.set($event)">
+          <option value="all">All locations</option>
+          @for (loc of locations(); track loc) { <option [value]="loc">{{ loc }}</option> }
+        </select>
+      </label>
+      <label class="pm-field" style="margin:0;">
+        <span class="pm-label">Max delivery (days): {{ maxDelivery() }}</span>
+        <input class="pm-range" type="range" min="1" max="14" step="1" [value]="maxDelivery()" (input)="maxDelivery.set(+$any($event.target).value)" />
+      </label>
+      <label class="pm-field" style="margin:0;">
+        <span class="pm-label">Sort by</span>
+        <select class="pm-select" [ngModel]="sortBy()" (ngModelChange)="sortBy.set($event)">
+          <option value="rating">Top rated</option>
+          <option value="rank">Highest rank</option>
+          <option value="delivery">Fastest delivery</option>
+        </select>
+      </label>
+    </div>
+
     <div class="pm-grid-3">
       @for (printer of compatiblePrinters(); track printer.id) {
         <app-printer-card [printer]="printer" (selected)="selectPrinter($event)" />
+      } @empty {
+        <div class="pm-empty pm-panel" style="padding:2.5rem 1.5rem; grid-column:1/-1;">
+          <p style="font-size:var(--pm-text-sm); color:var(--pm-text-muted);">No available printer matches these filters. Try widening them.</p>
+        </div>
       }
     </div>
 
@@ -28,8 +64,8 @@
         </p>
       </div>
       <div class="flex flex-wrap gap-3">
-        <a class="pm-btn pm-btn-secondary text-sm" [routerLink]="['/customize', d.id]" [queryParams]="{ product: product()?.id }">← Back to customization</a>
-        <button type="button" class="pm-btn pm-btn-primary" (click)="addToCart()">Add to cart →</button>
+        <a class="pm-btn pm-btn-secondary text-sm" [routerLink]="['/customize', d.id]" [queryParams]="{ product: product()?.id }">← Back</a>
+        <button type="button" class="pm-btn pm-btn-primary" (click)="sendRequest()">Send request to printer →</button>
       </div>
     </div>
 
