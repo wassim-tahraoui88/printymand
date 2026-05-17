@@ -270,7 +270,7 @@
   <div style="position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:60; display:flex; align-items:center; justify-content:center; padding:1rem;" (click)="closeReviewModal()">
     <div class="pm-panel" style="width:100%; max-width:440px; padding:1.75rem;" (click)="$event.stopPropagation()">
       <h2 class="pm-heading" style="font-size:var(--pm-text-lg); font-weight:800; color:var(--pm-text); margin-bottom:0.5rem;">Rate your order</h2>
-      <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted); margin-bottom:1.25rem;">Rate both the design and the printer who fulfilled it.</p>
+      <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted); margin-bottom:1.25rem;">Rate both the design and the pressroom who fulfilled it.</p>
       <div style="display:grid; gap:1rem;">
 
         @if (!hasReview(reviewOrderId()!, 'design')) {
@@ -289,7 +289,7 @@
 
         @if (!hasReview(reviewOrderId()!, 'printer')) {
           <div style="border:1px solid var(--pm-border); border-radius:var(--pm-radius); padding:1rem;">
-            <p style="font-size:var(--pm-text-sm); font-weight:700; color:var(--pm-text); margin-bottom:0.625rem;">Printer</p>
+            <p style="font-size:var(--pm-text-sm); font-weight:700; color:var(--pm-text); margin-bottom:0.625rem;">Pressroom</p>
             <label class="pm-field">
               <span class="pm-label">Rating (1–5)</span>
               <input class="pm-input" type="number" min="1" max="5" [ngModel]="reviewPrinterRating()" (ngModelChange)="reviewPrinterRating.set($event)" />

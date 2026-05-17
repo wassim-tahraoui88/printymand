@@ -1,137 +1,125 @@
 @if (design(); as d) {
-  <div class="pm-page">
-
-    <!-- Header -->
-    <div>
-      <a [routerLink]="['/design', d.id]" class="pm-back-link">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-        Back to {{ d.title }}
-      </a>
-      <h1 class="pm-display" style="font-size:clamp(1.75rem,4vw,2.5rem); color:var(--pm-text); margin-top:0.5rem;">Customize your order</h1>
-      <p style="font-size:var(--pm-text-base); color:var(--pm-text-muted); margin-top:0.375rem;">
-        Preview "{{ d.title }}" on each product and choose colour, size and quantity.
+  <section class="page page-bread">
+    <div style="margin-bottom:16px;">
+      <a [routerLink]="['/design', d.id]" class="serif-italic" style="color:var(--pm-text-muted); font-size:14px;">← Back to {{ d.title }}</a>
+    </div>
+    <div class="section-head">
+      <span class="section-no">XIII.</span>
+      <hr class="line" />
+      <span class="title">Press configurator · variants &amp; quantities</span>
+    </div>
+    <div class="bread-grid">
+      <h1 class="bread-title">Set the<br /><em>press</em> brief.</h1>
+      <p class="bread-deck">
+        Preview "{{ d.title }}" on each chosen product, then dial in colour, size
+        and quantity. Final price is locked when you pick a pressroom next.
       </p>
     </div>
+  </section>
+
+  <section class="page">
 
     @if (!products().length) {
-      <div class="pm-empty pm-panel" style="padding:3rem 1.5rem;">
-        <p style="font-size:var(--pm-text-sm); color:var(--pm-text-muted);">No products selected.</p>
-        <a [routerLink]="['/design', d.id]" class="pm-btn pm-btn-secondary pm-btn-sm" style="margin-top:1rem; display:inline-flex;">← Choose products</a>
+      <div style="padding:60px 0; text-align:center;">
+        <p class="serif-italic" style="font-size:22px; color:var(--pm-text-muted);">No products selected.</p>
+        <a [routerLink]="['/design', d.id]" class="btn btn-ghost" style="margin-top:18px;">← Choose products</a>
       </div>
     } @else {
 
-      <div style="display:grid; gap:1.25rem;">
-        @for (p of products(); track p.id) {
-          <div class="pm-panel" style="padding:1.5rem;">
-            <div class="grid gap-6 lg:grid-cols-[280px_1fr] lg:items-start">
+      @for (p of products(); track p.id; let idx = $index) {
+        <div class="cust-card">
+          <div class="head">
+            <span class="no">C·{{ (idx + 1).toString().padStart(2, '0') }}</span>
+            <div>
+              <div class="pname">{{ p.name }}<small>{{ p.category }} · {{ colorsFor(p.id).length }} colour{{ colorsFor(p.id).length === 1 ? '' : 's' }} · {{ sizesFor(p.id).length }} size{{ sizesFor(p.id).length === 1 ? '' : 's' }}</small></div>
+            </div>
+            <div class="price">{{ (p.basePrice + platformMargin()) * cfg(p.id).quantity }}<small style="font-size:12px; font-weight:600; color:var(--pm-text-muted); margin-left:4px;"> TND</small></div>
+          </div>
 
-              <!-- Composite preview -->
-              <div style="position:relative; aspect-ratio:1; border-radius:var(--pm-radius-lg); border:1px solid var(--pm-border); overflow:hidden; background:var(--pm-surface-alt);">
-                <app-image-with-fallback [src]="p.images[0] ?? d.image" [alt]="p.name" [imgClass]="'h-full w-full object-cover'" />
-                <div
-                  style="position:absolute; transform:translate(-50%,-50%);"
-                  [style.left.%]="placement(p.id).x"
-                  [style.top.%]="placement(p.id).y"
-                >
-                  <img [src]="d.image" [alt]="d.title" [style.width.%]="placement(p.id).scale * 100" style="object-fit:contain;" onerror="this.style.display='none'" />
-                </div>
+          <div class="cust-body">
+            <div class="cust-preview">
+              <app-image-with-fallback [src]="p.images[0] ?? d.image" [alt]="p.name" [imgClass]="'bg w-full h-full object-cover'" />
+              <div
+                class="overlay"
+                style="transform:translate(-50%,-50%);"
+                [style.left.%]="placement(p.id).x"
+                [style.top.%]="placement(p.id).y"
+              >
+                <img [src]="d.image" [alt]="d.title" [style.width.%]="placement(p.id).scale * 100" style="object-fit:contain;" onerror="this.style.display='none'" />
               </div>
+            </div>
 
-              <!-- Variations -->
-              <div style="display:grid; gap:1.125rem;">
-                <div style="display:flex; align-items:center; justify-content:space-between; gap:0.75rem; flex-wrap:wrap;">
-                  <div>
-                    <p style="font-size:var(--pm-text-base); font-weight:700; color:var(--pm-text);">{{ p.name }}</p>
-                    <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted);">{{ p.category }}</p>
+            <div class="cust-fields">
+
+              @if (colorsFor(p.id).length) {
+                <div>
+                  <div class="field-label">Colour<span class="v">{{ cfg(p.id).color }}</span></div>
+                  <div class="swatch-row">
+                    @for (color of colorsFor(p.id); track color) {
+                      <button
+                        type="button"
+                        class="swatch-btn"
+                        [class.active]="cfg(p.id).color === color"
+                        (click)="patch(p.id, { color })"
+                      >
+                        <span class="dot" [style.background]="color"></span>
+                        {{ color }}
+                      </button>
+                    }
                   </div>
-                  <span class="pm-heading" style="font-size:var(--pm-text-lg); font-weight:800; color:var(--pm-text);">
-                    from {{ p.basePrice + platformMargin() }} TND
-                  </span>
                 </div>
+              }
 
-                <!-- Colour (predefined) -->
-                @if (colorsFor(p.id).length) {
-                  <div class="pm-field">
-                    <span class="pm-label">Colour — <span style="font-weight:400; text-transform:none; letter-spacing:0; color:var(--pm-text);">{{ cfg(p.id).color }}</span></span>
-                    <div style="display:flex; flex-wrap:wrap; gap:0.4rem; margin-top:0.375rem;">
-                      @for (color of colorsFor(p.id); track color) {
-                        <button
-                          type="button"
-                          class="pm-color-chip"
-                          [style.outline]="cfg(p.id).color === color ? '2px solid var(--pm-primary)' : 'none'"
-                          [style.outline-offset]="'2px'"
-                          (click)="patch(p.id, { color })"
-                        >
-                          <span class="pm-swatch" [style.background]="color"></span>
-                          {{ color }}
-                        </button>
-                      }
-                    </div>
+              @if (sizesFor(p.id).length) {
+                <div>
+                  <div class="field-label">Size<span class="v">{{ cfg(p.id).size }}</span></div>
+                  <div class="size-row">
+                    @for (size of sizesFor(p.id); track size) {
+                      <button
+                        type="button"
+                        class="size-btn"
+                        [class.active]="cfg(p.id).size === size"
+                        (click)="patch(p.id, { size })"
+                      >{{ size }}</button>
+                    }
                   </div>
-                }
+                </div>
+              }
 
-                <!-- Size (predefined) -->
-                @if (sizesFor(p.id).length) {
-                  <div class="pm-field">
-                    <span class="pm-label">Size</span>
-                    <div style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:0.375rem;">
-                      @for (size of sizesFor(p.id); track size) {
-                        <button
-                          type="button"
-                          class="pm-size-btn"
-                          [class.is-selected]="cfg(p.id).size === size"
-                          (click)="patch(p.id, { size })"
-                        >{{ size }}</button>
-                      }
-                    </div>
-                  </div>
-                }
-
-                <!-- Quantity -->
-                <div class="pm-field">
-                  <span class="pm-label">Quantity</span>
-                  <div style="display:flex; align-items:center; gap:0.5rem; margin-top:0.375rem;">
-                    <button type="button" class="pm-btn pm-btn-secondary pm-btn-sm" (click)="setQuantity(p.id, cfg(p.id).quantity - 1)">−</button>
-                    <input
-                      class="pm-input"
-                      type="number"
-                      min="1"
-                      max="99"
-                      style="width:5rem; text-align:center;"
-                      [ngModel]="cfg(p.id).quantity"
-                      (ngModelChange)="setQuantity(p.id, +$event)"
-                    />
-                    <button type="button" class="pm-btn pm-btn-secondary pm-btn-sm" (click)="setQuantity(p.id, cfg(p.id).quantity + 1)">+</button>
-                  </div>
+              <div>
+                <div class="field-label">Quantity</div>
+                <div class="qty-row">
+                  <button type="button" (click)="setQuantity(p.id, cfg(p.id).quantity - 1)">−</button>
+                  <span class="val">{{ cfg(p.id).quantity }}</span>
+                  <button type="button" (click)="setQuantity(p.id, cfg(p.id).quantity + 1)">+</button>
                 </div>
               </div>
 
             </div>
           </div>
-        }
-      </div>
+        </div>
+      }
 
       @if (error()) {
-        <div style="background:var(--pm-danger-soft); border:1px solid rgba(185,28,28,0.2); border-radius:var(--pm-radius); padding:0.75rem 1rem; font-size:var(--pm-text-sm); color:var(--pm-danger);">
+        <div class="serif-italic" style="border:1px solid var(--pm-danger); color:var(--pm-danger); padding:12px 16px; margin-bottom:16px;">
           {{ error() }}
         </div>
       }
 
-      <!-- Footer / CTA -->
-      <div class="pm-panel" style="padding:1.25rem 1.5rem; display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap;">
+      <div class="cust-footer">
         <div>
-          <p style="font-size:var(--pm-text-xs); font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--pm-text-muted);">Estimated total (from)</p>
-          <p class="pm-display" style="font-size:var(--pm-text-2xl); color:var(--pm-text);">{{ fromTotal() }} TND</p>
-          <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted);">Final price depends on the printer you choose next.</p>
+          <div class="ftot-label">Estimated total (from)</div>
+          <div class="ftot-amt">{{ fromTotal() }}<small style="font-family:var(--pm-font-sans); font-size:14px; font-weight:600; color:var(--pm-text-muted); margin-left:4px;"> TND</small></div>
+          <div class="ftot-note">Final price depends on the pressroom you choose next.</div>
         </div>
-        <div style="display:flex; gap:0.75rem;">
-          <a class="pm-btn pm-btn-secondary" [routerLink]="['/design', d.id]">← Back</a>
-          <button type="button" class="pm-btn pm-btn-primary pm-btn-lg" (click)="continueToPrinterSelection()">
-            Choose printer →
+        <div class="ftot-actions">
+          <a class="btn btn-ghost" [routerLink]="['/design', d.id]">← Back</a>
+          <button type="button" class="btn btn-clay" (click)="continueToPrinterSelection()">
+            Choose pressroom <span class="ar">→</span>
           </button>
         </div>
       </div>
     }
 
-  </div>
+  </section>
 }

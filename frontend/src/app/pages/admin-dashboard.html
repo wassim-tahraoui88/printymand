@@ -69,9 +69,9 @@
 
         <!-- Active printers -->
         <div class="pm-panel" style="padding:1.5rem;">
-          <h2 class="pm-heading" style="font-size:var(--pm-text-base); font-weight:700; color:var(--pm-text); margin-bottom:0.75rem;">Active printers</h2>
+          <h2 class="pm-heading" style="font-size:var(--pm-text-base); font-weight:700; color:var(--pm-text); margin-bottom:0.75rem;">Active pressrooms</h2>
           <p style="font-size:var(--pm-text-2xl); font-family:'Plus Jakarta Sans'; font-weight:800; color:var(--pm-text);">{{ overview().activePrinters }}</p>
-          <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted); margin-top:0.25rem;">registered printing partners</p>
+          <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted); margin-top:0.25rem;">registered pressroom partners</p>
         </div>
       }
 
@@ -185,7 +185,7 @@
             {{ productForm().id ? 'Edit product type' : 'Add a global product type' }}
           </h2>
           <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted); margin-bottom:1.25rem; line-height:1.6;">
-            The platform owns product names, categories and placeholder/mockup images. Printers
+            The platform owns product names, categories and placeholder/mockup images. Pressrooms
             only opt in and price these; designers attach designs to them.
           </p>
           <div style="display:grid; gap:1rem; max-width:620px;">
@@ -213,7 +213,7 @@
               <label class="pm-field">
                 <span class="pm-label">Minimum price (TND)</span>
                 <input class="pm-input" type="number" min="1" [ngModel]="productForm().basePrice" (ngModelChange)="productForm.set({...productForm(), basePrice: +$event})" />
-                <span style="font-size:var(--pm-text-xs); color:var(--pm-text-muted); margin-top:0.25rem;">Printers cannot price this product below this floor.</span>
+                <span style="font-size:var(--pm-text-xs); color:var(--pm-text-muted); margin-top:0.25rem;">Pressrooms cannot price this product below this floor.</span>
               </label>
               <label class="pm-field">
                 <span class="pm-label">Colors (comma separated)</span>
@@ -369,7 +369,7 @@
           <h2 class="pm-heading" style="font-size:var(--pm-text-base); font-weight:700; color:var(--pm-text); margin-bottom:1rem;">Pricing &amp; payout policy</h2>
           <div style="display:grid; gap:1rem;">
             <label class="pm-field">
-              <span class="pm-label">Platform margin (TND, added on top of printer base price)</span>
+              <span class="pm-label">Platform margin (TND, added on top of pressroom base price)</span>
               <input class="pm-input" type="number" min="0" [ngModel]="settingsForm().margin" (ngModelChange)="settingsForm.set({...settingsForm(), margin: +$event})" />
             </label>
             <label class="pm-field">

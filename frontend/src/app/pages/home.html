@@ -1,411 +1,341 @@
 <!-- ============================================================
-     HOME PAGE — Printymand
-     Each section is full-bleed width; inner content constrained by .pm-container
+     HOME — Printymand · Issue Nº 07 (editorial cover)
      ============================================================ -->
 
-<!-- ── 1. EDITORIAL HERO ─────────────────────────────────── -->
-<section class="pm-home-hero" aria-label="Hero">
-  <div class="pm-container" style="position:relative; z-index:1;">
-    <div class="grid items-center gap-10 lg:grid-cols-[1fr_360px] xl:grid-cols-[1fr_420px] lg:gap-12">
-
-      <!-- Left: copy -->
-      <div>
-        <p class="pm-kicker mb-5" style="color:rgba(232,162,58,0.85); letter-spacing:0.18em;">
-          Tunisia's first print-on-demand platform
-        </p>
-
-        <h1 class="pm-display text-white" style="font-size:clamp(2.75rem, 6vw, 4.75rem); max-width:580px;">
-          Design it.<br />
-          Print it.<br />
-          <span style="color:var(--pm-secondary);">Worn in Tunisia.</span>
-        </h1>
-
-        <p class="mt-6 text-white/65" style="max-width:460px; font-size:var(--pm-text-lg); line-height:1.7;">
-          Connect with local designers, pick your product, and have it printed by a verified Tunisian print shop. End-to-end, 100% local.
-        </p>
-
-        <div class="flex flex-wrap items-center gap-3 mt-9">
-          <a class="pm-btn pm-btn-primary pm-btn-lg" [routerLink]="primaryLink()">
-            {{ primaryLabel() }}
-          </a>
-          <a class="pm-btn pm-btn-glass pm-btn-lg" routerLink="/marketplace">
-            Browse designs
-          </a>
-        </div>
-
-        <!-- Inline stat strip -->
-        <div class="flex flex-wrap items-center gap-6 mt-10 pt-8" style="border-top:1px solid rgba(255,255,255,0.11);">
-          <div>
-            <p class="pm-display text-white" style="font-size:1.875rem; line-height:1.1;">{{ platformOverview().users }}</p>
-            <p style="font-size:var(--pm-text-xs); font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:rgba(255,255,255,0.42); margin-top:0.2rem;">Designers</p>
-          </div>
-
-          <span class="pm-divider-vertical" style="border-color:rgba(255,255,255,0.11);"></span>
-
-          <div>
-            <p class="pm-display text-white" style="font-size:1.875rem; line-height:1.1;">{{ platformOverview().orders }}</p>
-            <p style="font-size:var(--pm-text-xs); font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:rgba(255,255,255,0.42); margin-top:0.2rem;">Orders fulfilled</p>
-          </div>
-
-          <span class="pm-divider-vertical" style="border-color:rgba(255,255,255,0.11);"></span>
-
-          <div>
-            <p class="pm-display pm-gradient-text" style="font-size:1.875rem; line-height:1.1;">{{ platformOverview().revenue }} TND</p>
-            <p style="font-size:var(--pm-text-xs); font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:rgba(255,255,255,0.42); margin-top:0.2rem;">Platform GMV</p>
-          </div>
-        </div>
+<!-- ── COVER ─────────────────────────────────────────────── -->
+<section class="page cover" aria-label="Cover">
+  <div class="cover-grid">
+    <div>
+      <div class="kicker" style="margin-bottom:18px;">
+        <span style="color:var(--pm-clay);">✦</span>&nbsp;&nbsp;The cover — designed, printed &amp; worn in Tunisia
       </div>
 
-      <!-- Right: design mosaic — hidden below lg, proper grid column above -->
-      @if (featuredDesigns().length >= 2) {
-        <div class="hidden lg:grid grid-cols-2 gap-2.5" style="position:relative; z-index:1;">
-          @for (design of featuredDesigns().slice(0, 4); track design.id; let i = $index) {
-            <a
-              [routerLink]="['/design', design.id]"
-              class="group relative block overflow-hidden"
-              style="aspect-ratio:1; border:1px solid rgba(255,255,255,0.1);"
-              [style.border-radius]="i === 0 ? '16px 4px 4px 4px' :
-                                     i === 1 ? '4px 16px 4px 4px' :
-                                     i === 2 ? '4px 4px 4px 16px' :
-                                               '4px 4px 16px 4px'"
-            >
-              <app-image-with-fallback
-                [src]="design.image"
-                [alt]="design.title"
-                [imgClass]="'w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.06]'"
-              />
-              <div style="position:absolute; inset:0; background:linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 55%); display:flex; flex-direction:column; justify-content:flex-end; padding:0.875rem;">
-                <p style="font-size:var(--pm-text-xs); font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:rgba(255,255,255,0.5);">{{ design.category }}</p>
-                <p class="line-clamp-1 pm-heading" style="font-size:var(--pm-text-sm); font-weight:700; color:#fff; margin-top:0.15rem;">{{ design.title }}</p>
-              </div>
-            </a>
-          }
-        </div>
-      }
+      <h2 class="cover-headline" style="margin-top:6px;">
+        Design<br />
+        <em>it.</em><br />
+        Print <span class="outline">it.</span><br />
+        <span class="amber">Worn</span><br />
+        in Tunisia.
+      </h2>
 
-    </div>
-  </div>
-</section>
-
-<!-- ── 2. TRUST STRIP ─────────────────────────────────────── -->
-<div class="pm-trust-strip" role="region" aria-label="Platform guarantees">
-  <div class="pm-container">
-    <div class="pm-trust-strip-inner">
-
-      <span class="pm-trust-item">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg>
-        Free returns inside Tunisia
-      </span>
-
-      <span class="pm-trust-sep" aria-hidden="true"></span>
-
-      <span class="pm-trust-item">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-        Pay with D17, card, or cash
-      </span>
-
-      <span class="pm-trust-sep" aria-hidden="true"></span>
-
-      <span class="pm-trust-item">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        Verified local printers
-      </span>
-
-      <span class="pm-trust-sep" aria-hidden="true"></span>
-
-      <span class="pm-trust-item">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-        4.8 ★ average rating
-      </span>
-
-      <span class="pm-trust-sep" aria-hidden="true"></span>
-
-      <span class="pm-trust-item">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-        100% Tunisian, end-to-end
-      </span>
-
-    </div>
-  </div>
-</div>
-
-<!-- ── 3. FEATURED DESIGNS ────────────────────────────────── -->
-<section style="padding-block: 5rem;" aria-label="Featured designs">
-  <div class="pm-container">
-
-    <div class="flex flex-wrap items-end justify-between gap-4 mb-10">
-      <div>
-        <p class="pm-kicker mb-2">Marketplace</p>
-        <h2 class="pm-display" style="font-size:clamp(1.75rem, 3.5vw, 2.625rem); color:var(--pm-text);">Featured designs</h2>
-        <p class="mt-2" style="font-size:var(--pm-text-base); color:var(--pm-text-muted); max-width:400px; line-height:1.6;">
-          Hand-picked by our team — each one ready to customize and order.
-        </p>
-      </div>
-      <a class="pm-btn pm-btn-secondary" routerLink="/marketplace">
-        All designs
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-      </a>
-    </div>
-
-    <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-      @for (design of featuredDesigns(); track design.id) {
-        <app-design-card [design]="design" />
-      }
-    </div>
-
-  </div>
-</section>
-
-<!-- ── 4. SHOP BY MOOD ───────────────────────────────────── -->
-<section class="pm-section-warm" aria-label="Browse by mood">
-  <div class="pm-container">
-
-    <div class="flex flex-wrap items-end justify-between gap-4 mb-8">
-      <div>
-        <p class="pm-kicker mb-2">Browse by mood</p>
-        <h2 class="pm-display" style="font-size:clamp(1.75rem, 3.5vw, 2.625rem); color:var(--pm-text);">Find your style</h2>
-      </div>
-      <a class="pm-btn pm-btn-secondary" routerLink="/marketplace" style="font-size:var(--pm-text-sm);">All categories →</a>
-    </div>
-
-    <div class="pm-mood-grid">
-      @for (mood of moodCategories; track mood.label) {
-        <a
-          class="pm-mood-tile"
-          [routerLink]="['/marketplace']"
-          [queryParams]="{ category: mood.category }"
-          [attr.aria-label]="'Browse ' + mood.label + ' designs'"
-        >
-          <span class="pm-mood-tile-icon" aria-hidden="true">{{ mood.icon }}</span>
-          <span class="pm-mood-tile-label">{{ mood.label }}</span>
-        </a>
-      }
-    </div>
-
-  </div>
-</section>
-
-<!-- ── 5. MAKER SPOTLIGHT ─────────────────────────────────── -->
-<section style="padding-block: 5rem;" aria-label="Meet the makers">
-  <div class="pm-container">
-
-    <div class="mb-10">
-      <p class="pm-kicker mb-2">Behind the platform</p>
-      <h2 class="pm-display" style="font-size:clamp(1.75rem, 3.5vw, 2.625rem); color:var(--pm-text);">Meet the makers</h2>
-      <p class="mt-2" style="font-size:var(--pm-text-base); color:var(--pm-text-muted); max-width:480px; line-height:1.6;">
-        Real designers and verified print shops in Tunisia — people behind every order.
+      <p class="cover-deck">
+        A quarterly press of designs from Tunisian artists — printed by verified
+        local shops, paid in dinars, delivered in days.
       </p>
+
+      <div class="cover-meta" style="margin-top:28px;">
+        <div>
+          <strong>In this issue</strong><br />
+          <span>{{ platformOverview().users }} designers · verified pressrooms · 1 manifesto</span>
+        </div>
+        <div style="text-align:right;">
+          <strong>Platform GMV</strong><br />
+          <span>{{ platformOverview().revenue }} TND · {{ platformOverview().orders }} orders</span>
+        </div>
+      </div>
+
+      <div class="story-cta" style="margin-top:28px;">
+        <a class="btn btn-clay" [routerLink]="primaryLink()">{{ primaryLabel() }} <span class="ar">→</span></a>
+        <a class="btn btn-ghost" routerLink="/marketplace">Browse the archive</a>
+      </div>
     </div>
 
-    <div class="grid gap-6 md:grid-cols-2">
-
-      <!-- Featured designer card -->
-      @if (featuredDesigns().length) {
-        <article class="pm-maker-card">
-          <div class="pm-maker-banner">
-            <app-image-with-fallback
-              [src]="featuredDesigns()[0].image"
-              [alt]="'Work by ' + featuredDesigns()[0].designer"
-              [imgClass]="'w-full h-full object-cover opacity-60 mix-blend-luminosity'"
-            />
-            <div style="position:absolute; inset:0; background:linear-gradient(135deg, rgba(44,27,8,0.75), rgba(90,40,16,0.45)); pointer-events:none;"></div>
-            <span class="pm-chip absolute top-3 left-3" style="background:rgba(255,255,255,0.12); color:#fff; border-color:rgba(255,255,255,0.2); backdrop-filter:blur(8px);">
-              Designer
-            </span>
-          </div>
-
-          <div class="pm-maker-body">
-            <div class="flex items-end gap-3">
-              <div class="pm-maker-avatar" [attr.aria-label]="featuredDesigns()[0].designer">
-                {{ featuredDesigns()[0].designer.charAt(0).toUpperCase() }}
-              </div>
-              <div style="padding-bottom:0.2rem;">
-                <p class="pm-heading font-bold" style="font-size:var(--pm-text-lg); color:var(--pm-text); line-height:1.25;">
-                  {{ featuredDesigns()[0].designer }}
-                </p>
-                <p style="font-size:var(--pm-text-xs); color:var(--pm-primary); font-weight:700; text-transform:uppercase; letter-spacing:0.08em; margin-top:0.1rem;">
-                  {{ featuredDesigns()[0].designerRank }} Designer · {{ featuredDesigns()[0].category }}
-                </p>
+    @if (featuredDesigns().length) {
+      <div class="cover-right">
+        <div class="cover-image-wrap">
+          <app-image-with-fallback
+            [src]="featuredDesigns()[0].image"
+            [alt]="featuredDesigns()[0].title"
+            [imgClass]="'w-full h-full object-cover'"
+          />
+          <div class="badge-stack">
+            <div class="price-stamp">
+              <div>
+                <span class="big">{{ featuredDesigns()[0].rating.toFixed(1) }}</span>
+                <span class="sm">★ rated</span>
               </div>
             </div>
-
-            <p class="line-clamp-2" style="font-size:var(--pm-text-sm); color:var(--pm-text-muted); line-height:1.7;">
-              {{ featuredDesigns()[0].description }}
-            </p>
-
-            <div class="flex items-center justify-between pt-3" style="border-top:1px solid var(--pm-border);">
-              <div style="font-size:var(--pm-text-xs); color:var(--pm-text-muted);">
-                <span class="font-semibold" style="color:var(--pm-text);">{{ featuredDesigns()[0].sales }}</span> sales ·&nbsp;
-                <span class="pm-stars">{{ featuredDesigns()[0].rating.toFixed(1) }} ★</span>
-              </div>
-              <a
-                class="pm-btn pm-btn-secondary pm-btn-sm"
-                [routerLink]="['/marketplace']"
-                [queryParams]="{ search: featuredDesigns()[0].designer }"
-              >
-                View designs
-              </a>
-            </div>
           </div>
-        </article>
-      }
+        </div>
+        <a class="cover-callout" [routerLink]="['/design', featuredDesigns()[0].id]">
+          <span>The cover story <span style="color:var(--pm-amber); margin-left:6px;">↳</span> {{ featuredDesigns()[0].title }}</span>
+          <span class="arrow">→</span>
+        </a>
+      </div>
+    }
+  </div>
+</section>
 
-      <!-- Featured printer card -->
-      @if (featuredPrinter()) {
-        <article class="pm-maker-card">
-          <div class="pm-maker-banner">
-            <app-image-with-fallback
-              [src]="featuredPrinter()!.images[0] ?? ''"
-              [alt]="featuredPrinter()!.businessName"
-              [imgClass]="'w-full h-full object-cover opacity-55 mix-blend-luminosity'"
-            />
-            <div style="position:absolute; inset:0; background:linear-gradient(135deg, rgba(14,20,30,0.8), rgba(30,40,60,0.5)); pointer-events:none;"></div>
-            <span class="pm-chip absolute top-3 left-3" style="background:rgba(255,255,255,0.12); color:#fff; border-color:rgba(255,255,255,0.2); backdrop-filter:blur(8px);">
-              {{ featuredPrinter()!.rank }} Printer
-            </span>
+<hr class="rule-strong" style="max-width:var(--pm-page-max); margin:0 auto;" />
+
+<!-- ── MANIFESTO ─────────────────────────────────────────── -->
+<section class="page spread" aria-label="Editorial">
+  <div class="section-head">
+    <span class="section-no">I.</span>
+    <hr class="line" />
+    <span class="title">From the editor's desk</span>
+  </div>
+
+  <div class="manifesto">
+    <aside class="side">
+      <span class="kicker">In this volume</span>
+      <ul>
+        <li><span class="num">I</span><span>Editorial</span></li>
+        <li><span class="num">II</span><span>The cover story</span></li>
+        <li><span class="num">III</span><span>Featured plates</span></li>
+        <li><span class="num">IV</span><span>How it's made</span></li>
+        <li><span class="num">V</span><span>The pressroom</span></li>
+        <li><span class="num">VI</span><span>Colophon</span></li>
+      </ul>
+    </aside>
+
+    <div>
+      <p class="manifesto-body">
+        <span class="dropcap">T</span>
+        unisia has been printing for centuries — on cotton, on tile, on paper
+        pulled from olive press cake. What it has never had, until now, is a
+        place where the <em>designer in Sfax</em> meets the <em>pressroom in
+        Tunis</em> meets the <em>customer in Sousse</em> without an
+        intermediary or a foreign currency in between.
+      </p>
+      <p class="manifesto-body" style="margin-top:24px;">
+        <strong>Printymand</strong> is that place. End-to-end, 100% local —
+        payments in dinars, delivery in days, royalties paid the week a thing
+        sells. The platform is the connective tissue; the craft belongs to the
+        people who make it.
+      </p>
+      <div class="signed">
+        <span class="sig">The Editors</span>
+        <span>— Issue Nº 07</span>
+      </div>
+    </div>
+
+    <aside class="side">
+      <span class="kicker">By the numbers</span>
+      <ul>
+        <li><span>Designers</span><span class="num">{{ platformOverview().users }}</span></li>
+        <li><span>Orders</span><span class="num">{{ platformOverview().orders }}</span></li>
+        <li><span>GMV</span><span class="num">{{ platformOverview().revenue }}</span></li>
+      </ul>
+    </aside>
+  </div>
+</section>
+
+<!-- ── COVER STORY ───────────────────────────────────────── -->
+@if (featuredDesigns().length) {
+  <section class="cover-story" aria-label="Cover story">
+    <div class="cover-story-inner">
+      <div class="cover-story-image">
+        <app-image-with-fallback
+          [src]="featuredDesigns()[0].image"
+          [alt]="featuredDesigns()[0].title"
+          [imgClass]="'w-full h-full object-cover'"
+        />
+        <span class="stamp">★ Editor's pick — Issue 07</span>
+      </div>
+
+      <div>
+        <div class="kicker" style="color:var(--pm-clay);">II. — The cover story</div>
+        <h2 class="story-headline">{{ featuredDesigns()[0].title }}</h2>
+        <p class="story-deck">{{ featuredDesigns()[0].description }}</p>
+
+        <div class="story-specs">
+          <div>
+            <div class="label">Designer</div>
+            <div class="value">{{ featuredDesigns()[0].designer }}</div>
+            <div class="label" style="margin-top:4px;"><small style="color:var(--pm-clay);">{{ featuredDesigns()[0].designerRank }} tier</small></div>
           </div>
-
-          <div class="pm-maker-body">
-            <div class="flex items-end gap-3">
-              <div class="pm-maker-avatar" style="background:var(--pm-surface-alt); color:var(--pm-text-muted);" [attr.aria-label]="featuredPrinter()!.businessName">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                  <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
-                  <path d="M6 9V3h12v6"/>
-                  <rect x="6" y="14" width="12" height="8" rx="1"/>
-                </svg>
-              </div>
-              <div style="padding-bottom:0.2rem;">
-                <p class="pm-heading font-bold" style="font-size:var(--pm-text-lg); color:var(--pm-text); line-height:1.25;">
-                  {{ featuredPrinter()!.businessName }}
-                </p>
-                <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted); margin-top:0.1rem;">
-                  📍 {{ featuredPrinter()!.location }}
-                </p>
-              </div>
-            </div>
-
-            <p style="font-size:var(--pm-text-sm); color:var(--pm-text-muted); line-height:1.7;">
-              A verified Tunisian print shop with
-              <strong style="color:var(--pm-text);">{{ featuredPrinter()!.deliveryDays }}-day delivery</strong>
-              and a
-              <strong style="color:var(--pm-text);">{{ (featuredPrinter()!.fulfillmentRate * 100).toFixed(0) }}%</strong>
-              fulfillment rate.
-            </p>
-
-            <div class="flex items-center justify-between pt-3" style="border-top:1px solid var(--pm-border);">
-              <div style="font-size:var(--pm-text-xs); color:var(--pm-text-muted);">
-                <span class="pm-stars">{{ featuredPrinter()!.rating.toFixed(1) }} ★</span>
-                <span class="ml-1">({{ featuredPrinter()!.reviews }} reviews)</span>
-              </div>
-              <a class="pm-btn pm-btn-secondary pm-btn-sm" routerLink="/products">View products</a>
-            </div>
+          <div>
+            <div class="label">Category</div>
+            <div class="value">{{ featuredDesigns()[0].category }}</div>
+            <div class="label" style="margin-top:4px;"><small>{{ featuredDesigns()[0].sales }} sales</small></div>
           </div>
-        </article>
-      }
+          <div>
+            <div class="label">Rating</div>
+            <div class="value">{{ featuredDesigns()[0].rating.toFixed(1) }} <small>★</small></div>
+          </div>
+        </div>
 
+        <div class="story-cta">
+          <a class="btn btn-clay" [routerLink]="['/design', featuredDesigns()[0].id]">Open the page <span class="ar">→</span></a>
+          <a class="btn btn-ghost" routerLink="/marketplace">More plates</a>
+        </div>
+      </div>
+    </div>
+  </section>
+}
+
+<!-- ── FEATURED PLATES ───────────────────────────────────── -->
+<section class="page spread" aria-label="Featured designs">
+  <div class="section-head">
+    <span class="section-no">III.</span>
+    <hr class="line" />
+    <span class="title">Featured plates · this volume</span>
+  </div>
+
+  <div style="display:grid; grid-template-columns:1fr auto; gap:24px; align-items:end; margin-bottom:8px;">
+    <h2 class="display" style="font-size:clamp(36px, 6vw, 84px); margin:0;">
+      Hand-picked,<br />
+      <em style="font-family:var(--pm-font-serif); color:var(--pm-clay); font-weight:500;">ready to</em><br />
+      customize.
+    </h2>
+    <a class="serif-italic" routerLink="/marketplace" style="font-size:16px; color:var(--pm-text-muted); text-align:right;">
+      The full archive — updated weekly →
+    </a>
+  </div>
+
+  <div class="plate-grid">
+    @for (design of featuredDesigns(); track design.id) {
+      <app-design-card [design]="design" />
+    }
+  </div>
+
+  <!-- Browse by mood -->
+  <div class="filter-row" style="border-top:1px solid var(--pm-rule-strong);">
+    <span class="label">filed under:</span>
+    @for (mood of moodCategories; track mood.label) {
+      <a class="chip" [routerLink]="['/marketplace']" [queryParams]="{ category: mood.category }">{{ mood.label }}</a>
+    }
+  </div>
+</section>
+
+<!-- ── STAT STRIP ────────────────────────────────────────── -->
+<section class="page">
+  <div class="stat-strip">
+    <div class="stat"><span class="n">2<em>·</em>4d</span><span class="l">Delivery, anywhere in Tunisia</span></div>
+    <div class="stat"><span class="n">{{ platformOverview().users }}</span><span class="l">Verified Tunisian designers</span></div>
+    <div class="stat"><span class="n">{{ platformOverview().orders }}</span><span class="l">Orders fulfilled end-to-end</span></div>
+    <div class="stat"><span class="n">0<em>%</em></span><span class="l">Card fees on cash-on-delivery</span></div>
+  </div>
+</section>
+
+<!-- ── PULL QUOTE ────────────────────────────────────────── -->
+<section class="page pullquote">
+  <span class="open">"</span>
+  <q>
+    We were tired of <em>exporting</em> our designs and <em>importing</em>
+    our t-shirts. Printymand was the obvious answer.
+  </q>
+  <p class="attrib">
+    <strong>The makers</strong> — designers · pressrooms · founders, Tunisia
+  </p>
+</section>
+
+<!-- ── PROCESS ───────────────────────────────────────────── -->
+<section class="page spread" aria-label="How it works">
+  <div class="section-head">
+    <span class="section-no">IV.</span>
+    <hr class="line" />
+    <span class="title">How a Printymand is made</span>
+  </div>
+
+  <div class="process">
+    <div class="step">
+      <span class="step-tag">Step 01</span>
+      <span class="step-no">I</span>
+      <h4 class="step-title">Browse the plates</h4>
+      <p class="step-body">Pick a design from Tunisian artists. Every work is printable on shirts, hoodies, totes and mugs.</p>
+    </div>
+    <div class="step">
+      <span class="step-tag">Step 02</span>
+      <span class="step-no">II</span>
+      <h4 class="step-title">Customize &amp; choose a pressroom</h4>
+      <p class="step-body">Set product, colour, size and quantity, then pick a verified local pressroom and send the request.</p>
+    </div>
+    <div class="step">
+      <span class="step-tag">Step 03</span>
+      <span class="step-no">III</span>
+      <h4 class="step-title">Accept, pay &amp; press</h4>
+      <p class="step-body">The pressroom accepts, you pay in dinars, and your order is queued and quality-checked at the shop you chose.</p>
+    </div>
+    <div class="step">
+      <span class="step-tag">Step 04</span>
+      <span class="step-no">IV</span>
+      <h4 class="step-title">Wear it. Repeat.</h4>
+      <p class="step-body">Delivered in two to four days inside Tunisia. Free returns for fourteen days.</p>
     </div>
   </div>
 </section>
 
-<!-- ── 6. HOW IT WORKS ───────────────────────────────────── -->
-<div class="pm-section-warm" role="region" aria-label="How it works">
-  <div class="pm-container">
-    <div class="grid gap-10 md:grid-cols-[auto_1fr] md:items-center md:gap-16">
-
-      <div>
-        <p class="pm-kicker mb-2">Simple process</p>
-        <h2 class="pm-display" style="font-size:clamp(1.75rem, 3vw, 2.25rem); color:var(--pm-text); max-width:200px; line-height:1.1;">
-          How it works
-        </h2>
-      </div>
-
-      <ol class="pm-how-steps" style="list-style:none; margin:0; padding:0;">
-        <li class="pm-how-step">
-          <span class="pm-how-step-num" aria-hidden="true">1</span>
-          <div class="pm-how-step-content">
-            <p class="pm-heading font-bold" style="font-size:var(--pm-text-base); color:var(--pm-text);">Browse &amp; choose</p>
-            <p style="font-size:var(--pm-text-sm); color:var(--pm-text-muted); margin-top:0.3rem; line-height:1.65;">
-              Pick a design from Tunisian artists in our marketplace.
-            </p>
-          </div>
-        </li>
-        <li class="pm-how-step">
-          <span class="pm-how-step-num" aria-hidden="true">2</span>
-          <div class="pm-how-step-content">
-            <p class="pm-heading font-bold" style="font-size:var(--pm-text-base); color:var(--pm-text);">Customize your product</p>
-            <p style="font-size:var(--pm-text-sm); color:var(--pm-text-muted); margin-top:0.3rem; line-height:1.65;">
-              Place the design, select color and size — see a live preview.
-            </p>
-          </div>
-        </li>
-        <li class="pm-how-step">
-          <span class="pm-how-step-num" aria-hidden="true">3</span>
-          <div class="pm-how-step-content">
-            <p class="pm-heading font-bold" style="font-size:var(--pm-text-base); color:var(--pm-text);">Printed &amp; shipped to you</p>
-            <p style="font-size:var(--pm-text-sm); color:var(--pm-text-muted); margin-top:0.3rem; line-height:1.65;">
-              A verified local print shop handles production and delivery.
-            </p>
-          </div>
-        </li>
-      </ol>
-
+<!-- ── PRESSROOM SPOTLIGHT ───────────────────────────────── -->
+@if (featuredPrinter()) {
+  <section class="page spread" aria-label="Meet the makers">
+    <div class="section-head">
+      <span class="section-no">V.</span>
+      <hr class="line" />
+      <span class="title">From the pressroom</span>
     </div>
-  </div>
-</div>
 
-<!-- ── 7. FOR MAKERS CTA ──────────────────────────────────── -->
-<section class="pm-section-dark" aria-label="Join as a maker">
-  <div class="pm-container">
-    <div class="grid gap-10 md:grid-cols-2 md:gap-14 md:items-center">
-
-      <div>
-        <p class="pm-kicker mb-3" style="color:rgba(232,162,58,0.85);">Join the platform</p>
-        <h2 class="pm-display text-white" style="font-size:clamp(1.75rem, 3.5vw, 2.875rem); line-height:1.08;">
-          Are you a designer<br />or a print shop?
-        </h2>
-        <p class="mt-5 leading-7" style="font-size:var(--pm-text-base); color:rgba(255,255,255,0.58); max-width:400px;">
-          Upload your artwork and earn royalties on every sale — or list your print shop and fulfil orders from customers across Tunisia.
-        </p>
+    <div class="cover-story-inner" style="align-items:center;">
+      <div class="cover-story-image">
+        <app-image-with-fallback
+          [src]="featuredPrinter()!.images[0] ?? ''"
+          [alt]="featuredPrinter()!.businessName"
+          [imgClass]="'w-full h-full object-cover'"
+        />
+        <span class="stamp">{{ featuredPrinter()!.rank }} pressroom</span>
       </div>
-
-      <div class="grid gap-4 sm:grid-cols-2">
-
-        <!-- Designer CTA -->
-        <article style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.11); border-radius:var(--pm-radius-lg); padding:1.5rem; display:grid; gap:1rem;">
-          <div style="width:2.5rem; height:2.5rem; border-radius:10px; background:var(--pm-primary-soft); border:1px solid rgba(199,74,43,0.4); display:flex; align-items:center; justify-content:center;">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--pm-primary)" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-              <path d="M12 19l7-7 3 3-7 7-3-3z"/>
-              <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/>
-              <circle cx="11" cy="11" r="2"/>
-            </svg>
+      <div>
+        <div class="kicker" style="color:var(--pm-clay);">Verified pressroom</div>
+        <h2 class="story-headline">{{ featuredPrinter()!.businessName }}</h2>
+        <p class="story-deck">
+          A verified Tunisian pressroom in {{ featuredPrinter()!.location }} with
+          {{ featuredPrinter()!.deliveryDays }}-day delivery and a
+          {{ (featuredPrinter()!.fulfillmentRate * 100).toFixed(0) }}% fulfilment rate.
+        </p>
+        <div class="story-specs">
+          <div>
+            <div class="label">Rating</div>
+            <div class="value">{{ featuredPrinter()!.rating.toFixed(1) }} <small>★</small></div>
+            <div class="label" style="margin-top:4px;"><small>{{ featuredPrinter()!.reviews }} reviews</small></div>
           </div>
           <div>
-            <p class="pm-heading font-bold text-white" style="font-size:var(--pm-text-lg);">Designer</p>
-            <p style="font-size:var(--pm-text-sm); color:rgba(255,255,255,0.52); margin-top:0.375rem; line-height:1.65;">
-              Upload artwork, set your price, earn royalties on every sale.
-            </p>
-          </div>
-          <a class="pm-btn pm-btn-glass pm-btn-sm self-start" routerLink="/register">Start selling →</a>
-        </article>
-
-        <!-- Printer CTA -->
-        <article style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.11); border-radius:var(--pm-radius-lg); padding:1.5rem; display:grid; gap:1rem;">
-          <div style="width:2.5rem; height:2.5rem; border-radius:10px; background:var(--pm-secondary-soft); border:1px solid rgba(232,162,58,0.4); display:flex; align-items:center; justify-content:center;">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--pm-secondary)" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-              <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
-              <path d="M6 9V3h12v6"/>
-              <rect x="6" y="14" width="12" height="8" rx="1"/>
-            </svg>
+            <div class="label">Location</div>
+            <div class="value" style="font-size:18px;">{{ featuredPrinter()!.location }}</div>
           </div>
           <div>
-            <p class="pm-heading font-bold text-white" style="font-size:var(--pm-text-lg);">Print shop</p>
-            <p style="font-size:var(--pm-text-sm); color:rgba(255,255,255,0.52); margin-top:0.375rem; line-height:1.65;">
-              List your shop, receive orders, fulfill them on your schedule.
-            </p>
+            <div class="label">Lead time</div>
+            <div class="value">{{ featuredPrinter()!.deliveryDays }} <small>days</small></div>
           </div>
-          <a class="pm-btn pm-btn-glass pm-btn-sm self-start" routerLink="/register">Partner with us →</a>
-        </article>
+        </div>
+        <div class="story-cta">
+          <a class="btn btn-clay" routerLink="/products">View products <span class="ar">→</span></a>
+        </div>
+      </div>
+    </div>
+  </section>
+}
 
+<!-- ── FOR MAKERS ────────────────────────────────────────── -->
+<section class="cover-story" aria-label="Join as a maker">
+  <div class="cover-story-inner">
+    <div>
+      <div class="kicker" style="color:var(--pm-clay);">Join the press</div>
+      <h2 class="story-headline">Are you a designer<br /><em>or a pressroom?</em></h2>
+      <p class="story-deck">
+        Upload your artwork and earn royalties on every sale — or list your
+        print shop and fulfil orders from customers across Tunisia.
+      </p>
+      <div class="story-cta">
+        <a class="btn btn-clay" routerLink="/register">Become a designer <span class="ar">→</span></a>
+        <a class="btn btn-ghost" routerLink="/register">Open a pressroom</a>
+      </div>
+    </div>
+    <div class="story-specs" style="border-top:1px solid var(--pm-rule-strong);">
+      <div>
+        <div class="label">Royalties</div>
+        <div class="value">Weekly</div>
+        <div class="label" style="margin-top:4px;"><small>paid in dinars</small></div>
+      </div>
+      <div>
+        <div class="label">Pressrooms</div>
+        <div class="value">Verified</div>
+        <div class="label" style="margin-top:4px;"><small>audited quarterly</small></div>
+      </div>
+      <div>
+        <div class="label">Reach</div>
+        <div class="value">Tunisia</div>
+        <div class="label" style="margin-top:4px;"><small>nationwide delivery</small></div>
       </div>
     </div>
   </div>

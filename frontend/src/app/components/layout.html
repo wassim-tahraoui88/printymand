@@ -1,168 +1,143 @@
 <div style="min-height:100vh; background-color:var(--pm-bg); color:var(--pm-text); display:flex; flex-direction:column;">
 
   <!-- ═══════════════════════════════════════════════════════
-       NAV BAR
+       MASTHEAD
   ═══════════════════════════════════════════════════════ -->
   <header
+    class="masthead"
     [class.pm-nav-scrolled]="isScrolled()"
-    style="height:var(--pm-nav-height); background:var(--pm-surface); border-bottom:1px solid var(--pm-border); position:sticky; top:0; z-index:50; transition:box-shadow 320ms ease, background-color 180ms ease;">
-    <div class="flex h-full w-full items-center gap-2 px-4 md:px-6 lg:px-8" style="max-width:1440px; margin:0 auto;">
+    style="position:sticky; top:0; z-index:60;">
+    <div class="pm-container">
 
-      <!-- Brand -->
-      <a routerLink="/" class="pm-nav-brand mr-1">
-        <div class="pm-nav-logo" aria-hidden="true">P</div>
-        <span class="pm-heading font-bold hidden sm:block" style="font-size:var(--pm-text-base); color:var(--pm-text); letter-spacing:-0.02em;">Printymand</span>
-      </a>
-
-      <!-- Desktop nav links -->
-      <nav class="hidden lg:flex items-center gap-0.5 ml-1" aria-label="Main navigation">
-        @for (link of navLinks; track link.to) {
-          <a
-            [routerLink]="link.to"
-            class="pm-nav-link"
-            [class.is-active]="isActive(link.to)"
-            [attr.aria-current]="isActive(link.to) ? 'page' : null"
-          >{{ link.label }}</a>
-        }
-      </nav>
-
-      <!-- Search — visible from md upward -->
-      <form class="hidden md:flex flex-1 mx-4 max-w-xs" (ngSubmit)="handleSearch()" role="search">
-        <div class="relative w-full">
-          <svg class="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" style="opacity:0.38;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          <input
-            class="pm-input pm-input-compact w-full"
-            style="padding-left:2.25rem;"
-            [ngModel]="searchQuery()"
-            (ngModelChange)="searchQuery.set($event)"
-            name="globalSearch"
-            placeholder="Search designs…"
-            aria-label="Search designs and products"
-          />
+      <div class="masthead-row">
+        <!-- Meta -->
+        <div class="masthead-meta">
+          <span class="hide-sm">Tunisia's end-to-end print press</span>
         </div>
-      </form>
 
-      <!-- Right actions -->
-      <div class="flex items-center gap-1.5 ml-auto">
+        <!-- Title -->
+        <h1 class="masthead-title">
+          <a routerLink="/" style="color:inherit;">Printy<span class="amp">&amp;</span>mand</a>
+        </h1>
 
-        <!-- Theme toggle — pure CSS hover via pm-theme-toggle class -->
-        <button
-          type="button"
-          class="pm-theme-toggle"
-          (click)="toggleTheme()"
-          [attr.aria-label]="theme() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
-          [attr.title]="theme() === 'dark' ? 'Light mode' : 'Dark mode'"
-        >
-          @if (theme() === 'dark') {
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <circle cx="12" cy="12" r="4"/>
-              <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
-            </svg>
-            <span class="hidden sm:inline">Light</span>
+        <!-- Actions -->
+        <div class="masthead-actions">
+
+          <!-- Desktop search -->
+          <form class="hidden lg:flex" (ngSubmit)="handleSearch()" role="search" style="position:relative; width:170px;">
+            <svg style="position:absolute; left:6px; top:50%; transform:translateY(-50%); color:var(--pm-text-muted);" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg>
+            <input
+              [ngModel]="searchQuery()"
+              (ngModelChange)="searchQuery.set($event)"
+              name="globalSearch"
+              placeholder="Search the archive…"
+              aria-label="Search designs and products"
+              style="width:100%; background:transparent; border:0; border-bottom:1px solid var(--pm-rule-strong); padding:7px 6px 7px 26px; font-family:var(--pm-font-serif); font-style:italic; font-size:14px; color:var(--pm-ink); outline:none;"
+            />
+          </form>
+
+          <!-- Theme toggle -->
+          <button
+            type="button"
+            class="iconbtn"
+            (click)="toggleTheme()"
+            [attr.aria-label]="theme() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
+            [attr.title]="theme() === 'dark' ? 'Light edition' : 'Dark edition'"
+          >
+            @if (theme() === 'dark') {
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4"/></svg>
+            } @else {
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg>
+            }
+          </button>
+
+          @if (auth.isAuthenticated()) {
+            <!-- Cart -->
+            <a routerLink="/cart" class="iconbtn" aria-label="View cart" title="Cart">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6h15l-1.5 9h-12z"/><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M6 6 5 3H2"/></svg>
+              @if (cartCount()) {
+                <span class="masthead-badge" aria-label="{{ cartCount() }} items in cart">{{ cartCount() }}</span>
+              }
+            </a>
+
+            <!-- Notifications -->
+            <a routerLink="/notifications" class="iconbtn" aria-label="Notifications" title="Notifications">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+              @if (unreadNotifications()) {
+                <span class="masthead-badge" aria-label="{{ unreadNotifications() }} unread notifications">{{ unreadNotifications() }}</span>
+              }
+            </a>
+
+            <!-- User menu -->
+            <div class="relative hidden md:block">
+              <button
+                type="button"
+                class="iconbtn"
+                style="width:auto; border-radius:999px; padding:0 12px 0 6px; gap:8px;"
+                (click)="userMenu.set(!userMenu())"
+                [attr.aria-expanded]="userMenu()"
+                aria-haspopup="true"
+                aria-label="User menu"
+              >
+                <span
+                  style="display:inline-flex; height:26px; width:26px; align-items:center; justify-content:center; background:var(--pm-clay); color:#fff; font-family:var(--pm-font-display); font-weight:800; font-size:11px;"
+                  aria-hidden="true"
+                >{{ userInitials() }}</span>
+                <span style="max-width:100px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; font-weight:600;">{{ auth.user()?.name }}</span>
+              </button>
+
+              @if (userMenu()) {
+                <div class="pm-flyout absolute right-0 top-full mt-2 w-60" role="menu">
+                  <div class="px-3 py-2.5 mb-1.5" style="border-bottom:1px solid var(--pm-border);">
+                    <p style="font-family:var(--pm-font-display); font-weight:700; color:var(--pm-text);">{{ auth.user()?.name }}</p>
+                    <p style="font-size:var(--pm-text-xs); margin-top:0.15rem; color:var(--pm-text-muted);">{{ auth.user()?.email }}</p>
+                    <span class="pm-chip mt-1.5" style="text-transform:capitalize;">{{ auth.user()?.role }}</span>
+                  </div>
+                  <div class="grid gap-0.5 py-1">
+                    <a class="pm-btn pm-btn-ghost justify-start" style="font-size:var(--pm-text-sm);" [routerLink]="auth.dashboardPath(auth.user()!.role)" role="menuitem">Workspace</a>
+                    @if (auth.user()?.role === 'designer') {
+                      <a class="pm-btn pm-btn-ghost justify-start" style="font-size:var(--pm-text-sm);" [routerLink]="['/storefront', auth.user()!.id]" role="menuitem">Storefront</a>
+                    }
+                  </div>
+                  <div style="border-top:1px solid var(--pm-border);" class="pt-1.5 mt-1">
+                    <button type="button" class="pm-btn pm-btn-danger w-full" style="font-size:var(--pm-text-sm);" (click)="logout()" role="menuitem">Sign out</button>
+                  </div>
+                </div>
+              }
+            </div>
+
           } @else {
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-            </svg>
-            <span class="hidden sm:inline">Dark</span>
+            <a class="pm-btn pm-btn-ghost hidden sm:inline-flex" routerLink="/register">Register</a>
+            <a class="btn btn-clay" routerLink="/login">Sign in <span class="ar">→</span></a>
           }
-        </button>
 
-        @if (auth.isAuthenticated()) {
-          <!-- Cart -->
-          <a routerLink="/cart" class="pm-btn pm-btn-secondary relative" aria-label="View cart">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
-              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
-            </svg>
-            <span class="hidden sm:inline">Cart</span>
-            @if (cartCount()) {
-              <span
-                class="absolute -top-1.5 -right-1.5 min-w-[1.125rem] h-[1.125rem] flex items-center justify-center rounded-full text-[9px] font-bold text-white px-1"
-                style="background:var(--pm-primary);"
-                aria-label="{{ cartCount() }} items in cart"
-              >{{ cartCount() }}</span>
+          <!-- Hamburger -->
+          <button
+            type="button"
+            class="iconbtn pm-nav-burger"
+            (click)="toggleSiteMenu()"
+            [attr.aria-expanded]="siteMenu()"
+            aria-label="Toggle menu"
+          >
+            @if (siteMenu()) {
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            } @else {
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
             }
-          </a>
+          </button>
+        </div>
+      </div>
 
-          <!-- Notifications -->
-          <a routerLink="/notifications" class="pm-btn pm-btn-secondary relative" aria-label="Notifications">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-            </svg>
-            <span class="hidden sm:inline">Alerts</span>
-            @if (unreadNotifications()) {
-              <span
-                class="absolute -top-1.5 -right-1.5 min-w-[1.125rem] h-[1.125rem] flex items-center justify-center rounded-full text-[9px] font-bold text-white px-1"
-                style="background:var(--pm-primary);"
-                aria-label="{{ unreadNotifications() }} unread notifications"
-              >{{ unreadNotifications() }}</span>
-            }
-          </a>
+      <hr class="rule" />
 
-          <!-- User menu -->
-          <div class="relative hidden md:block">
-            <button
-              type="button"
-              class="pm-btn pm-btn-secondary gap-2"
-              (click)="userMenu.set(!userMenu())"
-              [attr.aria-expanded]="userMenu()"
-              aria-haspopup="true"
-              aria-label="User menu"
-            >
-              <span
-                class="inline-flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold text-white shrink-0"
-                style="background:var(--pm-primary);"
-                aria-hidden="true"
-              >{{ userInitials() }}</span>
-              <span class="max-w-[110px] truncate" style="font-size:var(--pm-text-sm);">{{ auth.user()?.name }}</span>
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
-            </button>
-
-            @if (userMenu()) {
-              <div class="pm-flyout absolute right-0 top-full mt-2 w-60" role="menu">
-                <div class="px-3 py-2.5 mb-1.5" style="border-bottom:1px solid var(--pm-border);">
-                  <p style="font-size:var(--pm-text-sm); font-weight:600; color:var(--pm-text);">{{ auth.user()?.name }}</p>
-                  <p style="font-size:var(--pm-text-xs); margin-top:0.15rem; color:var(--pm-text-muted);">{{ auth.user()?.email }}</p>
-                  <span class="pm-chip mt-1.5" style="text-transform:capitalize;">{{ auth.user()?.role }}</span>
-                </div>
-                <div class="grid gap-0.5 py-1">
-                  <a class="pm-btn pm-btn-ghost justify-start" style="font-size:var(--pm-text-sm);" [routerLink]="auth.dashboardPath(auth.user()!.role)" role="menuitem">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-                    Dashboard
-                  </a>
-                  @if (auth.user()?.role === 'designer') {
-                    <a class="pm-btn pm-btn-ghost justify-start" style="font-size:var(--pm-text-sm);" [routerLink]="['/storefront', auth.user()!.id]" role="menuitem">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 9l1-5h16l1 5M4 9v11a1 1 0 001 1h14a1 1 0 001-1V9M4 9h16M9 21v-6h6v6"/></svg>
-                      Storefront
-                    </a>
-                  }
-                </div>
-                <div style="border-top:1px solid var(--pm-border);" class="pt-1.5 mt-1">
-                  <button type="button" class="pm-btn pm-btn-danger w-full" style="font-size:var(--pm-text-sm);" (click)="logout()" role="menuitem">Sign out</button>
-                </div>
-              </div>
-            }
-          </div>
-
-        } @else {
-          <a class="pm-btn pm-btn-ghost hidden sm:inline-flex" style="font-size:var(--pm-text-sm);" routerLink="/register">Register</a>
-          <a class="pm-btn pm-btn-primary" style="font-size:var(--pm-text-sm);" routerLink="/login">Sign in</a>
-        }
-
-        <!-- Hamburger -->
-        <button
-          type="button"
-          class="pm-icon-btn pm-nav-burger"
-          (click)="toggleSiteMenu()"
-          [attr.aria-expanded]="siteMenu()"
-          aria-label="Toggle menu"
-        >
-          @if (siteMenu()) {
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
-          } @else {
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      <div class="nav-row">
+        <nav class="nav-links" aria-label="Main navigation">
+          <a routerLink="/" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: true }">Cover</a>
+          @for (link of navLinks; track link.to) {
+            <a [routerLink]="link.to" routerLinkActive="is-active">{{ link.label }}</a>
           }
-        </button>
+        </nav>
+        <div class="nav-folio">Vol. III — Tunisia’s end-to-end press</div>
       </div>
     </div>
   </header>
@@ -172,35 +147,33 @@
   ═══════════════════════════════════════════════════════ -->
   @if (siteMenu()) {
     <nav
-      style="background:var(--pm-surface); border-bottom:1px solid var(--pm-border);"
+      style="background:var(--pm-surface); border-bottom:1px solid var(--pm-rule-strong);"
       aria-label="Mobile navigation"
     >
-      <!-- Mobile search -->
-      <div class="px-4 pt-3 pb-2 md:hidden">
+      <div class="px-4 pt-3 pb-2">
         <form class="flex gap-2" (ngSubmit)="handleSearch()" role="search">
           <input
-            class="pm-input pm-input-compact flex-1"
+            class="pm-input flex-1"
             [ngModel]="searchQuery()"
             (ngModelChange)="searchQuery.set($event)"
             name="menuSearch"
-            placeholder="Search designs and products…"
+            placeholder="Search the archive…"
             aria-label="Search"
           />
-          <button type="submit" class="pm-btn pm-btn-primary px-4">Go</button>
+          <button type="submit" class="btn btn-clay px-4">Go</button>
         </form>
       </div>
 
-      <!-- Nav links -->
       <div class="px-4 py-2 grid gap-0.5">
+        <a routerLink="/" class="pm-btn pm-btn-ghost justify-start" style="font-size:var(--pm-text-sm);">Cover</a>
         @for (link of navLinks; track link.to) {
           <a [routerLink]="link.to" class="pm-btn pm-btn-ghost justify-start" style="font-size:var(--pm-text-sm);">{{ link.label }}</a>
         }
-        <a routerLink="/" class="pm-btn pm-btn-ghost justify-start" style="font-size:var(--pm-text-sm);">Home</a>
       </div>
 
       @if (auth.isAuthenticated()) {
         <div class="px-4 py-2 grid gap-0.5" style="border-top:1px solid var(--pm-border);">
-          <a [routerLink]="auth.dashboardPath(auth.user()!.role)" class="pm-btn pm-btn-ghost justify-start" style="font-size:var(--pm-text-sm);">Dashboard</a>
+          <a [routerLink]="auth.dashboardPath(auth.user()!.role)" class="pm-btn pm-btn-ghost justify-start" style="font-size:var(--pm-text-sm);">Workspace</a>
           @if (auth.user()?.role === 'designer') {
             <a [routerLink]="['/storefront', auth.user()!.id]" class="pm-btn pm-btn-ghost justify-start" style="font-size:var(--pm-text-sm);">Storefront</a>
           }
@@ -218,8 +191,8 @@
         </div>
       } @else {
         <div class="px-4 py-3 flex gap-2" style="border-top:1px solid var(--pm-border);">
-          <a routerLink="/login" class="pm-btn pm-btn-primary flex-1" style="font-size:var(--pm-text-sm);">Sign in</a>
-          <a routerLink="/register" class="pm-btn pm-btn-secondary flex-1" style="font-size:var(--pm-text-sm);">Register</a>
+          <a routerLink="/login" class="btn btn-clay flex-1" style="justify-content:center;">Sign in</a>
+          <a routerLink="/register" class="pm-btn pm-btn-secondary flex-1" style="justify-content:center;">Register</a>
         </div>
       }
     </nav>
@@ -233,84 +206,78 @@
   </main>
 
   <!-- ═══════════════════════════════════════════════════════
-       FOOTER
+       COLOPHON / FOOTER
   ═══════════════════════════════════════════════════════ -->
-  <footer class="pm-footer" aria-label="Site footer">
-    <div class="pm-container">
+  <footer class="colophon" aria-label="Site footer">
+    <div class="colophon-inner">
+      <div class="kicker" style="color:var(--pm-amber);">Colophon · imprint · masthead</div>
+      <h2 class="colophon-title">Printy<em>&amp;</em>mand,<br />made in Tunisia.</h2>
 
-      <div class="pm-footer-grid">
-
-        <!-- Brand column -->
-        <div>
-          <div class="flex items-center gap-2.5 mb-4">
-            <div class="pm-nav-logo" aria-hidden="true">P</div>
-            <span class="pm-heading font-bold text-white" style="font-size:var(--pm-text-base); letter-spacing:-0.02em;">Printymand</span>
-          </div>
-          <p style="font-size:var(--pm-text-sm); line-height:1.7; max-width:260px; color:rgba(244,237,226,0.55);">
-            Tunisia's print-on-demand platform. Designed by local artists, printed by verified shops, shipped anywhere in Tunisia.
+      <div class="colophon-grid">
+        <div class="col-block">
+          <h4>About this issue</h4>
+          <p class="credit">
+            Issue Nº 07, Spring 2026. Set in Bricolage Grotesque, Newsreader
+            and Inter. Printed by the Printymand network on 100% local presses.
+            Designed by local artists, shipped anywhere in Tunisia.
           </p>
-          <!-- Social links -->
           <div class="flex gap-2 mt-5">
             @for (social of socials; track social.label) {
               <a
                 [href]="social.href"
                 target="_blank"
                 rel="noopener noreferrer"
-                class="pm-icon-btn"
-                style="background:rgba(255,255,255,0.06); border-color:rgba(255,255,255,0.1); color:rgba(244,237,226,0.5);"
+                class="iconbtn"
+                style="border-color:rgba(244,236,220,0.25); color:rgba(244,236,220,0.7);"
                 [attr.aria-label]="social.label"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path [attr.d]="social.path"/>
-                </svg>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path [attr.d]="social.path"/></svg>
               </a>
             }
           </div>
         </div>
 
-        <!-- Shop column -->
-        <div>
-          <p class="pm-footer-heading">Shop</p>
-          <a routerLink="/marketplace" class="pm-footer-link">All Designs</a>
-          <a routerLink="/products" class="pm-footer-link">Products</a>
-          <a [routerLink]="['/marketplace']" [queryParams]="{category:'Minimal'}" class="pm-footer-link">Minimal</a>
-          <a [routerLink]="['/marketplace']" [queryParams]="{category:'Street'}" class="pm-footer-link">Streetwear</a>
-          <a [routerLink]="['/marketplace']" [queryParams]="{category:'Typography'}" class="pm-footer-link">Calligraphy</a>
+        <div class="col-block">
+          <h4>Browse</h4>
+          <ul>
+            <li><a routerLink="/marketplace">Marketplace</a></li>
+            <li><a routerLink="/products">Products</a></li>
+            <li><a [routerLink]="['/marketplace']" [queryParams]="{category:'Minimal'}">Minimal</a></li>
+            <li><a [routerLink]="['/marketplace']" [queryParams]="{category:'Street'}">Streetwear</a></li>
+            <li><a [routerLink]="['/marketplace']" [queryParams]="{category:'Typography'}">Calligraphy</a></li>
+          </ul>
         </div>
 
-        <!-- Account column -->
-        <div>
-          <p class="pm-footer-heading">Account</p>
-          <a routerLink="/login" class="pm-footer-link">Sign in</a>
-          <a routerLink="/register" class="pm-footer-link">Create account</a>
-          <a routerLink="/dashboard" class="pm-footer-link">Dashboard</a>
-          <a routerLink="/profile" class="pm-footer-link">Profile</a>
-          <a routerLink="/tracking" class="pm-footer-link">Order tracking</a>
+        <div class="col-block">
+          <h4>For the makers</h4>
+          <ul>
+            <li><a routerLink="/login">Sign in</a></li>
+            <li><a routerLink="/register">Become a designer</a></li>
+            <li><a routerLink="/register">Open a pressroom</a></li>
+            <li><a routerLink="/tracking">Track order</a></li>
+          </ul>
         </div>
 
-        <!-- Makers column -->
-        <div>
-          <p class="pm-footer-heading">Makers</p>
-          <a routerLink="/designer-dashboard" class="pm-footer-link">Designer studio</a>
-          <a routerLink="/printer-dashboard" class="pm-footer-link">Printer hub</a>
-          <a routerLink="/register" class="pm-footer-link">Become a designer</a>
-          <a routerLink="/register" class="pm-footer-link">Partner as printer</a>
-        </div>
-
-      </div>
-
-      <hr class="pm-footer-divider" />
-
-      <div class="pm-footer-bar">
-        <p class="pm-footer-copy">© {{ currentYear }} Printymand · Made in Tunisia 🇹🇳</p>
-        <div class="pm-payment-marks" aria-label="Accepted payment methods">
-          <span class="pm-payment-mark">VISA</span>
-          <span class="pm-payment-mark">MC</span>
-          <span class="pm-payment-mark">D17</span>
-          <span class="pm-payment-mark">CASH</span>
+        <div class="col-block">
+          <h4>Letters &amp; press</h4>
+          <ul>
+            <li>letters&#64;printymand.tn</li>
+            <li>+216 71 000 042</li>
+            <li>23 rue de Carthage, Tunis</li>
+            <li>Open Mon — Sat, 9—18h</li>
+          </ul>
         </div>
       </div>
 
+      <div class="colophon-bottom">
+        <span>© {{ currentYear }} Printymand · Tunisia's first end-to-end print-on-demand press.</span>
+        <div class="pays">
+          <span class="pay-tile">Visa</span>
+          <span class="pay-tile">MC</span>
+          <span class="pay-tile">D17</span>
+          <span class="pay-tile">COD</span>
+        </div>
+      </div>
     </div>
   </footer>
 

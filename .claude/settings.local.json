@@ -7,7 +7,8 @@
       "Bash(Format-Table -HideTableHeaders)",
       "Bash(npx ng *)",
       "PowerShell($f = Get-Item \"D:\\\\University\\\\Engineer\\\\Second Year\\\\Second Semester\\\\PFA\\\\Project\\\\printymand\\\\Printymand report.pdf\"; \"Size: $\\([math]::Round\\($f.Length/1KB,1\\)\\) KB\")",
-      "PowerShell($root=\"D:\\\\University\\\\Engineer\\\\Second Year\\\\Second Semester\\\\PFA\\\\Project\\\\printymand\"; Get-ChildItem $root -Directory | Select-Object Name; \"---FRONTEND SRC APP---\"; Get-ChildItem \"$root\\\\frontend\\\\src\\\\app\" -Directory -ErrorAction SilentlyContinue | Select-Object Name; \"---BACKEND?---\"; Get-ChildItem \"$root\\\\backend\" -ErrorAction SilentlyContinue | Select-Object Name)"
+      "PowerShell($root=\"D:\\\\University\\\\Engineer\\\\Second Year\\\\Second Semester\\\\PFA\\\\Project\\\\printymand\"; Get-ChildItem $root -Directory | Select-Object Name; \"---FRONTEND SRC APP---\"; Get-ChildItem \"$root\\\\frontend\\\\src\\\\app\" -Directory -ErrorAction SilentlyContinue | Select-Object Name; \"---BACKEND?---\"; Get-ChildItem \"$root\\\\backend\" -ErrorAction SilentlyContinue | Select-Object Name)",
+      "Bash(npm run *)"
     ]
   }
 }

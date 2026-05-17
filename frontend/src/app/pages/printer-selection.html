@@ -1,53 +1,50 @@
 @if (design(); as d) {
-  <div class="pm-page">
-
-    <div class="flex flex-wrap items-end justify-between gap-4">
-      <div>
-        <p class="pm-kicker mb-1">Step 3 of 3</p>
-        <h1 class="pm-heading font-bold text-3xl" style="color:var(--pm-text);">Choose a printer</h1>
-        <p class="text-sm mt-1" style="color:var(--pm-text-muted);">Pick the local print shop that will fulfill your order.</p>
-      </div>
-      <div style="background:var(--pm-surface-alt); border:1px solid var(--pm-border); border-radius:12px; padding:0.75rem 1rem; font-size:0.85rem; color:var(--pm-text-muted); max-width:420px;">
-        <span style="color:var(--pm-text); font-weight:600;">{{ d.title }}</span>
-        @for (op of orderProducts(); track op.product.id) {
-          <span> · {{ op.product.name }} ×{{ op.qty }}</span>
-        }
-      </div>
+  <section class="page page-bread">
+    <div style="margin-bottom:16px;">
+      <a [routerLink]="['/customize', d.id]" class="serif-italic" style="color:var(--pm-text-muted); font-size:14px;">← Back to customize</a>
     </div>
+    <div class="section-head">
+      <span class="section-no">XIV.</span>
+      <hr class="line" />
+      <span class="title">The pressroom · choose who prints</span>
+    </div>
+    <div class="bread-grid">
+      <h1 class="bread-title">Who prints<br /><em>this one?</em></h1>
+      <p class="bread-deck">
+        Verified pressrooms across Tunisia. Each gets the same brief —
+        <span style="color:var(--pm-ink); font-style:normal; font-family:var(--pm-font-display);">{{ d.title }}</span>@for (op of orderProducts(); track op.product.id) {<span> · {{ op.product.name }} ×{{ op.qty }}</span>}
+        — pick the one whose timeline, location and rating fits.
+      </p>
+    </div>
+  </section>
 
-    <!-- Filters (spec: availability, rank, delivery time, price, location) -->
-    <div class="pm-panel" style="padding:1rem 1.25rem; display:flex; flex-wrap:wrap; gap:1rem; align-items:flex-end;">
-      <label class="pm-field" style="margin:0;">
-        <span class="pm-label">Rank</span>
-        <select class="pm-select" [ngModel]="rankFilter()" (ngModelChange)="rankFilter.set($event)">
-          <option value="all">All ranks</option>
-          <option value="Verified">Verified</option>
-          <option value="Gold">Gold</option>
-          <option value="Premium">Premium</option>
-        </select>
-      </label>
-      <label class="pm-field" style="margin:0;">
-        <span class="pm-label">Location</span>
-        <select class="pm-select" [ngModel]="locationFilter()" (ngModelChange)="locationFilter.set($event)">
-          <option value="all">All locations</option>
-          @for (loc of locations(); track loc) { <option [value]="loc">{{ loc }}</option> }
-        </select>
-      </label>
-      <label class="pm-field" style="margin:0;">
-        <span class="pm-label">Max delivery (days): {{ maxDelivery() }}</span>
+  <section class="page">
+
+    <!-- Filters -->
+    <div class="filter-row" style="border-top:1px solid var(--pm-rule-strong);">
+      <span class="label">Rank by:</span>
+      <button type="button" class="chip" [class.active]="sortBy() === 'rating'" (click)="sortBy.set('rating')">Highest rated</button>
+      <button type="button" class="chip" [class.active]="sortBy() === 'rank'" (click)="sortBy.set('rank')">Highest rank</button>
+      <button type="button" class="chip" [class.active]="sortBy() === 'delivery'" (click)="sortBy.set('delivery')">Fastest lead</button>
+      <button type="button" class="chip" [class.active]="sortBy() === 'price'" (click)="sortBy.set('price')">Lowest price</button>
+
+      <select class="sort-select" [ngModel]="rankFilter()" (ngModelChange)="rankFilter.set($event)" aria-label="Filter rank">
+        <option value="all">rank — all</option>
+        <option value="Verified">rank — Verified</option>
+        <option value="Gold">rank — Gold</option>
+        <option value="Premium">rank — Premium</option>
+      </select>
+      <select class="sort-select" style="margin-left:0;" [ngModel]="locationFilter()" (ngModelChange)="locationFilter.set($event)" aria-label="Filter location">
+        <option value="all">where — all</option>
+        @for (loc of locations(); track loc) { <option [value]="loc">where — {{ loc }}</option> }
+      </select>
+      <label class="serif-italic" style="display:flex; align-items:center; gap:8px; font-size:13px; color:var(--pm-text-muted);">
+        ≤ {{ maxDelivery() }}d
         <input class="pm-range" type="range" min="1" max="14" step="1" [value]="maxDelivery()" (input)="maxDelivery.set(+$any($event.target).value)" />
       </label>
-      <label class="pm-field" style="margin:0;">
-        <span class="pm-label">Sort by</span>
-        <select class="pm-select" [ngModel]="sortBy()" (ngModelChange)="sortBy.set($event)">
-          <option value="rating">Top rated</option>
-          <option value="rank">Highest rank</option>
-          <option value="delivery">Fastest delivery</option>
-        </select>
-      </label>
     </div>
 
-    <div class="pm-grid-3">
+    <div class="pm-grid-3" style="padding:28px 0;">
       @for (printer of compatiblePrinters(); track printer.id) {
         <app-printer-card
           [printer]="printer"
@@ -57,29 +54,36 @@
           (selected)="selectPrinter($event)"
         />
       } @empty {
-        <div class="pm-empty pm-panel" style="padding:2.5rem 1.5rem; grid-column:1/-1;">
-          <p style="font-size:var(--pm-text-sm); color:var(--pm-text-muted);">No available printer matches these filters. Try widening them.</p>
+        <div style="grid-column:1/-1; padding:60px 0; text-align:center;">
+          <p class="serif-italic" style="font-size:20px; color:var(--pm-text-muted);">No available pressroom matches these filters — try widening them.</p>
         </div>
       }
     </div>
 
-    <!-- Summary bar -->
-    <div class="pm-panel flex flex-wrap items-center justify-between gap-4" style="padding:1.25rem 1.5rem;">
+    <!-- Summary footer -->
+    <div class="cust-footer">
       <div>
-        <p class="text-sm font-semibold" style="color:var(--pm-text);">Selected printer</p>
-        <p class="text-sm mt-0.5" style="color:var(--pm-text-muted);">
-          {{ selectedPrinterId() ? workflow.getPrinterById(selectedPrinterId()!)?.businessName : 'None selected — choose above' }}
-        </p>
+        <div class="ftot-label">Selected pressroom</div>
+        <div class="ftot-amt" style="font-size:28px;">
+          {{ selectedPrinterId() ? workflow.getPrinterById(selectedPrinterId()!)?.businessName : 'None selected' }}
+        </div>
+        <div class="ftot-note">
+          @if (selectedPrinterId()) {
+            Total from {{ priceFor(selectedPrinterId()!) }} TND · the pressroom must accept before you pay.
+          } @else {
+            Pick a pressroom above to send your request.
+          }
+        </div>
       </div>
-      <div class="flex flex-wrap gap-3">
-        <a class="pm-btn pm-btn-secondary text-sm" [routerLink]="['/customize', d.id]">← Back</a>
-        <button type="button" class="pm-btn pm-btn-primary" (click)="sendRequest()">Send request to printer →</button>
+      <div class="ftot-actions">
+        <a class="btn btn-ghost" [routerLink]="['/customize', d.id]">← Back</a>
+        <button type="button" class="btn btn-clay" (click)="sendRequest()">Send the brief <span class="ar">→</span></button>
       </div>
     </div>
 
     @if (error()) {
-      <div style="background:var(--pm-danger-soft); border:1px solid rgba(185,28,28,0.2); border-radius:10px; padding:0.875rem 1rem; font-size:0.875rem; color:var(--pm-danger);">{{ error() }}</div>
+      <div class="serif-italic" style="border:1px solid var(--pm-danger); color:var(--pm-danger); padding:12px 16px; margin-top:16px;">{{ error() }}</div>
     }
 
-  </div>
+  </section>
 }

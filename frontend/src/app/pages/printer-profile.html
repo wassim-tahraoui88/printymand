@@ -1,4 +1,4 @@
-<app-dashboard-shell eyebrow="Printer" title="Business profile" description="Manage your business identity and contact details.">
+<app-dashboard-shell eyebrow="Pressroom" title="Business profile" description="Manage your business identity and contact details.">
   <div class="grid gap-6 lg:grid-cols-2 lg:items-start">
     <div class="pm-panel" style="padding:1.5rem;">
       <h2 class="font-bold text-lg mb-4" style="color:var(--pm-text);">Business details</h2>
@@ -29,8 +29,8 @@
           <input class="pm-input" [ngModel]="user()?.printerProfile?.governorate" (ngModelChange)="auth.updatePrinterProfile({ governorate: $event })" />
         </label>
         <label class="pm-field">
-          <span class="pm-label">About your shop</span>
-          <textarea class="pm-textarea" [ngModel]="user()?.printerProfile?.about" (ngModelChange)="auth.updatePrinterProfile({ about: $event })" placeholder="Tell designers about your print shop…"></textarea>
+          <span class="pm-label">About your pressroom</span>
+          <textarea class="pm-textarea" [ngModel]="user()?.printerProfile?.about" (ngModelChange)="auth.updatePrinterProfile({ about: $event })" placeholder="Tell designers about your pressroom…"></textarea>
         </label>
       </div>
     </div>
@@ -39,7 +39,7 @@
   <section class="pm-panel" style="padding:1.5rem;">
     <h2 class="font-bold text-lg mb-2" style="color:var(--pm-text);">Products you fulfill</h2>
     <p style="font-size:var(--pm-text-sm); color:var(--pm-text-muted); line-height:1.6; margin-bottom:1rem;">
-      The product catalog is managed by Printymand. You choose which predefined products you
+      The product catalogue is managed by Printymand. You choose which predefined products you
       print and set your pricing &amp; availability from your
       <strong>Dashboard → Products</strong>. You can't create products or upload mockups —
       if you need a new product type, contact the admins and they'll add it to the catalog.

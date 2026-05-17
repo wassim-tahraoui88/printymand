@@ -17,7 +17,11 @@ export class ProductsPageComponent {
 
   readonly search = signal('');
   readonly category = signal('All');
+  readonly pressroom = signal<number | 'all'>('all');
   readonly sort = signal<ProductSort>('popular');
+
+  /** Pressrooms that have at least one product offering (for the filter). */
+  readonly pressrooms = computed(() => this.workflow.printers());
 
   readonly categories = computed(() => [
     'All',
@@ -36,10 +40,17 @@ export class ProductsPageComponent {
     const cat     = this.category();
     const sortKey = this.sort();
 
+    const pressroom = this.pressroom();
+
     const filtered = this.workflow
       .products()
       .filter((p) => p.availability !== 'DRAFT')
       .filter((p) => cat === 'All' || p.category === cat)
+      .filter(
+        (p) =>
+          pressroom === 'all' ||
+          this.workflow.printersForProduct(p.id).some((pr) => pr.id === pressroom),
+      )
       .filter((p) => {
         if (!query) return true;
         return [p.name, p.category, p.description].some((v) => v.toLowerCase().includes(query));
@@ -59,12 +70,14 @@ export class ProductsPageComponent {
     let n = 0;
     if (this.search()) n++;
     if (this.category() !== 'All') n++;
+    if (this.pressroom() !== 'all') n++;
     return n;
   });
 
   clearFilters(): void {
     this.search.set('');
     this.category.set('All');
+    this.pressroom.set('all');
     this.sort.set('popular');
   }
 }

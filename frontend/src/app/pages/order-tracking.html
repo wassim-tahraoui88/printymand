@@ -1,121 +1,151 @@
 @if (order(); as o) {
-  <div class="pm-page">
+  <section class="page page-bread">
+    <div style="margin-bottom:16px;">
+      <a routerLink="/dashboard" class="serif-italic" style="color:var(--pm-text-muted); font-size:14px;">← Back to your desk</a>
+    </div>
+    <div class="section-head">
+      <span class="section-no">XVIII.</span>
+      <hr class="line" />
+      <span class="title">The press log · order tracking</span>
+    </div>
+    <div class="bread-grid">
+      <h1 class="bread-title">Order<br /><em>{{ o.id }}.</em></h1>
+      <p class="bread-deck">
+        Status: {{ stage().toLowerCase() }}. The press log below tracks every
+        hand your order has passed through.
+      </p>
+    </div>
+  </section>
 
-    <div class="flex flex-wrap items-end justify-between gap-4">
+  <section class="page">
+
+    <!-- Order head -->
+    <div class="track-head">
       <div>
-        <p class="pm-kicker mb-1">Order tracking</p>
-        <h1 class="pm-heading font-bold text-3xl" style="color:var(--pm-text);">Order {{ o.id }}</h1>
-        <p class="text-sm mt-1" style="color:var(--pm-text-muted);">Tracking code {{ o.trackingCode }} · Payment {{ o.paymentStatus }}</p>
+        <div style="display:flex; gap:18px; align-items:center; flex-wrap:wrap;">
+          <span class="status-pill production">{{ stage() }}</span>
+          <span class="serif-italic" style="color:var(--pm-text-muted);">tracking {{ o.trackingCode }} · payment {{ o.paymentStatus }}</span>
+        </div>
+        @if (o.lines.length) {
+          <h2 class="display" style="font-size:clamp(28px, 3vw, 44px); margin:14px 0 0; line-height:1.05;">
+            {{ o.lines[0].designTitle }}<br />
+            <em style="font-family:var(--pm-font-serif); color:var(--pm-clay); font-weight:500;">on {{ o.lines[0].productName }}.</em>
+          </h2>
+        }
       </div>
-      <a class="pm-btn pm-btn-secondary text-sm" routerLink="/dashboard">← Dashboard</a>
+      <div class="h-meta">
+        <span>{{ o.lines.length }} line{{ o.lines.length === 1 ? '' : 's' }}</span>
+        <strong>{{ o.total }} TND</strong>
+        <span>Paid via {{ o.paymentMethod || '—' }}</span>
+      </div>
     </div>
 
-    <!-- Approval / payment status banner -->
-    <div class="pm-panel" style="padding:1.25rem 1.5rem; display:flex; flex-wrap:wrap; align-items:center; gap:1rem; justify-content:space-between;">
-      <div style="min-width:0;">
-        <p class="text-xs font-bold tracking-widest uppercase" style="color:var(--pm-text-muted);">Current stage</p>
-        <p class="pm-heading" style="font-size:1.25rem; font-weight:800; color:var(--pm-text); margin-top:0.2rem;">{{ stage() }}</p>
-
-        @if (stage() === 'Requested') {
-          <p class="text-sm mt-1" style="color:var(--pm-text-muted);">Waiting for the printer to accept your request. You'll be able to pay once it's accepted.</p>
-        }
-        @if (stage() === 'Awaiting payment') {
-          <p class="text-sm mt-1" style="color:var(--pm-text-muted);">Your request was accepted. Complete payment to confirm the order.</p>
-        }
-        @if (stage() === 'Rejected') {
-          <p class="text-sm mt-1" style="color:var(--pm-danger);">{{ o.rejectionReason ?? 'The printer rejected this request.' }}</p>
-        }
-        @if (stage() === 'Cancelled') {
-          <p class="text-sm mt-1" style="color:var(--pm-text-muted);">You cancelled this request.</p>
-        }
-      </div>
-
-      <div class="flex flex-wrap gap-3">
+    <!-- Status messages + actions -->
+    <div style="display:flex; flex-wrap:wrap; gap:16px; justify-content:space-between; align-items:center; padding:0 0 24px;">
+      <p class="serif-italic" style="color:var(--pm-text-muted); font-size:15px; margin:0; max-width:60ch;">
+        @if (stage() === 'Requested') { Waiting for the pressroom to accept your request. You'll be able to pay once it's accepted. }
+        @else if (stage() === 'Awaiting payment') { Your request was accepted. Complete payment to confirm the order. }
+        @else if (stage() === 'Rejected') { <span style="color:var(--pm-danger);">{{ o.rejectionReason ?? 'The pressroom rejected this request.' }}</span> }
+        @else if (stage() === 'Cancelled') { You cancelled this request. }
+        @else { Questions about this order? The pressroom is open Mon — Sat, 9—18h. }
+      </p>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
         @if (canPay()) {
-          <button type="button" class="pm-btn pm-btn-primary" [disabled]="busy()" (click)="pay()">
-            {{ busy() ? 'Processing…' : 'Pay ' + o.total + ' TND →' }}
+          <button type="button" class="btn btn-clay" [disabled]="busy()" (click)="pay()">
+            {{ busy() ? 'Pressing…' : 'Pay ' + o.total + ' TND' }} <span class="ar">→</span>
           </button>
         }
         @if (canCancel()) {
-          <button type="button" class="pm-btn pm-btn-secondary" (click)="cancel()">Cancel request</button>
+          <button type="button" class="btn btn-ghost" (click)="cancel()">Cancel request</button>
         }
         @if (stage() === 'Rejected' || stage() === 'Cancelled') {
-          <a class="pm-btn pm-btn-secondary" routerLink="/marketplace">Browse marketplace →</a>
+          <a class="btn btn-ghost" routerLink="/marketplace">Browse the archive →</a>
         }
       </div>
     </div>
 
     @if (error()) {
-      <div style="background:var(--pm-danger-soft); border:1px solid rgba(185,28,28,0.2); border-radius:var(--pm-radius); padding:0.875rem 1rem; font-size:0.875rem; color:var(--pm-danger);">{{ error() }}</div>
+      <div class="serif-italic" style="border:1px solid var(--pm-danger); color:var(--pm-danger); padding:12px 16px; margin-bottom:16px;">{{ error() }}</div>
     }
 
     <!-- Timeline -->
-    <div class="pm-panel" style="padding:1.5rem;">
-      <p class="text-xs font-bold tracking-widest uppercase mb-4" style="color:var(--pm-text-muted);">Order progress</p>
-      <div class="grid gap-3 sm:grid-cols-5">
-        @for (step of timeline(); track step.label) {
-          <div
-            style="border-radius:var(--pm-radius); padding:0.875rem 0.75rem; text-align:center; border:1px solid;"
-            [style.background]="step.done ? 'var(--pm-primary-soft)' : 'var(--pm-surface-alt)'"
-            [style.borderColor]="step.done ? 'rgba(199,74,43,0.25)' : 'var(--pm-border)'"
-          >
-            <div
-              class="mx-auto mb-2 flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold"
-              [style.background]="step.done ? 'var(--pm-primary)' : 'var(--pm-border)'"
-              [style.color]="step.done ? '#fff' : 'var(--pm-text-muted)'"
-            >✓</div>
-            <p class="text-xs font-semibold" [style.color]="step.done ? 'var(--pm-primary)' : 'var(--pm-text-muted)'">{{ step.label }}</p>
-          </div>
-        }
-      </div>
+    <div class="timeline">
+      @for (step of timeline(); track step.label; let i = $index; let first = $first; let last = $last) {
+        <div
+          class="tl-marker"
+          [class.done]="step.done"
+          [class.current]="!step.done && (first || timeline()[i - 1].done)"
+          [class.first]="first"
+          [class.last]="last"
+        >
+          <span class="dot"></span>
+        </div>
+        <div class="tl-body" [class.first]="first">
+          <div class="stage-no">STAGE {{ (i + 1).toString().padStart(2, '0') }}</div>
+          <div class="stage-title">{{ step.label }}</div>
+          <div class="stage-when">{{ step.done ? 'Done' : (!step.done && (first || timeline()[i - 1].done) ? 'In progress' : 'Pending') }}</div>
+        </div>
+      }
     </div>
 
-    <div class="grid gap-6 lg:grid-cols-[1fr_0.85fr] lg:items-start">
+    <!-- Detail strip -->
+    <div class="stat-strip" style="margin-top:32px;">
+      <div class="stat"><span class="n">{{ o.lines.length }}</span><span class="l">Line items</span></div>
+      <div class="stat"><span class="n">{{ o.total }}<em> TND</em></span><span class="l">Order total</span></div>
+      <div class="stat"><span class="n">{{ o.paymentStatus }}</span><span class="l">Payment</span></div>
+      <div class="stat"><span class="n">{{ stage() }}</span><span class="l">Current stage</span></div>
+    </div>
 
-      <!-- Line items -->
-      <div class="pm-panel" style="padding:1.5rem;">
-        <h2 class="font-bold text-lg mb-4" style="color:var(--pm-text);">Line items</h2>
-        <div class="grid gap-3">
+    <!-- Line items + shipping -->
+    <section style="padding-top:48px;">
+      <div class="section-head">
+        <span class="section-no">↳</span>
+        <hr class="line" />
+        <span class="title">The brief</span>
+      </div>
+      <table class="news-table">
+        <thead>
+          <tr>
+            <th>Design / product</th>
+            <th>Pressroom</th>
+            <th class="r">Variant</th>
+            <th class="r">Status</th>
+          </tr>
+        </thead>
+        <tbody>
           @for (line of o.lines; track line.id) {
-            <div style="border:1px solid var(--pm-border); border-radius:var(--pm-radius); padding:1rem; background:var(--pm-surface-alt);">
-              <div class="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <p class="font-semibold" style="color:var(--pm-text);">{{ line.designTitle }}</p>
-                  <p class="text-sm mt-0.5" style="color:var(--pm-text-muted);">{{ line.productName }} · {{ line.color }} · {{ line.size }}</p>
-                  <p class="text-sm" style="color:var(--pm-text-muted);">{{ line.printerName }}</p>
-                </div>
-                <span [class]="statusClass(line.status)">{{ line.status }}</span>
-              </div>
-            </div>
+            <tr>
+              <td class="title-cell">{{ line.designTitle }}<small>{{ line.productName }}</small></td>
+              <td>{{ line.printerName }}</td>
+              <td class="r">{{ line.color }} · {{ line.size }}</td>
+              <td class="r"><span [class]="statusClass(line.status)">{{ line.status }}</span></td>
+            </tr>
           }
+        </tbody>
+      </table>
+
+      <div class="story-specs" style="margin-top:28px; border-top:1px solid var(--pm-rule-strong);">
+        <div>
+          <div class="label">Shipping address</div>
+          <div class="value" style="font-size:15px; font-family:var(--pm-font-serif); font-weight:400;">{{ o.shippingAddress || '—' }}</div>
+        </div>
+        <div>
+          <div class="label">Payment method</div>
+          <div class="value" style="text-transform:uppercase;">{{ o.paymentMethod || '—' }}</div>
+        </div>
+        <div>
+          <div class="label">Order total</div>
+          <div class="value">{{ o.total }} <small>TND</small></div>
         </div>
       </div>
+    </section>
 
-      <!-- Shipping & payment -->
-      <div class="pm-panel" style="padding:1.5rem;">
-        <h2 class="font-bold text-lg mb-4" style="color:var(--pm-text);">Shipping & payment</h2>
-        <div class="grid gap-3">
-          <div style="background:var(--pm-surface-alt); border:1px solid var(--pm-border); border-radius:var(--pm-radius); padding:1rem;">
-            <p class="text-xs font-bold tracking-widest uppercase mb-2" style="color:var(--pm-text-muted);">Shipping address</p>
-            <p class="text-sm" style="color:var(--pm-text);">{{ o.shippingAddress }}</p>
-          </div>
-          <div style="background:var(--pm-surface-alt); border:1px solid var(--pm-border); border-radius:var(--pm-radius); padding:1rem;">
-            <p class="text-xs font-bold tracking-widest uppercase mb-2" style="color:var(--pm-text-muted);">Payment method</p>
-            <p class="text-sm font-semibold uppercase" style="color:var(--pm-text);">{{ o.paymentMethod }}</p>
-          </div>
-          <div style="background:var(--pm-secondary-soft); border:1px solid rgba(232,158,28,0.2); border-radius:var(--pm-radius); padding:1rem; display:flex; align-items:center; justify-content:space-between;">
-            <span class="text-sm font-semibold" style="color:var(--pm-text-muted);">Order total</span>
-            <span class="pm-heading font-bold" style="color:var(--pm-text); font-size:1.6rem;">{{ o.total }} TND</span>
-          </div>
-        </div>
-      </div>
-
-    </div>
-  </div>
+  </section>
 } @else {
-  <div class="pm-page">
-    <div class="pm-empty" style="padding:3rem;">
-      Order not found. <a routerLink="/dashboard" style="color:var(--pm-primary); font-weight:600;">Back to dashboard →</a>
+  <section class="page" style="padding:80px 0;">
+    <div style="text-align:center;">
+      <p class="serif-italic" style="font-size:22px; color:var(--pm-text-muted);">Order not found.</p>
+      <a routerLink="/dashboard" class="btn btn-ghost" style="margin-top:18px;">← Back to dashboard</a>
     </div>
-  </div>
+  </section>
 }

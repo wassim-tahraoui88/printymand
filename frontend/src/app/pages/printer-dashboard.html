@@ -4,7 +4,7 @@
   <app-dashboard-sidebar
     [nav]="nav"
     [activeTab]="activeTab()"
-    roleLabel="Printer"
+    roleLabel="Pressroom"
     [mobileOpen]="sidebarOpen()"
     (tabChange)="activeTab.set($event)"
     (mobileClose)="sidebarOpen.set(false)"
@@ -43,7 +43,7 @@
             {{ requests().length }} request{{ requests().length === 1 ? '' : 's' }}
           </span>
         }
-        <span class="pm-chip">{{ user()?.name ?? 'Printer' }}</span>
+        <span class="pm-chip">{{ user()?.name ?? 'Pressroom' }}</span>
       </div>
     </div>
 
@@ -358,7 +358,7 @@
         <div class="pm-panel" style="padding:1.5rem;">
           <div style="display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:1rem;">
             <div>
-              <p class="pm-stat-label">Printer level</p>
+              <p class="pm-stat-label">Pressroom level</p>
               <p class="pm-heading" style="font-size:var(--pm-text-lg); font-weight:800; color:var(--pm-text);">{{ level() }}</p>
             </div>
             <div style="text-align:right;">

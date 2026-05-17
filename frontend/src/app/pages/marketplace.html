@@ -1,145 +1,96 @@
-<div class="pm-page">
-
-  <!-- ── PAGE HEADER ─────────────────────────────────────── -->
-  <div>
-    <p class="pm-kicker mb-1">Discover</p>
-    <h1 class="pm-display" style="font-size:clamp(1.875rem, 4vw, 2.75rem); color:var(--pm-text);">
-      Design marketplace
-    </h1>
-    <p style="font-size:var(--pm-text-base); color:var(--pm-text-muted); margin-top:0.375rem;">
-      {{ designs().length }} design{{ designs().length === 1 ? '' : 's' }} ready for customization.
+<!-- ── PAGE BREAD ──────────────────────────────────────── -->
+<section class="page page-bread">
+  <div style="margin-bottom:16px;">
+    <a routerLink="/" class="serif-italic" style="color:var(--pm-text-muted); font-size:14px;">← Back to the cover</a>
+  </div>
+  <div class="section-head">
+    <span class="section-no">VIII.</span>
+    <hr class="line" />
+    <span class="title">The marketplace · all plates</span>
+  </div>
+  <div class="bread-grid">
+    <h1 class="bread-title"><em>All</em> the works,<br />in one&nbsp;archive.</h1>
+    <p class="bread-deck">
+      {{ designs().length }} active design{{ designs().length === 1 ? '' : 's' }} on Printymand —
+      filtered, sorted, and ready for the press. Updated weekly.
     </p>
   </div>
+</section>
 
-  <!-- ── FILTER BAR ──────────────────────────────────────── -->
-  <div class="pm-panel" style="padding:1.25rem;">
-    <div class="grid gap-3 md:grid-cols-[1fr_auto]">
+<section class="page">
 
-      <!-- Left: search + category pills -->
-      <div class="grid gap-3">
-
-        <!-- Search input -->
-        <div style="position:relative;">
-          <svg style="position:absolute; left:0.875rem; top:50%; transform:translateY(-50%); opacity:0.38; pointer-events:none;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          <input
-            class="pm-input w-full"
-            style="padding-left:2.5rem;"
-            [ngModel]="search()"
-            (ngModelChange)="search.set($event)"
-            (keyup.enter)="applyFilters()"
-            placeholder="Search designs, designers, tags…"
-            aria-label="Search designs"
-          />
-        </div>
-
-        <!-- Category pills — horizontal scrollable on mobile -->
-        <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-          <button
-            type="button"
-            class="pm-btn pm-btn-sm"
-            [class.pm-btn-primary]="category() === 'All'"
-            [class.pm-btn-secondary]="category() !== 'All'"
-            (click)="category.set('All'); applyFilters()"
-          >All</button>
-          @for (cat of categories(); track cat) {
-            <button
-              type="button"
-              class="pm-btn pm-btn-sm"
-              [class.pm-btn-primary]="category() === cat"
-              [class.pm-btn-secondary]="category() !== cat"
-              (click)="category.set(cat); applyFilters()"
-            >{{ cat }}</button>
-          }
-        </div>
-      </div>
-
-      <!-- Right: sort + product filter + clear -->
-      <div class="flex flex-wrap items-end gap-2">
-
-        <!-- Product filter -->
-        <label class="pm-field" style="min-width:160px;">
-          <span class="pm-label">Product</span>
-          <select
-            class="pm-select"
-            [ngModel]="selectedProductId()"
-            (ngModelChange)="selectedProductId.set($event ? +$event : null); applyFilters()"
-          >
-            <option [ngValue]="null">All products</option>
-            @for (product of workflow.products(); track product.id) {
-              <option [ngValue]="product.id">{{ product.name }}</option>
-            }
-          </select>
-        </label>
-
-        <!-- Sort -->
-        <label class="pm-field" style="min-width:160px;">
-          <span class="pm-label">Sort by</span>
-          <select class="pm-select" [ngModel]="sort()" (ngModelChange)="sort.set($event)">
-            @for (opt of sortOptions; track opt.value) {
-              <option [value]="opt.value">{{ opt.label }}</option>
-            }
-          </select>
-        </label>
-
-        <!-- Clear (only shown when filters are active) -->
-        @if (activeFilterCount() > 0) {
-          <button
-            type="button"
-            class="pm-btn pm-btn-secondary pm-btn-sm self-end"
-            (click)="clearFilters()"
-            style="white-space:nowrap;"
-          >
-            Clear
-            <span class="pm-chip" style="background:var(--pm-primary-soft); color:var(--pm-primary); border-color:rgba(199,74,43,0.2);">{{ activeFilterCount() }}</span>
-          </button>
+  <!-- Toolbar -->
+  <div class="market-toolbar">
+    <div class="search">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg>
+      <input
+        class="search-input"
+        [ngModel]="search()"
+        (ngModelChange)="search.set($event)"
+        (keyup.enter)="applyFilters()"
+        placeholder="Search designs, designers, or tags…"
+        aria-label="Search designs"
+      />
+    </div>
+    <div class="toolbar-right">
+      <span class="market-count">{{ designs().length }} {{ designs().length === 1 ? 'plate' : 'plates' }}</span>
+      <select class="sort-select" [ngModel]="sort()" (ngModelChange)="sort.set($event)" aria-label="Sort designs">
+        @for (opt of sortOptions; track opt.value) {
+          <option [value]="opt.value">sort — {{ opt.label }}</option>
         }
-      </div>
-
+      </select>
+      <select
+        class="sort-select"
+        style="margin-left:0;"
+        [ngModel]="selectedProductId()"
+        (ngModelChange)="selectedProductId.set($event ? +$event : null); applyFilters()"
+        aria-label="Filter by product"
+      >
+        <option [ngValue]="null">on — any product</option>
+        @for (product of workflow.products(); track product.id) {
+          <option [ngValue]="product.id">on — {{ product.name }}</option>
+        }
+      </select>
     </div>
   </div>
 
-  <!-- ── ACTIVE PRODUCT FILTER BANNER ────────────────────── -->
+  <!-- Category chips -->
+  <div class="filter-row" style="border-top:1px solid var(--pm-rule); margin-top:20px;">
+    <span class="label">Filed under:</span>
+    <button type="button" class="chip" [class.active]="category() === 'All'" (click)="category.set('All'); applyFilters()">All works</button>
+    @for (cat of categories(); track cat) {
+      <button type="button" class="chip" [class.active]="category() === cat" (click)="category.set(cat); applyFilters()">{{ cat }}</button>
+    }
+    @if (activeFilterCount() > 0) {
+      <button type="button" class="chip" style="margin-left:auto;" (click)="clearFilters()">Reset filters ({{ activeFilterCount() }})</button>
+    }
+  </div>
+
+  <!-- Active product banner -->
   @if (selectedProduct()) {
-    <div
-      class="pm-panel flex flex-wrap items-center justify-between gap-3"
-      style="padding:0.875rem 1.25rem; background:var(--pm-primary-soft); border-color:rgba(199,74,43,0.2);"
-      role="status"
-    >
-      <div>
-        <p style="font-size:var(--pm-text-sm); font-weight:600; color:var(--pm-primary);">
-          Showing designs compatible with <strong>{{ selectedProduct()!.name }}</strong>
-        </p>
-        <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted); margin-top:0.2rem;">
-          {{ selectedProduct()!.colors.join(' · ') }} &mdash; {{ selectedProduct()!.sizes.join(', ') }}
-        </p>
-      </div>
-      <button
-        type="button"
-        class="pm-btn pm-btn-secondary pm-btn-sm"
-        (click)="selectedProductId.set(null); applyFilters()"
-      >
-        ← Show all designs
-      </button>
+    <div class="filter-row" role="status" style="border-bottom:0;">
+      <span class="serif-italic" style="color:var(--pm-text-muted); font-size:14px;">
+        Showing plates compatible with <strong style="color:var(--pm-ink); font-family:var(--pm-font-display); font-style:normal;">{{ selectedProduct()!.name }}</strong>
+        — {{ selectedProduct()!.colors.join(' · ') }} · {{ selectedProduct()!.sizes.join(', ') }}
+      </span>
+      <button type="button" class="chip" (click)="selectedProductId.set(null); applyFilters()">← Show all designs</button>
     </div>
   }
 
-  <!-- ── RESULTS GRID ─────────────────────────────────────── -->
+  <!-- Results -->
   @if (designs().length) {
-    <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    <div class="plate-grid">
       @for (design of designs(); track design.id) {
         <app-design-card [design]="design" [preferredProductId]="selectedProductId()" [product]="selectedProduct() ?? null" />
       }
     </div>
   } @else {
-    <div class="pm-empty" role="status">
-      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 1rem; opacity:0.28;" aria-hidden="true">
-        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-      </svg>
-      <p style="font-size:var(--pm-text-base); font-weight:600; color:var(--pm-text);">No designs match your filters</p>
-      <p style="font-size:var(--pm-text-sm); margin-top:0.5rem;">Try a different category, search term, or
-        <button type="button" class="pm-btn pm-btn-ghost pm-btn-sm" style="display:inline-flex;" (click)="clearFilters()">clear all filters</button>.
+    <div style="padding:80px 0; text-align:center;" role="status">
+      <p class="serif-italic" style="font-size:22px; color:var(--pm-text-muted);">
+        No plates match — try a different category or search.
       </p>
+      <button type="button" class="btn btn-ghost" style="margin-top:18px;" (click)="clearFilters()">Reset filters</button>
     </div>
   }
 
-</div>
+</section>

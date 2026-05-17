@@ -1,79 +1,89 @@
-<div class="pm-page" style="min-height:calc(100vh - var(--pm-nav-height)); display:grid; align-content:start;">
-  <div class="grid gap-6 lg:grid-cols-[1fr_1fr] lg:items-start" style="max-width:1000px; margin:0 auto; width:100%;">
+<section class="page page-bread">
+  <div class="section-head">
+    <span class="section-no">XXII.</span>
+    <hr class="line" />
+    <span class="title">Press credentials · sign in</span>
+  </div>
+  <div class="bread-grid">
+    <h1 class="bread-title"><em>Sign</em> in,<br />to the&nbsp;press.</h1>
+    <p class="bread-deck">
+      Four roles, one platform — customer, designer, pressroom, admin.
+      Role-aware routing sends you straight to the right workspace.
+    </p>
+  </div>
+</section>
 
-    <!-- Left: brand panel -->
-    <div class="pm-hero flex flex-col justify-between gap-8" style="padding:2.5rem; min-height:420px;">
-      <div style="position:relative; z-index:1;">
-        <div class="pm-nav-logo mb-6" style="width:48px; height:48px; font-size:1.3rem;">P</div>
-        <p class="pm-kicker mb-3">Welcome back</p>
-        <h1 class="pm-heading font-extrabold leading-tight text-white" style="font-size:2.2rem;">
-          Sign in to your<br />Printymand workspace.
-        </h1>
-        <p class="mt-4 text-white/65 leading-7 text-sm">
-          Role-aware routing sends you directly to the right dashboard — customer, designer, printer, or admin.
-        </p>
-      </div>
-      <div class="grid grid-cols-3 gap-3" style="position:relative; z-index:1;">
-        @for (item of [
-          { label: 'Routing', desc: 'Role-aware entry' },
-          { label: 'Session', desc: 'Secure auth flow' },
-          { label: 'Access', desc: '4 user roles' }
-        ]; track item.label) {
-          <div style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.14); border-radius:12px; padding:0.85rem;">
-            <p style="font-size:0.68rem; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:rgba(255,255,255,0.5);">{{ item.label }}</p>
-            <p style="font-size:0.82rem; color:#fff; margin-top:0.35rem; font-weight:500;">{{ item.desc }}</p>
-          </div>
-        }
+<section class="page">
+  <div class="login-spread">
+
+    <!-- LEFT — brand panel -->
+    <div class="login-left">
+      <div class="brand">P</div>
+      <div class="kicker" style="color:var(--pm-amber); font-size:11px; margin-bottom:18px;">Issue Nº 07 — Spring 2026</div>
+      <h2>
+        Tunisia's first<br />
+        end-to-end<br />
+        <em>print press,</em><br />
+        for everyone.
+      </h2>
+      <p class="deck">
+        Sign in to manage orders, upload designs, run a pressroom, or sit on
+        the editorial desk.
+      </p>
+      <div class="specs">
+        <div class="spec"><div class="l">Routing</div><div class="v">Role-aware</div></div>
+        <div class="spec"><div class="l">Session</div><div class="v">Secure</div></div>
+        <div class="spec"><div class="l">Roles</div><div class="v">Four</div></div>
       </div>
     </div>
 
-    <!-- Right: form -->
-    <div class="pm-panel" style="padding:2rem;">
-      <h2 class="pm-heading font-bold text-xl mb-1" style="color:var(--pm-text);">Sign in</h2>
-      <p class="text-sm mb-6" style="color:var(--pm-text-muted);">Use a demo account below or your own credentials.</p>
+    <!-- RIGHT — form -->
+    <div class="login-right">
+      <h3>Sign in</h3>
+      <p class="sub">Use a demo account below — or your own credentials.</p>
 
-      <form class="grid gap-4" (ngSubmit)="submit()">
-        <label class="pm-field">
-          <span class="pm-label">Email address</span>
-          <input class="pm-input" type="email" [(ngModel)]="email" name="email" required placeholder="you@example.com" />
+      <form (ngSubmit)="submit()" style="display:grid; gap:18px;">
+        <label>
+          <div class="field-label">Email address</div>
+          <input class="pm-input" type="email" [(ngModel)]="email" name="email" required placeholder="you@example.tn" />
         </label>
-        <label class="pm-field">
-          <span class="pm-label">Password</span>
+        <label>
+          <div class="field-label">Password</div>
           <input class="pm-input" type="password" [(ngModel)]="password" name="password" required placeholder="••••••••" />
         </label>
 
         @if (error()) {
-          <div style="background:var(--pm-danger-soft); border:1px solid rgba(185,28,28,0.2); border-radius:10px; padding:0.75rem 1rem; font-size:0.85rem; color:var(--pm-danger);">
-            {{ error() }}
-          </div>
+          <div class="serif-italic" style="border:1px solid var(--pm-clay); padding:10px 14px; font-size:14px;">{{ error() }}</div>
         }
 
-        <button type="submit" class="pm-btn pm-btn-primary w-full" style="min-height:3rem; margin-top:0.25rem;">
-          {{ loading() ? 'Signing in…' : 'Sign in' }}
+        <button type="submit" class="btn btn-clay" style="justify-content:center; padding:16px;" [disabled]="loading()">
+          {{ loading() ? 'Working…' : 'Sign in' }} <span class="ar">→</span>
         </button>
       </form>
 
-      <!-- Divider -->
-      <div class="flex items-center gap-3 my-5">
-        <hr class="pm-divider flex-1" />
-        <span class="text-xs font-semibold" style="color:var(--pm-text-muted);">Demo accounts</span>
-        <hr class="pm-divider flex-1" />
+      <div style="display:flex; align-items:center; gap:14px; margin:28px 0 14px;">
+        <hr class="rule" style="flex:1;" />
+        <span style="font-size:10.5px; letter-spacing:0.18em; text-transform:uppercase; font-weight:700; color:var(--pm-text-muted);">Demo accounts</span>
+        <hr class="rule" style="flex:1;" />
       </div>
 
-      <div class="grid gap-2">
+      <div class="demo-list">
         @for (account of demoAccounts; track account.email) {
-          <button type="button" class="pm-btn pm-btn-secondary justify-between w-full text-sm" (click)="useDemo(account.email, account.password)">
-            <span class="font-semibold" style="color:var(--pm-text);">{{ account.label }}</span>
-            <span style="color:var(--pm-text-muted); font-size:0.78rem;">{{ account.email }}</span>
+          <button type="button" class="demo-btn" (click)="useDemo(account.email, account.password)">
+            <div>
+              <div class="demo-label">{{ account.label }}</div>
+              <div class="demo-role">{{ account.email }}</div>
+            </div>
+            <span class="demo-email">demo</span>
           </button>
         }
       </div>
 
-      <p class="text-sm mt-5" style="color:var(--pm-text-muted);">
+      <p style="margin-top:22px; font-family:var(--pm-font-serif); font-style:italic; font-size:14px; color:var(--pm-text-muted);">
         No account yet?
-        <a routerLink="/register" class="font-semibold" style="color:var(--pm-primary);">Create one free →</a>
+        <a routerLink="/register" style="color:var(--pm-clay); font-weight:600;">Create one free →</a>
       </p>
     </div>
 
   </div>
-</div>
+</section>
