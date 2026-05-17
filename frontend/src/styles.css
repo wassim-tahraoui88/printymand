@@ -658,6 +658,11 @@ body::after {
 }
 .pm-icon-btn:hover { background: var(--pm-surface-alt); color: var(--pm-text); border-color: var(--pm-border-strong); }
 
+/* Navbar hamburger: mobile/tablet only. Explicit media query because unlayered
+   component classes (.pm-icon-btn) otherwise win over Tailwind's lg:hidden. */
+.pm-nav-burger { display: inline-flex; }
+@media (min-width: 1024px) { .pm-nav-burger { display: none !important; } }
+
 /* ============================================================
    FORM ELEMENTS
    ============================================================ */

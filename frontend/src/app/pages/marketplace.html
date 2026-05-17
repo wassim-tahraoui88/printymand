@@ -127,7 +127,7 @@
   @if (designs().length) {
     <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       @for (design of designs(); track design.id) {
-        <app-design-card [design]="design" [preferredProductId]="selectedProductId()" />
+        <app-design-card [design]="design" [preferredProductId]="selectedProductId()" [product]="selectedProduct() ?? null" />
       }
     </div>
   } @else {

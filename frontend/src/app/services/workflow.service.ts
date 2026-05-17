@@ -36,6 +36,17 @@ export class WorkflowService {
   readonly currentCart = computed<Cart>(() => this.store.currentCart());
   readonly currentOrders = computed<Order[]>(() => this.store.currentUserOrders());
 
+  getUserById(id: number) {
+    return this.store.getUserById(id);
+  }
+
+  /** Public storefront designs for a designer: approved, active, non-upload. */
+  storefrontDesigns(designerId: number): Design[] {
+    return this.store
+      .designsForDesigner(designerId)
+      .filter((d) => d.status === 'ACTIVE' && (d.moderation ?? 'APPROVED') === 'APPROVED' && !d.isUserUpload);
+  }
+
   getDesignById(id: number | string): Design | undefined {
     return this.store.getDesignById(id);
   }

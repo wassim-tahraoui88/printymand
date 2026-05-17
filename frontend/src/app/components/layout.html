@@ -130,10 +130,12 @@
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
                     Dashboard
                   </a>
-                  <a class="pm-btn pm-btn-ghost justify-start" style="font-size:var(--pm-text-sm);" [routerLink]="profilePath(auth.user()!.role)" role="menuitem">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                    Profile
-                  </a>
+                  @if (auth.user()?.role === 'designer') {
+                    <a class="pm-btn pm-btn-ghost justify-start" style="font-size:var(--pm-text-sm);" [routerLink]="['/storefront', auth.user()!.id]" role="menuitem">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 9l1-5h16l1 5M4 9v11a1 1 0 001 1h14a1 1 0 001-1V9M4 9h16M9 21v-6h6v6"/></svg>
+                      Storefront
+                    </a>
+                  }
                 </div>
                 <div style="border-top:1px solid var(--pm-border);" class="pt-1.5 mt-1">
                   <button type="button" class="pm-btn pm-btn-danger w-full" style="font-size:var(--pm-text-sm);" (click)="logout()" role="menuitem">Sign out</button>
@@ -150,7 +152,7 @@
         <!-- Hamburger -->
         <button
           type="button"
-          class="pm-icon-btn lg:hidden"
+          class="pm-icon-btn pm-nav-burger"
           (click)="toggleSiteMenu()"
           [attr.aria-expanded]="siteMenu()"
           aria-label="Toggle menu"
@@ -199,7 +201,9 @@
       @if (auth.isAuthenticated()) {
         <div class="px-4 py-2 grid gap-0.5" style="border-top:1px solid var(--pm-border);">
           <a [routerLink]="auth.dashboardPath(auth.user()!.role)" class="pm-btn pm-btn-ghost justify-start" style="font-size:var(--pm-text-sm);">Dashboard</a>
-          <a [routerLink]="profilePath(auth.user()!.role)" class="pm-btn pm-btn-ghost justify-start" style="font-size:var(--pm-text-sm);">Profile</a>
+          @if (auth.user()?.role === 'designer') {
+            <a [routerLink]="['/storefront', auth.user()!.id]" class="pm-btn pm-btn-ghost justify-start" style="font-size:var(--pm-text-sm);">Storefront</a>
+          }
           <a routerLink="/notifications" class="pm-btn pm-btn-ghost justify-start" style="font-size:var(--pm-text-sm);">
             Notifications
             @if (unreadNotifications()) { <span class="pm-chip ml-1">{{ unreadNotifications() }}</span> }

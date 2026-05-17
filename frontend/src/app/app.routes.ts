@@ -21,6 +21,7 @@ import { AdminProfilePageComponent } from './pages/admin-profile.page';
 import { UploadDesignPageComponent } from './pages/upload-design.page';
 import { VerificationPendingPageComponent } from './pages/verification-pending.page';
 import { NotificationsPageComponent } from './pages/notifications.page';
+import { StorefrontPageComponent } from './pages/storefront.page';
 import { NotFoundPageComponent } from './pages/not-found.page';
 import { authRoleGuard } from './guards/auth-role.guard';
 
@@ -33,6 +34,7 @@ export const routes: Routes = [
       { path: 'marketplace', component: MarketplacePageComponent },
       { path: 'products', component: ProductsPageComponent },
       { path: 'design/:id', component: DesignDetailPageComponent },
+      { path: 'storefront/:id', component: StorefrontPageComponent },
       { path: 'login', component: LoginPageComponent },
       { path: 'register', component: RegisterPageComponent },
       { path: 'verification-pending', component: VerificationPendingPageComponent },

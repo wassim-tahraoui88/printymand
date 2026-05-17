@@ -1,7 +1,12 @@
 <article class="pm-card group" style="display:flex; flex-direction:column;">
 
-  <!-- Image -->
-  <a [routerLink]="['/design', design().id]" style="display:block; position:relative; overflow:hidden; flex-shrink:0;" [attr.aria-label]="'View ' + design().title">
+  <!-- Image (links to editor for the owning designer, else to the PDP) -->
+  <a
+    [routerLink]="ownerEditMode() ? ['/designer-dashboard'] : ['/design', design().id]"
+    [queryParams]="ownerEditMode() ? { edit: design().id } : (product() ? { product: product()!.id } : null)"
+    style="display:block; position:relative; overflow:hidden; flex-shrink:0;"
+    [attr.aria-label]="(ownerEditMode() ? 'Edit ' : 'View ') + design().title"
+  >
     <!-- Chips -->
     <div style="position:absolute; inset:0 0 auto; z-index:10; display:flex; align-items:flex-start; justify-content:space-between; padding:0.75rem; gap:0.5rem;">
       <span class="pm-chip" style="backdrop-filter:blur(8px);">{{ design().category }}</span>
@@ -9,27 +14,57 @@
         <span class="pm-chip" style="backdrop-filter:blur(8px); background:var(--pm-warning-soft); color:var(--pm-warning); border-color:rgba(180,83,9,0.2);">
           {{ design().status }}
         </span>
+      } @else if (ownerEditMode() && (design().moderation ?? 'APPROVED') !== 'APPROVED') {
+        <span class="pm-chip" style="backdrop-filter:blur(8px); background:var(--pm-warning-soft); color:var(--pm-warning); border-color:rgba(180,83,9,0.2);">
+          {{ design().moderation }}
+        </span>
       }
     </div>
 
-    <!-- Wishlist (visual intent marker — not yet wired to backend) -->
-    <button
-      type="button"
-      class="pm-icon-btn absolute z-10"
-      style="top:0.625rem; right:0.625rem; width:2rem; height:2rem; background:rgba(255,255,255,0.12); border-color:rgba(255,255,255,0.2); backdrop-filter:blur(8px); color:rgba(255,255,255,0.75);"
-      aria-label="Save design"
-      (click)="$event.preventDefault(); $event.stopPropagation()"
-    >
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
-        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-      </svg>
-    </button>
+    @if (!ownerEditMode()) {
+      <!-- Wishlist (visual intent marker — not yet wired to backend) -->
+      <button
+        type="button"
+        class="pm-icon-btn absolute z-10"
+        style="top:0.625rem; right:0.625rem; width:2rem; height:2rem; background:rgba(255,255,255,0.12); border-color:rgba(255,255,255,0.2); backdrop-filter:blur(8px); color:rgba(255,255,255,0.75);"
+        aria-label="Save design"
+        (click)="$event.preventDefault(); $event.stopPropagation()"
+      >
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+        </svg>
+      </button>
+    }
 
-    <app-image-with-fallback
-      [src]="design().image"
-      [alt]="design().title"
-      [imgClass]="'h-56 w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]'"
-    />
+    @if (product(); as prod) {
+      <!-- Design composited onto the product mockup (TeePublic-style preview) -->
+      <div style="position:relative; width:100%; height:14rem; overflow:hidden; background:var(--pm-surface-alt);">
+        <app-image-with-fallback
+          [src]="prod.images[0]"
+          [alt]="prod.name"
+          [imgClass]="'h-56 w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]'"
+        />
+        <div
+          style="position:absolute; transform:translate(-50%,-50%);"
+          [style.left.%]="placement().x"
+          [style.top.%]="placement().y"
+        >
+          <img
+            [src]="design().image"
+            [alt]="design().title"
+            [style.width.rem]="14 * placement().scale"
+            style="object-fit:contain;"
+            onerror="this.style.display='none'"
+          />
+        </div>
+      </div>
+    } @else {
+      <app-image-with-fallback
+        [src]="design().image"
+        [alt]="design().title"
+        [imgClass]="'h-56 w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]'"
+      />
+    }
 
     <!-- Bottom gradient overlay -->
     <div style="position:absolute; inset:0; background:linear-gradient(to top, rgba(0,0,0,0.28) 0%, transparent 45%); pointer-events:none;"></div>
@@ -38,25 +73,27 @@
   <!-- Content -->
   <div style="padding:1.125rem 1.25rem 1.25rem; display:flex; flex-direction:column; gap:0.75rem; flex:1;">
 
-    <!-- Title + price -->
+    <!-- Title -->
     <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:0.75rem;">
       <div style="min-width:0; flex:1;">
         <a
-          [routerLink]="['/design', design().id]"
+          [routerLink]="ownerEditMode() ? ['/designer-dashboard'] : ['/design', design().id]"
+          [queryParams]="ownerEditMode() ? { edit: design().id } : (product() ? { product: product()!.id } : null)"
           class="pm-heading pm-card-title-link line-clamp-1"
           style="font-size:var(--pm-text-base); font-weight:700; color:var(--pm-text); display:block; transition:color var(--pm-duration-base) var(--pm-ease);"
         >{{ design().title }}</a>
 
-        <!-- Designer credit — more prominent -->
         <p style="font-size:var(--pm-text-xs); margin-top:0.2rem; font-weight:600; color:var(--pm-primary);">
           {{ design().designer }}
           <span style="color:var(--pm-text-soft); font-weight:400;">· {{ design().designerRank }}</span>
         </p>
       </div>
 
-      <span class="pm-chip" style="white-space:nowrap; flex-shrink:0;">
-        {{ design().category }}
-      </span>
+      @if (product()) {
+        <span class="pm-chip" style="white-space:nowrap; flex-shrink:0;">on {{ product()!.name }}</span>
+      } @else {
+        <span class="pm-chip" style="white-space:nowrap; flex-shrink:0;">{{ design().category }}</span>
+      }
     </div>
 
     <!-- Rating + tags -->
@@ -77,14 +114,25 @@
 
     <!-- CTA -->
     <div style="padding-top:0.875rem; border-top:1px solid var(--pm-border);">
-      <a
-        class="pm-btn pm-btn-primary w-full"
-        style="font-size:var(--pm-text-sm);"
-        [routerLink]="['/customize', design().id]"
-        [queryParams]="preferredProductId() ? { product: preferredProductId() } : null"
-      >
-        Customize this design →
-      </a>
+      @if (ownerEditMode()) {
+        <a
+          class="pm-btn pm-btn-primary w-full"
+          style="font-size:var(--pm-text-sm);"
+          [routerLink]="['/designer-dashboard']"
+          [queryParams]="{ edit: design().id }"
+        >
+          Edit design →
+        </a>
+      } @else {
+        <a
+          class="pm-btn pm-btn-primary w-full"
+          style="font-size:var(--pm-text-sm);"
+          [routerLink]="['/design', design().id]"
+          [queryParams]="product() ? { product: product()!.id } : null"
+        >
+          Preview this design →
+        </a>
+      }
     </div>
 
   </div>

@@ -25,6 +25,7 @@
           @case ('queue')     { <h1 class="pm-heading" style="font-size:var(--pm-text-lg); font-weight:800; color:var(--pm-text);">Print queue</h1> }
           @case ('products')  { <h1 class="pm-heading" style="font-size:var(--pm-text-lg); font-weight:800; color:var(--pm-text);">Products</h1> }
           @case ('earnings')  { <h1 class="pm-heading" style="font-size:var(--pm-text-lg); font-weight:800; color:var(--pm-text);">Earnings</h1> }
+          @case ('account')   { <h1 class="pm-heading" style="font-size:var(--pm-text-lg); font-weight:800; color:var(--pm-text);">Account settings</h1> }
         }
       </div>
       <div style="display:flex; align-items:center; gap:0.75rem; flex-shrink:0;">
@@ -310,6 +311,57 @@
           } @else {
             <p style="font-size:var(--pm-text-sm); color:var(--pm-text-muted);">No payouts released yet. Payouts appear here once orders are delivered.</p>
           }
+        </div>
+      }
+
+      <!-- ── ACCOUNT SETTINGS (profile integrated into dashboard) ─ -->
+      @if (activeTab() === 'account') {
+        <div class="pm-panel" style="padding:1.5rem;">
+          <h2 class="pm-heading" style="font-size:var(--pm-text-base); font-weight:700; color:var(--pm-text); margin-bottom:1.25rem;">Account</h2>
+          <div style="display:grid; gap:1rem; max-width:560px;">
+            <label class="pm-field">
+              <span class="pm-label">Name</span>
+              <input class="pm-input" type="text" [value]="user()?.name ?? ''" (change)="auth.updateProfile({name: $any($event.target).value})" />
+            </label>
+            <label class="pm-field">
+              <span class="pm-label">Email</span>
+              <input class="pm-input" type="email" [value]="user()?.email ?? ''" (change)="auth.updateProfile({email: $any($event.target).value})" />
+            </label>
+          </div>
+        </div>
+
+        <div class="pm-panel" style="padding:1.5rem;">
+          <h2 class="pm-heading" style="font-size:var(--pm-text-base); font-weight:700; color:var(--pm-text); margin-bottom:1.25rem;">Business profile</h2>
+          <div style="display:grid; gap:1rem; max-width:560px;">
+            <label class="pm-field">
+              <span class="pm-label">Business name</span>
+              <input class="pm-input" type="text" [value]="user()?.printerProfile?.businessName ?? ''" (change)="auth.updatePrinterProfile({businessName: $any($event.target).value})" />
+            </label>
+            <div class="grid gap-4 sm:grid-cols-2">
+              <label class="pm-field">
+                <span class="pm-label">Contact email</span>
+                <input class="pm-input" type="email" [value]="user()?.printerProfile?.contactEmail ?? ''" (change)="auth.updatePrinterProfile({contactEmail: $any($event.target).value})" />
+              </label>
+              <label class="pm-field">
+                <span class="pm-label">Contact phone</span>
+                <input class="pm-input" type="tel" [value]="user()?.printerProfile?.contactPhone ?? ''" (change)="auth.updatePrinterProfile({contactPhone: $any($event.target).value})" />
+              </label>
+            </div>
+            <div class="grid gap-4 sm:grid-cols-2">
+              <label class="pm-field">
+                <span class="pm-label">Location</span>
+                <input class="pm-input" type="text" [value]="user()?.printerProfile?.location ?? ''" (change)="auth.updatePrinterProfile({location: $any($event.target).value})" />
+              </label>
+              <label class="pm-field">
+                <span class="pm-label">Governorate</span>
+                <input class="pm-input" type="text" [value]="user()?.printerProfile?.governorate ?? ''" (change)="auth.updatePrinterProfile({governorate: $any($event.target).value})" />
+              </label>
+            </div>
+            <label class="pm-field">
+              <span class="pm-label">About your shop</span>
+              <textarea class="pm-input" rows="3" [value]="user()?.printerProfile?.about ?? ''" (change)="auth.updatePrinterProfile({about: $any($event.target).value})" style="resize:vertical;"></textarea>
+            </label>
+          </div>
         </div>
       }
 

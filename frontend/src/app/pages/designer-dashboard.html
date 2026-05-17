@@ -24,7 +24,7 @@
           @case ('designs')   { <h1 class="pm-heading" style="font-size:var(--pm-text-lg); font-weight:800; color:var(--pm-text);">Designs</h1> }
           @case ('analytics') { <h1 class="pm-heading" style="font-size:var(--pm-text-lg); font-weight:800; color:var(--pm-text);">Analytics</h1> }
           @case ('payouts')   { <h1 class="pm-heading" style="font-size:var(--pm-text-lg); font-weight:800; color:var(--pm-text);">Payouts</h1> }
-          @case ('profile')   { <h1 class="pm-heading" style="font-size:var(--pm-text-lg); font-weight:800; color:var(--pm-text);">Profile</h1> }
+          @case ('profile')   { <h1 class="pm-heading" style="font-size:var(--pm-text-lg); font-weight:800; color:var(--pm-text);">Storefront Settings</h1> }
         }
       </div>
       <span class="pm-chip">{{ user()?.name ?? 'Designer' }}</span>
@@ -357,25 +357,55 @@
         }
       }
 
-      <!-- ── PROFILE ─────────────────────────────────────── -->
+      <!-- ── STOREFRONT SETTINGS (account + public storefront) ─ -->
       @if (activeTab() === 'profile') {
+
+        <!-- Account settings -->
         <div class="pm-panel" style="padding:1.5rem;">
-          <h2 class="pm-heading" style="font-size:var(--pm-text-base); font-weight:700; color:var(--pm-text); margin-bottom:1.25rem;">Designer profile</h2>
+          <h2 class="pm-heading" style="font-size:var(--pm-text-base); font-weight:700; color:var(--pm-text); margin-bottom:1.25rem;">Account settings</h2>
           <div style="display:grid; gap:1rem; max-width:560px;">
             <label class="pm-field">
               <span class="pm-label">Display name</span>
               <input class="pm-input" type="text" [value]="user()?.name ?? ''" (change)="auth.updateProfile({name: $any($event.target).value})" />
             </label>
             <label class="pm-field">
+              <span class="pm-label">Email</span>
+              <input class="pm-input" type="email" [value]="user()?.email ?? ''" (change)="auth.updateProfile({email: $any($event.target).value})" />
+            </label>
+            <label class="pm-field">
+              <span class="pm-label">Payout account</span>
+              <input class="pm-input" type="text" [value]="user()?.designerProfile?.payoutAccount ?? ''" (change)="auth.updateDesignerProfile({payoutAccount: $any($event.target).value})" placeholder="Bank / D17 account for royalties" />
+            </label>
+          </div>
+        </div>
+
+        <!-- Public storefront -->
+        <div class="pm-panel" style="padding:1.5rem;">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap; margin-bottom:1.25rem;">
+            <h2 class="pm-heading" style="font-size:var(--pm-text-base); font-weight:700; color:var(--pm-text);">Public storefront</h2>
+            @if (user()) {
+              <a class="pm-btn pm-btn-secondary pm-btn-sm" [routerLink]="['/storefront', user()!.id]">View my storefront →</a>
+            }
+          </div>
+          <div style="display:grid; gap:1rem; max-width:560px;">
+            <label class="pm-field">
               <span class="pm-label">Bio</span>
-              <textarea class="pm-input" rows="3" [value]="user()?.designerProfile?.bio ?? ''" (change)="auth.updateDesignerProfile({bio: $any($event.target).value})" style="resize:vertical;"></textarea>
+              <textarea class="pm-input" rows="3" [value]="user()?.designerProfile?.bio ?? ''" (change)="auth.updateDesignerProfile({bio: $any($event.target).value})" placeholder="Tell customers about your work…" style="resize:vertical;"></textarea>
+            </label>
+            <label class="pm-field">
+              <span class="pm-label">Profile picture URL</span>
+              <input class="pm-input" type="text" [value]="user()?.designerProfile?.profilePicture ?? ''" (change)="auth.updateDesignerProfile({profilePicture: $any($event.target).value})" placeholder="https://…" />
+            </label>
+            <label class="pm-field">
+              <span class="pm-label">Banner image URL</span>
+              <input class="pm-input" type="text" [value]="user()?.designerProfile?.banner ?? ''" (change)="auth.updateDesignerProfile({banner: $any($event.target).value})" placeholder="https://…" />
             </label>
             <label class="pm-field">
               <span class="pm-label">Portfolio links (one per line)</span>
               <textarea class="pm-input" rows="4" [ngModel]="profileLinks()" (ngModelChange)="profileLinks.set($event)" placeholder="https://…" style="resize:vertical;"></textarea>
             </label>
             <div>
-              <button type="button" class="pm-btn pm-btn-primary" (click)="saveProfile()">Save profile</button>
+              <button type="button" class="pm-btn pm-btn-primary" (click)="saveProfile()">Save storefront</button>
             </div>
           </div>
         </div>
