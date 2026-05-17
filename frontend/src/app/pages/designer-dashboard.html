@@ -128,20 +128,56 @@
               {{ designForm().id ? 'Edit design' : 'Upload new design' }}
             </h2>
             <div style="display:grid; gap:1rem; max-width:600px;">
-              <div class="grid gap-4 sm:grid-cols-2">
-                <label class="pm-field">
-                  <span class="pm-label">Title</span>
-                  <input class="pm-input" type="text" [ngModel]="designForm().title" (ngModelChange)="designForm.set({...designForm(), title: $event})" placeholder="Design title" />
-                </label>
-                <label class="pm-field">
-                  <span class="pm-label">Category</span>
-                  <select class="pm-select" [ngModel]="designForm().category" (ngModelChange)="designForm.set({...designForm(), category: $event})">
-                    @for (cat of ['Culture','Sport','Art','Minimalist','Typography','Nature','Tech','Humor']; track cat) {
-                      <option [value]="cat">{{ cat }}</option>
-                    }
-                  </select>
-                </label>
+              <label class="pm-field">
+                <span class="pm-label">Title</span>
+                <input class="pm-input" type="text" [ngModel]="designForm().title" (ngModelChange)="designForm.set({...designForm(), title: $event})" placeholder="Design title" />
+              </label>
+
+              <!-- Multiple categories -->
+              <div class="pm-field">
+                <span class="pm-label">Categories (pick one or more)</span>
+                <div style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:0.375rem;">
+                  @for (cat of allCategories(); track cat) {
+                    <button
+                      type="button"
+                      class="pm-chip"
+                      [style.background]="isCategory(cat) ? 'var(--pm-primary)' : 'var(--pm-surface-alt)'"
+                      [style.color]="isCategory(cat) ? '#fff' : 'var(--pm-text-muted)'"
+                      [style.border-color]="isCategory(cat) ? 'var(--pm-primary)' : 'var(--pm-border)'"
+                      style="cursor:pointer;"
+                      (click)="toggleCategory(cat)"
+                    >{{ cat }}</button>
+                  }
+                </div>
               </div>
+
+              <!-- Tags (max 10) -->
+              <div class="pm-field">
+                <span class="pm-label">Tags ({{ designForm().tags.length }}/{{ MAX_TAGS }})</span>
+                <div style="display:flex; gap:0.5rem; margin-top:0.375rem;">
+                  <input
+                    class="pm-input"
+                    type="text"
+                    [ngModel]="tagInput()"
+                    (ngModelChange)="tagInput.set($event)"
+                    (keydown.enter)="$event.preventDefault(); addTag()"
+                    [disabled]="designForm().tags.length >= MAX_TAGS"
+                    placeholder="Add a tag and press Enter"
+                  />
+                  <button type="button" class="pm-btn pm-btn-secondary pm-btn-sm" (click)="addTag()" [disabled]="designForm().tags.length >= MAX_TAGS">Add</button>
+                </div>
+                @if (designForm().tags.length) {
+                  <div style="display:flex; flex-wrap:wrap; gap:0.4rem; margin-top:0.5rem;">
+                    @for (tag of designForm().tags; track tag) {
+                      <span class="pm-chip" style="display:inline-flex; align-items:center; gap:0.3rem;">
+                        {{ tag }}
+                        <button type="button" (click)="removeTag(tag)" style="background:none; border:none; cursor:pointer; color:var(--pm-text-muted); font-weight:700;">×</button>
+                      </span>
+                    }
+                  </div>
+                }
+              </div>
+
               <label class="pm-field">
                 <span class="pm-label">Default description</span>
                 <textarea class="pm-input" rows="2" [ngModel]="designForm().description" (ngModelChange)="designForm.set({...designForm(), description: $event})" style="resize:vertical;"></textarea>
@@ -211,10 +247,36 @@
                           <span class="pm-label">Description for this product</span>
                           <textarea class="pm-input" rows="2" [ngModel]="configFor(product.id).description" (ngModelChange)="patchConfig(product.id, { description: $event })" [placeholder]="designForm().description" style="resize:vertical;"></textarea>
                         </label>
-                        <label class="pm-field">
-                          <span class="pm-label">Available colors (comma separated)</span>
-                          <input class="pm-input" type="text" [ngModel]="configFor(product.id).colors" (ngModelChange)="patchConfig(product.id, { colors: $event })" />
-                        </label>
+                        <div class="pm-field">
+                          <span class="pm-label">Available colours (from this product's palette)</span>
+                          <div style="display:flex; flex-wrap:wrap; gap:0.4rem; margin-top:0.375rem;">
+                            @for (color of productColors(product.id); track color) {
+                              <button
+                                type="button"
+                                class="pm-color-chip"
+                                [style.outline]="configFor(product.id).colors.includes(color) ? '2px solid var(--pm-primary)' : 'none'"
+                                [style.outline-offset]="'2px'"
+                                (click)="toggleConfigColor(product.id, color)"
+                              >
+                                <span class="pm-swatch" [style.background]="color"></span>
+                                {{ color }}
+                              </button>
+                            }
+                          </div>
+                        </div>
+                        <div class="pm-field">
+                          <span class="pm-label">Available sizes (from this product)</span>
+                          <div style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:0.375rem;">
+                            @for (size of productSizes(product.id); track size) {
+                              <button
+                                type="button"
+                                class="pm-size-btn"
+                                [class.is-selected]="configFor(product.id).sizes.includes(size)"
+                                (click)="toggleConfigSize(product.id, size)"
+                              >{{ size }}</button>
+                            }
+                          </div>
+                        </div>
                         <div class="grid gap-4 sm:grid-cols-3">
                           <label class="pm-field">
                             <span class="pm-label">X: {{ configFor(product.id).x }}%</span>
@@ -278,6 +340,38 @@
 
       <!-- ── ANALYTICS ──────────────────────────────────── -->
       @if (activeTab() === 'analytics') {
+        <!-- KPIs -->
+        <div class="pm-stat-grid">
+          <div class="pm-stat-card">
+            <span class="pm-stat-label">Total earnings</span>
+            <span class="pm-stat-value">{{ totals().earnings | number:'1.0-0' }} <span style="font-size:var(--pm-text-sm); font-weight:600;">TND</span></span>
+          </div>
+          <div class="pm-stat-card">
+            <span class="pm-stat-label">Designs</span>
+            <span class="pm-stat-value">{{ totals().designs }}</span>
+          </div>
+          <div class="pm-stat-card">
+            <span class="pm-stat-label">Orders</span>
+            <span class="pm-stat-value">{{ totals().orders }}</span>
+          </div>
+          <div class="pm-stat-card">
+            <span class="pm-stat-label">Avg conversion</span>
+            <span class="pm-stat-value">{{ totals().avgConversion | number:'1.1-1' }}%</span>
+          </div>
+        </div>
+
+        <!-- Visual charts -->
+        <div class="grid gap-5 lg:grid-cols-2">
+          <div class="pm-panel" style="padding:1.5rem;">
+            <h2 class="pm-heading" style="font-size:var(--pm-text-base); font-weight:700; color:var(--pm-text); margin-bottom:1rem;">Sales by design</h2>
+            <app-donut-chart [data]="salesChart()" title="Sales by design" unit="sales" />
+          </div>
+          <div class="pm-panel" style="padding:1.5rem;">
+            <h2 class="pm-heading" style="font-size:var(--pm-text-base); font-weight:700; color:var(--pm-text); margin-bottom:1rem;">Views by design</h2>
+            <app-donut-chart [data]="viewsChart()" title="Views by design" unit="views" />
+          </div>
+        </div>
+
         @if (analytics().length) {
           <div class="pm-panel" style="padding:0; overflow:hidden;">
             <table style="width:100%; border-collapse:collapse; font-size:var(--pm-text-sm);">

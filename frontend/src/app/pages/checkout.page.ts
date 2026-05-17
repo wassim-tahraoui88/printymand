@@ -82,4 +82,15 @@ export class CheckoutPageComponent {
     }
     this.router.navigateByUrl(`/tracking/${order.id}`);
   }
+
+  /** Buyer removes an accepted-but-unpaid order; the printer sees it canceled. */
+  remove(order: Order): void {
+    const user = this.user();
+    if (!user) return;
+    this.error.set('');
+    const result = this.workflow.cancelOrderRequest(order.id, user.id);
+    if (!result.success) {
+      this.error.set(result.error ?? 'Could not remove this order.');
+    }
+  }
 }

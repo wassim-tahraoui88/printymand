@@ -211,8 +211,9 @@
             </label>
             <div class="grid gap-4 sm:grid-cols-3">
               <label class="pm-field">
-                <span class="pm-label">Reference price (TND)</span>
+                <span class="pm-label">Minimum price (TND)</span>
                 <input class="pm-input" type="number" min="1" [ngModel]="productForm().basePrice" (ngModelChange)="productForm.set({...productForm(), basePrice: +$event})" />
+                <span style="font-size:var(--pm-text-xs); color:var(--pm-text-muted); margin-top:0.25rem;">Printers cannot price this product below this floor.</span>
               </label>
               <label class="pm-field">
                 <span class="pm-label">Colors (comma separated)</span>
@@ -239,7 +240,7 @@
                 <th style="text-align:left; padding:0.875rem 1.25rem; font-size:var(--pm-text-xs); font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--pm-text-muted);">Product</th>
                 <th style="text-align:left; padding:0.875rem 1.25rem; font-size:var(--pm-text-xs); font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--pm-text-muted);">Category</th>
                 <th style="text-align:left; padding:0.875rem 1.25rem; font-size:var(--pm-text-xs); font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--pm-text-muted);">Sizes</th>
-                <th style="text-align:right; padding:0.875rem 1.25rem; font-size:var(--pm-text-xs); font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--pm-text-muted);">Ref. price</th>
+                <th style="text-align:right; padding:0.875rem 1.25rem; font-size:var(--pm-text-xs); font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--pm-text-muted);">Min price</th>
                 <th style="text-align:right; padding:0.875rem 1.25rem; font-size:var(--pm-text-xs); font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--pm-text-muted);">Actions</th>
               </tr>
             </thead>

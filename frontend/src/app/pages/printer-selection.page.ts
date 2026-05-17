@@ -23,7 +23,14 @@ export class PrinterSelectionPageComponent {
   readonly designId = signal<number>(701);
   readonly draft = this.workflow.draft;
   readonly design = computed(() => this.workflow.getDesignById(this.designId()) ?? this.workflow.designs()[0]);
-  readonly product = computed(() => (this.draft() ? this.workflow.getProductById(this.draft()!.productId) : undefined));
+
+  /** Items the buyer configured (one per product, with quantity). */
+  readonly items = computed(() => this.draft()?.items ?? []);
+  readonly orderProducts = computed(() =>
+    this.items()
+      .map((it) => ({ product: this.workflow.getProductById(it.productId), qty: it.quantity }))
+      .filter((x): x is { product: NonNullable<typeof x.product>; qty: number } => !!x.product),
+  );
 
   // Spec "Printer Selection": filter by availability, rank, delivery time, price, location.
   readonly rankFilter = signal<'all' | 'Verified' | 'Gold' | 'Premium'>('all');
@@ -35,21 +42,36 @@ export class PrinterSelectionPageComponent {
     Array.from(new Set(this.workflow.printers().map((p) => p.location))).sort(),
   );
 
-  /** Printer's production price for the chosen global product. */
+  /** Total the buyer pays at this printer for the WHOLE multi-product order. */
   priceFor(printerId: number): number {
-    const product = this.product();
-    return product ? this.workflow.offeringPrice(printerId, product.id) : 0;
+    const margin = this.workflow.platformSettings().margin;
+    return this.items().reduce(
+      (sum, it) => sum + (this.workflow.offeringPrice(printerId, it.productId) + margin) * it.quantity,
+      0,
+    );
+  }
+
+  /** This printer's own description(s) for the selected product(s). */
+  noteFor(printerId: number): string {
+    const parts: string[] = [];
+    for (const it of this.items()) {
+      const off = this.workflow.getOffering(printerId, it.productId);
+      const prod = this.workflow.getProductById(it.productId);
+      if (off?.description && prod) parts.push(`${prod.name}: ${off.description}`);
+    }
+    return parts.join(' · ');
   }
 
   readonly compatiblePrinters = computed(() => {
-    const product = this.product();
+    const ids = this.items().map((it) => it.productId);
     const rank = this.rankFilter();
     const loc = this.locationFilter();
     const maxDays = this.maxDelivery();
-    // Only printers that offer THIS global product (available) and are open for work.
-    const base = (product ? this.workflow.printersForProduct(product.id) : this.workflow.printers()).filter(
-      (printer) => printer.availability === 'available',
-    );
+    // Printers must be available AND offer every product in the order.
+    const base = this.workflow.printers().filter((printer) => {
+      if (printer.availability !== 'available') return false;
+      return ids.every((pid) => this.workflow.printersForProduct(pid).some((pr) => pr.id === printer.id));
+    });
     const filtered = base
       .filter((p) => rank === 'all' || p.rank === rank)
       .filter((p) => loc === 'all' || p.location === loc)

@@ -172,7 +172,10 @@ export interface DesignProductConfiguration {
     y: number;
     scale: number;
   };
+  /** Subset of the product's predefined colors the designer enables for this design. */
   availableColors: string[];
+  /** Subset of the product's predefined sizes the designer enables for this design. */
+  availableSizes?: string[];
   /** Per-product copy set by the designer (e.g. a t-shirt blurb differs from a mug). */
   title?: string;
   description?: string;
@@ -186,8 +189,12 @@ export interface Design {
   designer: string;
   designerRank: DesignerRank;
   designerAvatar: string;
+  /** Primary category (kept for back-compat / sorting). */
   category: string;
+  /** A design can belong to multiple categories (designer picks several). */
+  categories?: string[];
   description: string;
+  /** Searchable tags, capped at 10 by the upload UI. */
   tags: string[];
   rating: number;
   sales: number;
@@ -233,7 +240,10 @@ export interface Product {
   name: string;
   category: string;
   description: string;
-  /** Platform reference / "from" price used for display before a printer is chosen. */
+  /**
+   * MINIMUM allowed price (floor) set by admin. Printers must price at or above
+   * this. Also used as the "from" price for display before a printer is chosen.
+   */
   basePrice: number;
   colors: string[];
   sizes: string[];
@@ -255,7 +265,10 @@ export interface PrinterProductOffering {
   id: number;
   printerId: number;
   productId: number;
+  /** Printer's own price for this product (must be >= product floor price). */
   basePrice: number;
+  /** Printer's own description for this product, shown at printer selection. */
+  description?: string;
   available: boolean;
   createdAt: string;
 }
@@ -286,17 +299,24 @@ export interface PlatformSettings {
   categories: string[];
 }
 
-export interface CustomizationDraft {
-  designId: number;
+/** One configured product line within an order draft (variation + quantity). */
+export interface DraftOrderItem {
   productId: number;
-  selectedColor: string;
-  selectedSize: string;
-  selectedPrinterId: number | null;
+  color: string;
+  size: string;
+  quantity: number;
   placement: {
     x: number;
     y: number;
     scale: number;
   };
+}
+
+export interface CustomizationDraft {
+  designId: number;
+  /** Buyer can order the SAME design on several products at once. */
+  items: DraftOrderItem[];
+  selectedPrinterId: number | null;
 }
 
 export interface CartItemPayload {
@@ -358,9 +378,12 @@ export interface OrderLine {
   printerName: string;
   color: string;
   size: string;
+  /** Units ordered for this line (defaults to 1). */
+  quantity?: number;
   x: number;
   y: number;
   scale: number;
+  /** Line total = unit price × quantity. */
   price: number;
   /** Money split (spec §2): printer production + platform fee + designer royalty. (Defaulted at load.) */
   printerAmount?: number;

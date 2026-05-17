@@ -3,13 +3,16 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { DashboardSidebarComponent, DashboardNavSection } from '../components/dashboard-sidebar.component';
+import { DonutChartComponent, type DonutSlice } from '../components/donut-chart.component';
 import { AuthService } from '../services/auth.service';
 import { WorkflowService } from '../services/workflow.service';
+
+const CHART_COLORS = ['#C74A2B', '#E89E1C', '#2E7D5B', '#3B6EA5', '#7C3AED', '#0E7490', '#B45309', '#9A3412'];
 
 @Component({
   selector: 'app-designer-dashboard-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, DashboardSidebarComponent],
+  imports: [CommonModule, FormsModule, RouterModule, DashboardSidebarComponent, DonutChartComponent],
   templateUrl: './designer-dashboard.html',
 })
 export class DesignerDashboardPageComponent {
@@ -43,6 +46,28 @@ export class DesignerDashboardPageComponent {
   readonly user = computed(() => this.auth.user());
   readonly designs = computed(() => (this.user() ? this.workflow.designsForDesigner(this.user()!.id) : []));
   readonly analytics = computed(() => (this.user() ? this.workflow.designerAnalytics(this.user()!.id) : []));
+
+  /** Pie data: sales split across the designer's designs. */
+  readonly salesChart = computed<DonutSlice[]>(() =>
+    this.analytics()
+      .filter((a) => a.sales > 0)
+      .map((a, i) => ({
+        label: this.workflow.getDesignById(a.designId)?.title ?? `#${a.designId}`,
+        value: a.sales,
+        color: CHART_COLORS[i % CHART_COLORS.length],
+      })),
+  );
+
+  /** Pie data: views split across designs. */
+  readonly viewsChart = computed<DonutSlice[]>(() =>
+    this.analytics()
+      .filter((a) => a.views > 0)
+      .map((a, i) => ({
+        label: this.workflow.getDesignById(a.designId)?.title ?? `#${a.designId}`,
+        value: a.views,
+        color: CHART_COLORS[i % CHART_COLORS.length],
+      })),
+  );
   readonly totals = computed(() => (this.user() ? this.workflow.designerTotals(this.user()!.id) : { earnings: 0, designs: 0, orders: 0, avgConversion: 0 }));
   readonly payouts = computed(() => this.workflow.payouts().filter((p) => p.designerId === this.user()?.id));
 
@@ -53,24 +78,58 @@ export class DesignerDashboardPageComponent {
   readonly wizardStep = signal<1 | 2>(1);
   readonly uploadError = signal('');
 
-  // Spec: the designer does NOT set price.
+  // Spec: the designer does NOT set price. Multiple categories + up to 10 tags.
   readonly designForm = signal({
     id: 0,
     title: '',
     image: '',
-    category: 'Culture',
+    categories: [] as string[],
+    tags: [] as string[],
     description: '',
   });
+  readonly tagInput = signal('');
+  readonly MAX_TAGS = 10;
+
+  /** Platform-controlled category list (admin owns it). */
+  readonly allCategories = computed(() => this.workflow.platformSettings().categories);
+
+  toggleCategory(cat: string): void {
+    const f = this.designForm();
+    const set = new Set(f.categories);
+    if (set.has(cat)) set.delete(cat);
+    else set.add(cat);
+    this.designForm.set({ ...f, categories: [...set] });
+  }
+
+  isCategory(cat: string): boolean {
+    return this.designForm().categories.includes(cat);
+  }
+
+  addTag(): void {
+    const value = this.tagInput().trim().toLowerCase();
+    const f = this.designForm();
+    if (!value || f.tags.includes(value) || f.tags.length >= this.MAX_TAGS) {
+      this.tagInput.set('');
+      return;
+    }
+    this.designForm.set({ ...f, tags: [...f.tags, value] });
+    this.tagInput.set('');
+  }
+
+  removeTag(tag: string): void {
+    const f = this.designForm();
+    this.designForm.set({ ...f, tags: f.tags.filter((t) => t !== tag) });
+  }
 
   /** Per-product designer customization keyed by product id. */
   readonly productConfigs = signal<
-    Record<number, { selected: boolean; x: number; y: number; scale: number; colors: string; title: string; description: string }>
+    Record<number, { selected: boolean; x: number; y: number; scale: number; colors: string[]; sizes: string[]; title: string; description: string }>
   >({});
 
   readonly allProducts = computed(() => this.workflow.products());
 
   private blankConfig() {
-    return { selected: false, x: 50, y: 48, scale: 0.42, colors: 'white, black', title: '', description: '' };
+    return { selected: false, x: 50, y: 48, scale: 0.42, colors: [] as string[], sizes: [] as string[], title: '', description: '' };
   }
 
   configFor(productId: number) {
@@ -82,8 +141,41 @@ export class DesignerDashboardPageComponent {
     this.productConfigs.set({ ...this.productConfigs(), [productId]: { ...current, ...patch } });
   }
 
+  /** Predefined colours/sizes for a product (admin-owned, designer picks a subset). */
+  productColors(productId: number): string[] {
+    return this.workflow.getProductById(productId)?.colors ?? [];
+  }
+  productSizes(productId: number): string[] {
+    return this.workflow.getProductById(productId)?.sizes ?? [];
+  }
+
   toggleProduct(productId: number, checked: boolean): void {
-    this.patchConfig(productId, { selected: checked });
+    if (checked) {
+      // Default to ALL predefined colours/sizes; the designer can narrow them.
+      this.patchConfig(productId, {
+        selected: true,
+        colors: this.configFor(productId).colors.length ? this.configFor(productId).colors : this.productColors(productId),
+        sizes: this.configFor(productId).sizes.length ? this.configFor(productId).sizes : this.productSizes(productId),
+      });
+    } else {
+      this.patchConfig(productId, { selected: false });
+    }
+  }
+
+  toggleConfigColor(productId: number, color: string): void {
+    const c = this.configFor(productId);
+    const set = new Set(c.colors);
+    if (set.has(color)) set.delete(color);
+    else set.add(color);
+    this.patchConfig(productId, { colors: [...set] });
+  }
+
+  toggleConfigSize(productId: number, size: string): void {
+    const c = this.configFor(productId);
+    const set = new Set(c.sizes);
+    if (set.has(size)) set.delete(size);
+    else set.add(size);
+    this.patchConfig(productId, { sizes: [...set] });
   }
 
   readonly selectedProductIds = computed(() =>
@@ -93,8 +185,13 @@ export class DesignerDashboardPageComponent {
   );
 
   goToStep2(): void {
-    if (!this.designForm().image) {
+    const f = this.designForm();
+    if (!f.image) {
       this.uploadError.set('Please upload your artwork before continuing.');
+      return;
+    }
+    if (!f.categories.length) {
+      this.uploadError.set('Pick at least one category.');
       return;
     }
     this.uploadError.set('');
@@ -115,7 +212,15 @@ export class DesignerDashboardPageComponent {
       return;
     }
     const created = this.workflow.addOrUpdateDesign(
-      { id: f.id || undefined, title: f.title, image: f.image, category: f.category, description: f.description },
+      {
+        id: f.id || undefined,
+        title: f.title,
+        image: f.image,
+        category: f.categories[0] ?? 'Culture',
+        categories: f.categories,
+        tags: f.tags,
+        description: f.description,
+      },
       user.id,
     );
     const ids = this.selectedProductIds();
@@ -125,13 +230,15 @@ export class DesignerDashboardPageComponent {
       this.workflow.saveDesignProductConfiguration(created.id, {
         productId: pid,
         defaultPlacement: { x: c.x, y: c.y, scale: c.scale },
-        availableColors: c.colors.split(',').map((v) => v.trim()).filter(Boolean),
+        availableColors: c.colors.length ? c.colors : this.productColors(pid),
+        availableSizes: c.sizes.length ? c.sizes : this.productSizes(pid),
         title: c.title.trim() || undefined,
         description: c.description.trim() || undefined,
       });
     }
     // Reset wizard
-    this.designForm.set({ id: 0, title: '', image: '', category: 'Culture', description: '' });
+    this.designForm.set({ id: 0, title: '', image: '', categories: [], tags: [], description: '' });
+    this.tagInput.set('');
     this.productConfigs.set({});
     this.wizardStep.set(1);
     this.uploadError.set('');
@@ -164,9 +271,11 @@ export class DesignerDashboardPageComponent {
       id: design.id,
       title: design.title,
       image: design.image,
-      category: design.category,
+      categories: design.categories?.length ? design.categories : design.category ? [design.category] : [],
+      tags: design.tags ?? [],
       description: design.description,
     });
+    this.tagInput.set('');
     const configs: Record<number, ReturnType<DesignerDashboardPageComponent['blankConfig']>> = {};
     for (const pid of design.assignedProductIds) {
       const cfg = design.productConfigurations.find((c) => c.productId === pid);
@@ -175,7 +284,8 @@ export class DesignerDashboardPageComponent {
         x: cfg?.defaultPlacement.x ?? 50,
         y: cfg?.defaultPlacement.y ?? 48,
         scale: cfg?.defaultPlacement.scale ?? 0.42,
-        colors: (cfg?.availableColors ?? this.workflow.getProductById(pid)?.colors ?? ['white']).join(', '),
+        colors: cfg?.availableColors ?? this.workflow.getProductById(pid)?.colors ?? [],
+        sizes: cfg?.availableSizes ?? this.workflow.getProductById(pid)?.sizes ?? [],
         title: cfg?.title ?? '',
         description: cfg?.description ?? '',
       };

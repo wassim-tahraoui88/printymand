@@ -71,14 +71,6 @@ export class WorkflowService {
     this.store.clearCustomizationDraft();
   }
 
-  createCartPayloadFromDraft(draft: CustomizationDraft) {
-    return this.store.createCartPayloadFromDraft(draft);
-  }
-
-  addDraftToCart(userId: number) {
-    return this.store.addDraftToCart(userId);
-  }
-
   cartForUser(userId: number) {
     return this.store.cartForUser(userId);
   }
@@ -193,8 +185,8 @@ export class WorkflowService {
     return this.store.printersForProduct(productId);
   }
 
-  setPrinterOffering(printerUserId: number, productId: number, basePrice: number, available: boolean) {
-    this.store.setPrinterOffering(printerUserId, productId, basePrice, available);
+  setPrinterOffering(printerUserId: number, productId: number, basePrice: number, available: boolean, description?: string) {
+    return this.store.setPrinterOffering(printerUserId, productId, basePrice, available, description);
   }
 
   removePrinterOffering(printerUserId: number, productId: number) {
@@ -247,6 +239,10 @@ export class WorkflowService {
 
   fulfillmentLinesForPrinter(printerUserId: number) {
     return this.store.fulfillmentLinesForPrinter(printerUserId);
+  }
+
+  canceledOrdersForPrinter(printerUserId: number) {
+    return this.store.canceledOrdersForPrinter(printerUserId);
   }
 
   printerTotals(printerUserId: number) {

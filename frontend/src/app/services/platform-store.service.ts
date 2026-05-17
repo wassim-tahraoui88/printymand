@@ -516,56 +516,6 @@ export class PlatformStoreService {
     this.patchState({ customizationDraft: null });
   }
 
-  createCartPayloadFromDraft(draft: CustomizationDraft): CartItemPayload {
-    return {
-      design: {
-        id: draft.designId,
-        x: draft.placement.x,
-        y: draft.placement.y,
-        scale: draft.placement.scale,
-      },
-      product: {
-        id: draft.productId,
-        color: draft.selectedColor,
-      },
-    };
-  }
-
-  async addDraftToCart(userId: number): Promise<{ success: boolean; error?: string }> {
-    const draft = this.state().customizationDraft;
-    if (!draft) return { success: false, error: 'No customization draft is available.' };
-    if (!draft.selectedPrinterId) return { success: false, error: 'Select a printer before adding to cart.' };
-
-    try {
-      await this.api.addToCart(this.createCartPayloadFromDraft(draft));
-      this.patchState({ backendMode: 'hybrid' });
-    } catch {
-      this.patchState({ backendMode: 'hybrid' });
-    }
-
-    const nextCartItem: CartItem = {
-      id: this.takeNextId(),
-      userId,
-      designId: draft.designId,
-      productId: draft.productId,
-      printerId: draft.selectedPrinterId,
-      color: draft.selectedColor,
-      size: draft.selectedSize,
-      x: draft.placement.x,
-      y: draft.placement.y,
-      scale: draft.placement.scale,
-      createdAt: new Date().toISOString(),
-    };
-
-    this.state.update((current) => ({
-      ...current,
-      cartItems: [nextCartItem, ...current.cartItems],
-      customizationDraft: null,
-    }));
-
-    return { success: true };
-  }
-
   removeCartItem(userId: number, cartItemId: number): void {
     this.state.update((current) => ({
       ...current,
@@ -613,45 +563,56 @@ export class PlatformStoreService {
    */
   submitDraftOrderRequest(userId: number, shippingAddress?: string): Order | null {
     const draft = this.state().customizationDraft;
-    if (!draft || !draft.selectedPrinterId) return null;
+    if (!draft || !draft.selectedPrinterId || !draft.items.length) return null;
     const design = this.getDesignById(draft.designId);
-    const product = this.getProductById(draft.productId);
     const printer = this.getPrinterById(draft.selectedPrinterId);
-    if (!design || !product || !printer) return null;
+    if (!design || !printer) return null;
 
     const user = this.getUserById(userId);
     const margin = this.state().platformSettings.margin;
     const royalty = design.isUserUpload ? 0 : this.state().platformSettings.designerRoyalty;
-    // Price comes from the chosen printer's offering for this global product.
-    const printerBase = this.offeringPrice(printer.id, product.id);
     const orderId = `PMD-${Date.now()}`;
-    const line: OrderLine = {
-      id: this.takeNextId(),
-      designId: design.id,
-      designTitle: design.title,
-      designImage: design.image,
-      productId: product.id,
-      productName: product.name,
-      productImage: product.images[0] ?? '/placeholder-image.svg',
-      printerId: printer.id,
-      printerName: printer.businessName,
-      color: draft.selectedColor,
-      size: draft.selectedSize,
-      x: draft.placement.x,
-      y: draft.placement.y,
-      scale: draft.placement.scale,
-      price: printerBase + margin,
-      printerAmount: printerBase,
-      platformFee: margin,
-      designerRoyalty: royalty,
-      status: 'Pending',
-    };
+
+    // One line per chosen product (the buyer can order the design on several products).
+    const lines: OrderLine[] = draft.items
+      .map((item): OrderLine | null => {
+        const product = this.getProductById(item.productId);
+        if (!product) return null;
+        const qty = Math.max(1, item.quantity || 1);
+        const printerBase = this.offeringPrice(printer.id, product.id);
+        return {
+          id: this.takeNextId(),
+          designId: design.id,
+          designTitle: design.title,
+          designImage: design.image,
+          productId: product.id,
+          productName: product.name,
+          productImage: product.images[0] ?? '/placeholder-image.svg',
+          printerId: printer.id,
+          printerName: printer.businessName,
+          color: item.color,
+          size: item.size,
+          quantity: qty,
+          x: item.placement.x,
+          y: item.placement.y,
+          scale: item.placement.scale,
+          price: (printerBase + margin) * qty,
+          printerAmount: printerBase * qty,
+          platformFee: margin * qty,
+          designerRoyalty: royalty * qty,
+          status: 'Pending',
+        };
+      })
+      .filter((l): l is OrderLine => l !== null);
+
+    if (!lines.length) return null;
+
     const order: Order = {
       id: orderId,
       userId,
       createdAt: new Date().toISOString().slice(0, 10),
       trackingCode: `PMD-${String(orderId).slice(-6)}`,
-      total: line.price,
+      total: lines.reduce((s, l) => s + l.price, 0),
       paymentMethod: 'd17',
       paymentStatus: 'unpaid',
       requestStatus: 'REQUESTED',
@@ -660,7 +621,7 @@ export class PlatformStoreService {
         user?.customerProfile?.savedAddresses.find((a) => a.isDefault)?.line1 ||
         user?.address ||
         '',
-      lines: [line],
+      lines,
     };
 
     void this.api.submitOrderRequest({ paymentMethod: 'd17', shippingAddress: order.shippingAddress }).catch(() => undefined);
@@ -725,19 +686,42 @@ export class PlatformStoreService {
     return { success: true };
   }
 
-  /** Customer cancels while still awaiting a printer decision (allowed only pre-acceptance). */
+  /**
+   * Customer cancels the request. Allowed while it is still REQUESTED, or after
+   * the printer ACCEPTED it but before payment (the buyer can still remove it
+   * from the cart). The printer is notified that the customer canceled.
+   */
   cancelOrderRequest(orderId: number | string, userId: number): { success: boolean; error?: string } {
     const order = this.getOrderById(orderId);
     if (!order || order.userId !== userId) return { success: false, error: 'Order not found.' };
-    if (order.requestStatus !== 'REQUESTED') {
-      return { success: false, error: 'Cancellation after the printer accepts is not allowed.' };
+    if (order.paymentStatus === 'paid') {
+      return { success: false, error: 'A paid order can no longer be cancelled here.' };
+    }
+    if (order.requestStatus !== 'REQUESTED' && order.requestStatus !== 'ACCEPTED') {
+      return { success: false, error: 'This request can no longer be cancelled.' };
     }
     this.state.update((current) => ({
       ...current,
       orders: current.orders.map((entry) =>
-        entry.id === order.id ? { ...entry, requestStatus: 'CANCELLED' } : entry,
+        entry.id === order.id
+          ? {
+              ...entry,
+              requestStatus: 'CANCELLED',
+              rejectionReason: 'Cancelled by the customer.',
+              lines: entry.lines.map((line) => ({ ...line, status: 'Rejected' as OrderLineStatus })),
+            }
+          : entry,
       ),
     }));
+    // Tell the printer(s) it was canceled by the customer.
+    const printerUserIds = new Set<number>();
+    order.lines.forEach((line) => {
+      const p = line.printerId ? this.getPrinterById(line.printerId) : null;
+      if (p) printerUserIds.add(p.userId);
+    });
+    printerUserIds.forEach((pid) =>
+      this.notify(pid, 'order_rejected', `Order ${order.id} was canceled by the customer.`, '/printer-dashboard'),
+    );
     return { success: true };
   }
 
@@ -884,9 +868,10 @@ export class PlatformStoreService {
       designer: designer?.name ?? 'Unknown designer',
       designerRank: designer?.designerRank ?? 'Novice',
       designerAvatar: designer?.avatar ?? '/placeholder-image.svg',
-      category: input.category,
+      category: input.categories?.[0] ?? input.category,
+      categories: input.categories ?? existing?.categories ?? (input.category ? [input.category] : []),
       description: input.description,
-      tags: input.tags ?? existing?.tags ?? [],
+      tags: (input.tags ?? existing?.tags ?? []).slice(0, 10),
       rating: existing?.rating ?? 0,
       sales: existing?.sales ?? 0,
       views: existing?.views ?? 0,
@@ -1171,16 +1156,30 @@ export class PlatformStoreService {
   }
 
   /** Printer opts into / prices / toggles a global product. Cannot create products. */
-  setPrinterOffering(printerUserId: number, productId: number, basePrice: number, available: boolean): void {
+  /**
+   * Printer opts into / prices a global product. The price is clamped to be at
+   * least the admin-set floor (product.basePrice). Returns whether it was clamped.
+   */
+  setPrinterOffering(
+    printerUserId: number,
+    productId: number,
+    basePrice: number,
+    available: boolean,
+    description?: string,
+  ): { success: boolean; clamped: boolean; floor: number } {
     const printer = this.getPrinterByUserId(printerUserId);
-    if (!printer || !this.getProductById(productId)) return;
+    const product = this.getProductById(productId);
+    if (!printer || !product) return { success: false, clamped: false, floor: 0 };
+    const floor = product.basePrice;
+    const clamped = basePrice < floor;
+    const finalPrice = clamped ? floor : basePrice;
     this.state.update((current) => {
       const existing = current.offerings.find((o) => o.printerId === printer.id && o.productId === productId);
       if (existing) {
         return {
           ...current,
           offerings: current.offerings.map((o) =>
-            o === existing ? { ...o, basePrice, available } : o,
+            o === existing ? { ...o, basePrice: finalPrice, available, description: description ?? o.description } : o,
           ),
         };
       }
@@ -1191,7 +1190,8 @@ export class PlatformStoreService {
             id: this.takeNextId(),
             printerId: printer.id,
             productId,
-            basePrice,
+            basePrice: finalPrice,
+            description,
             available,
             createdAt: new Date().toISOString().slice(0, 10),
           },
@@ -1199,6 +1199,7 @@ export class PlatformStoreService {
         ],
       };
     });
+    return { success: true, clamped, floor };
   }
 
   /** Printer stops offering a global product entirely. */
@@ -1338,6 +1339,17 @@ export class PlatformStoreService {
     return this.state()
       .orders.filter(
         (order) => order.requestStatus === 'REQUESTED' && order.lines.some((line) => line.printerId === printer.id),
+      )
+      .sort(sortByDateDesc);
+  }
+
+  /** Requests this printer accepted but the customer then canceled (pre-payment). */
+  canceledOrdersForPrinter(printerUserId: number): Order[] {
+    const printer = this.getPrinterByUserId(printerUserId);
+    if (!printer) return [];
+    return this.state()
+      .orders.filter(
+        (order) => order.requestStatus === 'CANCELLED' && order.lines.some((line) => line.printerId === printer.id),
       )
       .sort(sortByDateDesc);
   }

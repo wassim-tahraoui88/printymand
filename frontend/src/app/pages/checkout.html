@@ -45,15 +45,22 @@
               <span class="pm-display" style="font-size:var(--pm-text-2xl); color:var(--pm-text);">{{ order.total }} TND</span>
             </div>
 
-            <button
-              type="button"
-              class="pm-btn pm-btn-primary pm-btn-lg"
-              style="width:100%; justify-content:center; margin-top:1rem;"
-              [disabled]="busy() === order.id"
-              (click)="pay(order)"
-            >
-              {{ busy() === order.id ? 'Processing…' : 'Pay ' + order.total + ' TND →' }}
-            </button>
+            <div style="display:flex; gap:0.75rem; margin-top:1rem;">
+              <button
+                type="button"
+                class="pm-btn pm-btn-secondary"
+                (click)="remove(order)"
+              >Remove</button>
+              <button
+                type="button"
+                class="pm-btn pm-btn-primary pm-btn-lg"
+                style="flex:1; justify-content:center;"
+                [disabled]="busy() === order.id"
+                (click)="pay(order)"
+              >
+                {{ busy() === order.id ? 'Processing…' : 'Pay ' + order.total + ' TND →' }}
+              </button>
+            </div>
           </div>
         }
 

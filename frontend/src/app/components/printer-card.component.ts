@@ -40,9 +40,29 @@ import { PrinterBadgeComponent } from './rank-badge.component';
           }
         </div>
 
+        @if (note()) {
+          <p style="font-size:0.8rem; color:var(--pm-text-muted); line-height:1.55; background:var(--pm-surface-alt); border:1px solid var(--pm-border); border-radius:10px; padding:0.625rem 0.75rem;">
+            {{ note() }}
+          </p>
+        }
+
         <div style="border-top:1px solid var(--pm-border); padding-top:0.875rem; display:flex; align-items:center; justify-content:space-between; gap:0.75rem;">
-          <p style="font-size:0.82rem; color:var(--pm-text-muted);">{{ printer().reviews }} reviews</p>
-          <button type="button" class="pm-btn pm-btn-primary" style="font-size:0.85rem;" (click)="selected.emit(printer().id)">Select →</button>
+          @if (price() !== null) {
+            <div>
+              <p style="font-size:0.68rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--pm-text-muted);">Total here</p>
+              <p class="pm-heading" style="font-size:1.05rem; font-weight:800; color:var(--pm-text);">{{ price() }} TND</p>
+            </div>
+          } @else {
+            <p style="font-size:0.82rem; color:var(--pm-text-muted);">{{ printer().reviews }} reviews</p>
+          }
+          <button
+            type="button"
+            class="pm-btn"
+            [class.pm-btn-primary]="!isSelected()"
+            [class.pm-btn-secondary]="isSelected()"
+            style="font-size:0.85rem;"
+            (click)="selected.emit(printer().id)"
+          >{{ isSelected() ? '✓ Selected' : 'Select →' }}</button>
         </div>
       </div>
     </article>
@@ -50,6 +70,11 @@ import { PrinterBadgeComponent } from './rank-badge.component';
 })
 export class PrinterCardComponent {
   readonly printer = input.required<PrinterPartner>();
+  /** Total price the buyer would pay at this printer for the whole order. */
+  readonly price = input<number | null>(null);
+  /** This printer's own description(s) for the selected product(s). */
+  readonly note = input<string>('');
+  readonly isSelected = input<boolean>(false);
   readonly selected = output<number>();
   readonly activeIndex = signal(0);
   readonly currentImage = computed(() => this.printer().images[this.activeIndex()] ?? this.printer().images[0] ?? '/placeholder-image.svg');
