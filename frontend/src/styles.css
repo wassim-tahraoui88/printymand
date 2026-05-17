@@ -1752,6 +1752,16 @@ body::after { display: none !important; }
 body > * { position: relative; z-index: 1; }
 ::selection { background: var(--pm-clay); color: #fff; }
 
+/* No horizontal scroll — full-bleed bands must never exceed the viewport */
+html, body { overflow-x: hidden; max-width: 100%; }
+app-root, app-layout { display: block; background: transparent; }
+.cover-story, .stat-strip {
+  width: 100vw;
+  max-width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+}
+
 /* ── Type primitives ─────────────────────────────── */
 .pm-display, .display { font-family: var(--pm-font-display); letter-spacing: -0.035em; line-height: 0.94; font-weight: 700; color: var(--pm-ink); }
 .display em { font-family: var(--pm-font-serif); font-style: italic; color: var(--pm-clay); font-weight: 500; }
@@ -2307,4 +2317,27 @@ input[type="range"].pm-range, input[type="range"] { accent-color: var(--pm-clay)
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: rgba(244, 236, 220, 0.85);
+}
+
+/* ── Full-bleed override (must win the cascade) ───────── */
+.cover-story, .stat-strip {
+  width: 100vw;
+  max-width: 100vw;
+  margin-left: calc(50% - 50vw) !important;
+  margin-right: calc(50% - 50vw) !important;
+}
+
+/* Marketplace / archive toolbar — breathing room */
+.market-toolbar {
+  grid-template-columns: minmax(220px, 1fr) auto;
+  gap: 28px;
+  padding: 22px 0;
+  margin: 28px 0 0;
+}
+.market-toolbar .toolbar-right { gap: 22px; }
+.market-toolbar .search-input { font-size: 17px; padding: 12px 10px 12px 32px; }
+.market-toolbar .sort-select { padding: 8px 10px; }
+@media (max-width: 760px) {
+  .market-toolbar { grid-template-columns: 1fr; gap: 18px; }
+  .market-toolbar .toolbar-right { flex-wrap: wrap; gap: 16px; }
 }

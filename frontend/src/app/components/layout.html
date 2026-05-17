@@ -1,4 +1,4 @@
-<div style="min-height:100vh; background-color:var(--pm-bg); color:var(--pm-text); display:flex; flex-direction:column;">
+<div style="min-height:100vh; background-color:transparent; color:var(--pm-text); display:flex; flex-direction:column; overflow-x:hidden;">
 
   <!-- ═══════════════════════════════════════════════════════
        MASTHEAD
@@ -80,7 +80,7 @@
                 aria-label="User menu"
               >
                 <span
-                  style="display:inline-flex; height:26px; width:26px; align-items:center; justify-content:center; background:var(--pm-clay); color:#fff; font-family:var(--pm-font-display); font-weight:800; font-size:11px;"
+                  style="display:inline-flex; height:26px; width:26px; align-items:center; justify-content:center; background:var(--pm-clay); color:#fff; font-family:var(--pm-font-display); font-weight:800; font-size:11px; border-radius:50%; flex-shrink:0;"
                   aria-hidden="true"
                 >{{ userInitials() }}</span>
                 <span style="max-width:100px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; font-weight:600;">{{ auth.user()?.name }}</span>

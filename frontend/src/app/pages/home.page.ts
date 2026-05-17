@@ -32,6 +32,9 @@ export class HomePageComponent {
   /** First verified printer for the maker spotlight */
   readonly featuredPrinter = computed(() => this.workflow.printers()[0] ?? null);
 
+  /** All verified pressrooms for the homepage directory */
+  readonly pressrooms = computed(() => this.workflow.printers());
+
   readonly primaryLink = computed(() =>
     this.auth.isAuthenticated() ? this.auth.dashboardPath(this.auth.user()!.role) : '/register',
   );

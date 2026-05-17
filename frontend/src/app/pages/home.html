@@ -257,86 +257,57 @@
   </div>
 </section>
 
-<!-- ── PRESSROOM SPOTLIGHT ───────────────────────────────── -->
-@if (featuredPrinter()) {
-  <section class="page spread" aria-label="Meet the makers">
-    <div class="section-head">
-      <span class="section-no">V.</span>
-      <hr class="line" />
-      <span class="title">From the pressroom</span>
-    </div>
+<!-- ── PRESSROOM DIRECTORY ───────────────────────────────── -->
+<section class="page spread" aria-label="The pressroom directory">
+  <div class="section-head">
+    <span class="section-no">V.</span>
+    <hr class="line" />
+    <span class="title">The pressroom directory</span>
+  </div>
 
-    <div class="cover-story-inner" style="align-items:center;">
-      <div class="cover-story-image">
-        <app-image-with-fallback
-          [src]="featuredPrinter()!.images[0] ?? ''"
-          [alt]="featuredPrinter()!.businessName"
-          [imgClass]="'w-full h-full object-cover'"
-        />
-        <span class="stamp">{{ featuredPrinter()!.rank }} pressroom</span>
-      </div>
-      <div>
-        <div class="kicker" style="color:var(--pm-clay);">Verified pressroom</div>
-        <h2 class="story-headline">{{ featuredPrinter()!.businessName }}</h2>
-        <p class="story-deck">
-          A verified Tunisian pressroom in {{ featuredPrinter()!.location }} with
-          {{ featuredPrinter()!.deliveryDays }}-day delivery and a
-          {{ (featuredPrinter()!.fulfillmentRate * 100).toFixed(0) }}% fulfilment rate.
-        </p>
-        <div class="story-specs">
-          <div>
-            <div class="label">Rating</div>
-            <div class="value">{{ featuredPrinter()!.rating.toFixed(1) }} <small>★</small></div>
-            <div class="label" style="margin-top:4px;"><small>{{ featuredPrinter()!.reviews }} reviews</small></div>
-          </div>
-          <div>
-            <div class="label">Location</div>
-            <div class="value" style="font-size:18px;">{{ featuredPrinter()!.location }}</div>
-          </div>
-          <div>
-            <div class="label">Lead time</div>
-            <div class="value">{{ featuredPrinter()!.deliveryDays }} <small>days</small></div>
-          </div>
-        </div>
-        <div class="story-cta">
-          <a class="btn btn-clay" routerLink="/products">View products <span class="ar">→</span></a>
-        </div>
-      </div>
-    </div>
-  </section>
-}
+  <div class="pressroom-head">
+    <h2 class="title">
+      {{ pressrooms().length }} verified pressrooms,<br />
+      <em>across Tunisia,</em> one&nbsp;handshake.
+    </h2>
+    <p class="summary">
+      Each shop is audited quarterly by the editors. Premium-tier presses
+      guarantee a fast turnaround.
+    </p>
+  </div>
 
-<!-- ── FOR MAKERS ────────────────────────────────────────── -->
-<section class="cover-story" aria-label="Join as a maker">
-  <div class="cover-story-inner">
-    <div>
-      <div class="kicker" style="color:var(--pm-clay);">Join the press</div>
-      <h2 class="story-headline">Are you a designer<br /><em>or a pressroom?</em></h2>
-      <p class="story-deck">
-        Upload your artwork and earn royalties on every sale — or list your
-        print shop and fulfil orders from customers across Tunisia.
-      </p>
-      <div class="story-cta">
-        <a class="btn btn-clay" routerLink="/register">Become a designer <span class="ar">→</span></a>
-        <a class="btn btn-ghost" routerLink="/register">Open a pressroom</a>
-      </div>
+  <div class="directory">
+    <div class="dir-row head">
+      <span>№</span>
+      <span>Pressroom</span>
+      <span>Governorate</span>
+      <span class="col-hide">Tier</span>
+      <span class="col-hide">Reviews</span>
+      <span class="col-hide">Fulfilment</span>
+      <span></span>
     </div>
-    <div class="story-specs" style="border-top:1px solid var(--pm-rule-strong);">
-      <div>
-        <div class="label">Royalties</div>
-        <div class="value">Weekly</div>
-        <div class="label" style="margin-top:4px;"><small>paid in dinars</small></div>
-      </div>
-      <div>
-        <div class="label">Pressrooms</div>
-        <div class="value">Verified</div>
-        <div class="label" style="margin-top:4px;"><small>audited quarterly</small></div>
-      </div>
-      <div>
-        <div class="label">Reach</div>
-        <div class="value">Tunisia</div>
-        <div class="label" style="margin-top:4px;"><small>nationwide delivery</small></div>
-      </div>
-    </div>
+    @for (pr of pressrooms(); track pr.id; let i = $index) {
+      <a class="dir-row" routerLink="/products">
+        <span class="idx">{{ (i + 1).toString().padStart(2, '0') }}</span>
+        <div>
+          <div class="name">{{ pr.businessName }}</div>
+          <small>{{ pr.deliveryDays }}-day lead · {{ pr.rating.toFixed(1) }} ★</small>
+        </div>
+        <span class="loc">{{ pr.location }}</span>
+        <span class="col-hide">
+          <span class="pill" [class.premium]="pr.rank === 'Premium'" [class.gold]="pr.rank === 'Gold'">{{ pr.rank }}</span>
+        </span>
+        <span class="col-hide num">{{ pr.reviews }}<small>reviews</small></span>
+        <span class="col-hide num">{{ (pr.fulfillmentRate * 100).toFixed(0) }}<small>%</small></span>
+        <span class="arrow">→</span>
+      </a>
+    }
+  </div>
+
+  <div style="display:flex; justify-content:space-between; align-items:center; padding-top:22px; gap:16px; flex-wrap:wrap;">
+    <p class="serif-italic" style="color:var(--pm-text-muted); font-size:15px; margin:0;">
+      Want your shop in the next issue? <span style="color:var(--pm-clay);">Applications are always open.</span>
+    </p>
+    <a class="btn btn-clay" routerLink="/register">Apply to print <span class="ar">→</span></a>
   </div>
 </section>
