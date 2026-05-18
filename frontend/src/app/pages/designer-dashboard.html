@@ -1,4 +1,4 @@
-<div class="pm-dashboard">
+<div class="desk">
 
   <!-- Sidebar -->
   <app-dashboard-sidebar
@@ -11,501 +11,508 @@
   />
 
   <!-- Main -->
-  <div class="pm-dashboard-main">
+  <div class="desk-main">
 
-    <!-- Section header -->
-    <div class="pm-dash-header">
-      <button type="button" class="pm-sidebar-mobile-btn" style="align-items:center; justify-content:center; background:transparent; cursor:pointer;" (click)="sidebarOpen.set(true)">
+    <!-- Editorial header -->
+    <div class="desk-header">
+      <button type="button" class="desk-hamburger" (click)="sidebarOpen.set(true)" aria-label="Open menu">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
       </button>
       <div style="flex:1; min-width:0;">
         @switch (activeTab()) {
-          @case ('overview')  { <h1 class="pm-heading" style="font-size:var(--pm-text-lg); font-weight:800; color:var(--pm-text);">Overview</h1> }
-          @case ('designs')   { <h1 class="pm-heading" style="font-size:var(--pm-text-lg); font-weight:800; color:var(--pm-text);">Designs</h1> }
-          @case ('analytics') { <h1 class="pm-heading" style="font-size:var(--pm-text-lg); font-weight:800; color:var(--pm-text);">Analytics</h1> }
-          @case ('payouts')   { <h1 class="pm-heading" style="font-size:var(--pm-text-lg); font-weight:800; color:var(--pm-text);">Payouts</h1> }
-          @case ('profile')   { <h1 class="pm-heading" style="font-size:var(--pm-text-lg); font-weight:800; color:var(--pm-text);">Storefront Settings</h1> }
+          @case ('overview')  { <h1 class="h-title">Overview<br /><em>desk.</em></h1> }
+          @case ('designs')   { <h1 class="h-title">Designs<br /><em>portfolio.</em></h1> }
+          @case ('analytics') { <h1 class="h-title">Analytics<br /><em>numbers.</em></h1> }
+          @case ('payouts')   { <h1 class="h-title">Payouts<br /><em>earnings.</em></h1> }
+          @case ('profile')   { <h1 class="h-title">Storefront<br /><em>settings.</em></h1> }
         }
       </div>
-      <span class="pm-chip">{{ user()?.name ?? 'Designer' }}</span>
+      <div class="h-meta">
+        <span class="meta-name">{{ user()?.name ?? 'Designer' }}</span>
+        <span class="meta-role">Designer account · {{ level() }}</span>
+      </div>
     </div>
 
-    <!-- Section body -->
-    <div class="pm-dash-body">
+    <!-- ── OVERVIEW ──────────────────────────────────────────── -->
+    @if (activeTab() === 'overview') {
 
-      <!-- ── OVERVIEW ──────────────────────────────────── -->
-      @if (activeTab() === 'overview') {
-
-        <div class="pm-stat-grid">
-          <div class="pm-stat-card">
-            <span class="pm-stat-label">Total earnings</span>
-            <span class="pm-stat-value">{{ totals().earnings }} <span style="font-size:var(--pm-text-sm); font-weight:600;">TND</span></span>
-          </div>
-          <div class="pm-stat-card">
-            <span class="pm-stat-label">Active designs</span>
-            <span class="pm-stat-value">{{ totals().designs }}</span>
-          </div>
-          <div class="pm-stat-card">
-            <span class="pm-stat-label">Orders fulfilled</span>
-            <span class="pm-stat-value">{{ totals().orders }}</span>
-          </div>
-          <div class="pm-stat-card">
-            <span class="pm-stat-label">Avg conversion</span>
-            <span class="pm-stat-value">{{ totals().avgConversion | number:'1.1-1' }}%</span>
-          </div>
+      <div class="kpi-grid">
+        <div class="kpi">
+          <span class="l">Total earnings</span>
+          <span class="v">{{ totals().earnings }}<small>TND</small></span>
         </div>
+        <div class="kpi">
+          <span class="l">Active designs</span>
+          <span class="v">{{ totals().designs }}</span>
+        </div>
+        <div class="kpi">
+          <span class="l">Orders fulfilled</span>
+          <span class="v">{{ totals().orders }}</span>
+        </div>
+        <div class="kpi">
+          <span class="l">Avg conversion</span>
+          <span class="v">{{ totals().avgConversion | number:'1.1-1' }}<small>%</small></span>
+        </div>
+      </div>
 
-        <!-- Top designs -->
-        <div class="pm-panel" style="padding:1.5rem;">
-          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.25rem;">
-            <h2 class="pm-heading" style="font-size:var(--pm-text-base); font-weight:700; color:var(--pm-text);">Your designs</h2>
-            <button type="button" class="pm-btn pm-btn-ghost pm-btn-sm" (click)="activeTab.set('designs')">Manage →</button>
-          </div>
-          @if (designs().length) {
-            <div style="display:grid; gap:0.625rem;">
+      <div class="desk-section">
+        <h3>
+          Your designs
+          <em><button type="button" class="btn btn-ghost" style="font-size:13px; padding:4px 10px;" (click)="activeTab.set('designs')">Manage →</button></em>
+        </h3>
+        @if (designs().length) {
+          <table class="news-table">
+            <thead>
+              <tr>
+                <th>Design</th>
+                <th>Category</th>
+                <th class="r">Products</th>
+                <th class="r">Status</th>
+              </tr>
+            </thead>
+            <tbody>
               @for (design of designs().slice(0, 5); track design.id) {
-                <div style="display:flex; align-items:center; gap:1rem; padding:0.75rem 1rem; background:var(--pm-surface-alt); border:1px solid var(--pm-border); border-radius:var(--pm-radius);">
-                  <div style="width:2.75rem; height:2.75rem; border-radius:6px; overflow:hidden; flex-shrink:0; background:var(--pm-border);">
-                    <img [src]="design.image" [alt]="design.title" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.display='none'" />
-                  </div>
-                  <div style="flex:1; min-width:0;">
-                    <p style="font-size:var(--pm-text-sm); font-weight:700; color:var(--pm-text);">{{ design.title }}</p>
-                    <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted);">{{ design.category }}</p>
-                  </div>
-                  <span class="pm-chip" [style]="design.status === 'ACTIVE' ? 'background:var(--pm-success-soft); color:var(--pm-success);' : ''">{{ design.status }}</span>
-                </div>
+                <tr>
+                  <td class="title-cell">{{ design.title }}</td>
+                  <td><span class="serif-italic" style="color:var(--pm-text-muted); font-size:13px;">{{ design.category }}</span></td>
+                  <td class="r">{{ design.assignedProductIds.length }}</td>
+                  <td class="r"><span class="status-pill" [class.delivered]="design.status === 'ACTIVE'" [class.pending]="design.status !== 'ACTIVE'">{{ design.status }}</span></td>
+                </tr>
               }
-            </div>
-          } @else {
-            <div class="pm-empty">
-              <p style="font-size:var(--pm-text-sm); color:var(--pm-text-muted);">No designs yet. Upload your first one.</p>
-              <button type="button" class="pm-btn pm-btn-primary pm-btn-sm" style="margin-top:1rem;" (click)="activeTab.set('designs')">Upload design →</button>
-            </div>
-          }
-        </div>
-
-        <!-- Recent payouts -->
-        @if (payouts().length) {
-          <div class="pm-panel" style="padding:1.5rem;">
-            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.25rem;">
-              <h2 class="pm-heading" style="font-size:var(--pm-text-base); font-weight:700; color:var(--pm-text);">Recent payouts</h2>
-              <button type="button" class="pm-btn pm-btn-ghost pm-btn-sm" (click)="activeTab.set('payouts')">View all →</button>
-            </div>
-            <div style="display:grid; gap:0.5rem;">
-              @for (payout of payouts().slice(0, 3); track payout.id) {
-                <div style="display:flex; align-items:center; gap:1rem; padding:0.625rem 0.875rem; background:var(--pm-surface-alt); border:1px solid var(--pm-border); border-radius:var(--pm-radius);">
-                  <div style="flex:1;">
-                    <p style="font-size:var(--pm-text-sm); font-weight:600; color:var(--pm-text);">Ref: {{ payout.reference }}</p>
-                    <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted);">Due {{ payout.dueDate }}</p>
-                  </div>
-                  <span class="pm-heading" style="font-size:var(--pm-text-base); font-weight:800; color:var(--pm-text);">{{ payout.amount }} TND</span>
-                  <span class="pm-chip">{{ payout.status }}</span>
-                </div>
-              }
-            </div>
-          </div>
+            </tbody>
+          </table>
+        } @else {
+          <p class="serif-italic" style="color:var(--pm-text-muted); font-size:15px; padding:24px 0;">No designs yet. <button type="button" class="btn btn-ghost" style="font-size:13px;" (click)="activeTab.set('designs')">Upload your first one →</button></p>
         }
+      </div>
+
+      @if (payouts().length) {
+        <div class="desk-section">
+          <h3>
+            Recent payouts
+            <em><button type="button" class="btn btn-ghost" style="font-size:13px; padding:4px 10px;" (click)="activeTab.set('payouts')">View all →</button></em>
+          </h3>
+          <table class="news-table">
+            <thead>
+              <tr>
+                <th>Reference</th>
+                <th class="r">Due date</th>
+                <th class="r">Amount</th>
+                <th class="r">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (payout of payouts().slice(0, 3); track payout.id) {
+                <tr>
+                  <td class="id">{{ payout.reference }}</td>
+                  <td class="r"><span class="serif-italic" style="color:var(--pm-text-muted);">{{ payout.dueDate }}</span></td>
+                  <td class="r amt">{{ payout.amount }}<small>TND</small></td>
+                  <td class="r"><span class="status-pill">{{ payout.status }}</span></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    }
+
+    <!-- ── DESIGNS (2-step upload wizard) ──────────────────────── -->
+    @if (activeTab() === 'designs') {
+
+      <!-- Step indicator -->
+      <div class="desk-section" style="margin-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:16px; padding-bottom:16px; border-bottom:1px solid var(--pm-rule);">
+          <span style="font-family:var(--pm-font-display); font-weight:700; font-size:13px; letter-spacing:0.12em; text-transform:uppercase; color:{{ wizardStep() === 1 ? 'var(--pm-clay)' : 'var(--pm-text-muted)' }};">
+            01 · Upload artwork
+          </span>
+          <span style="color:var(--pm-text-muted);">→</span>
+          <span style="font-family:var(--pm-font-display); font-weight:700; font-size:13px; letter-spacing:0.12em; text-transform:uppercase; color:{{ wizardStep() === 2 ? 'var(--pm-clay)' : 'var(--pm-text-muted)' }};">
+            02 · Products &amp; customization
+          </span>
+        </div>
+      </div>
+
+      @if (uploadError()) {
+        <div style="border:1px solid var(--pm-danger); color:var(--pm-danger); padding:10px 14px; margin-bottom:20px; font-size:13px;">{{ uploadError() }}</div>
       }
 
-      <!-- ── DESIGNS (2-step upload wizard) ─────────────── -->
-      @if (activeTab() === 'designs') {
+      <!-- STEP 1 -->
+      @if (wizardStep() === 1) {
+        <div class="desk-section">
+          <h3>{{ designForm().id ? 'Edit design' : 'Upload new design' }}</h3>
+          <div style="display:grid; gap:1rem; max-width:600px;">
+            <label class="pm-field">
+              <span class="pm-label">Title</span>
+              <input class="pm-input" type="text" [ngModel]="designForm().title" (ngModelChange)="designForm.set({...designForm(), title: $event})" placeholder="Design title" />
+            </label>
 
-        <!-- Step indicator -->
-        <div class="pm-panel" style="padding:1rem 1.5rem; display:flex; align-items:center; gap:1rem;">
-          <span class="pm-chip" [style.background]="wizardStep() === 1 ? 'var(--pm-primary-soft)' : 'var(--pm-surface-alt)'" [style.color]="wizardStep() === 1 ? 'var(--pm-primary)' : 'var(--pm-text-muted)'">1 · Upload artwork</span>
-          <span style="color:var(--pm-text-soft);">→</span>
-          <span class="pm-chip" [style.background]="wizardStep() === 2 ? 'var(--pm-primary-soft)' : 'var(--pm-surface-alt)'" [style.color]="wizardStep() === 2 ? 'var(--pm-primary)' : 'var(--pm-text-muted)'">2 · Products &amp; customization</span>
-        </div>
-
-        @if (uploadError()) {
-          <div style="background:var(--pm-danger-soft); border:1px solid rgba(185,28,28,0.2); border-radius:var(--pm-radius); padding:0.75rem 1rem; font-size:var(--pm-text-sm); color:var(--pm-danger);">{{ uploadError() }}</div>
-        }
-
-        <!-- STEP 1 -->
-        @if (wizardStep() === 1) {
-          <div class="pm-panel" style="padding:1.5rem;">
-            <h2 class="pm-heading" style="font-size:var(--pm-text-base); font-weight:700; color:var(--pm-text); margin-bottom:1.25rem;">
-              {{ designForm().id ? 'Edit design' : 'Upload new design' }}
-            </h2>
-            <div style="display:grid; gap:1rem; max-width:600px;">
-              <label class="pm-field">
-                <span class="pm-label">Title</span>
-                <input class="pm-input" type="text" [ngModel]="designForm().title" (ngModelChange)="designForm.set({...designForm(), title: $event})" placeholder="Design title" />
-              </label>
-
-              <!-- Multiple categories -->
-              <div class="pm-field">
-                <span class="pm-label">Categories (pick one or more)</span>
-                <div style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:0.375rem;">
-                  @for (cat of allCategories(); track cat) {
-                    <button
-                      type="button"
-                      class="pm-chip"
-                      [style.background]="isCategory(cat) ? 'var(--pm-primary)' : 'var(--pm-surface-alt)'"
-                      [style.color]="isCategory(cat) ? '#fff' : 'var(--pm-text-muted)'"
-                      [style.border-color]="isCategory(cat) ? 'var(--pm-primary)' : 'var(--pm-border)'"
-                      style="cursor:pointer;"
-                      (click)="toggleCategory(cat)"
-                    >{{ cat }}</button>
-                  }
-                </div>
-              </div>
-
-              <!-- Tags (max 10) -->
-              <div class="pm-field">
-                <span class="pm-label">Tags ({{ designForm().tags.length }}/{{ MAX_TAGS }})</span>
-                <div style="display:flex; gap:0.5rem; margin-top:0.375rem;">
-                  <input
-                    class="pm-input"
-                    type="text"
-                    [ngModel]="tagInput()"
-                    (ngModelChange)="tagInput.set($event)"
-                    (keydown.enter)="$event.preventDefault(); addTag()"
-                    [disabled]="designForm().tags.length >= MAX_TAGS"
-                    placeholder="Add a tag and press Enter"
-                  />
-                  <button type="button" class="pm-btn pm-btn-secondary pm-btn-sm" (click)="addTag()" [disabled]="designForm().tags.length >= MAX_TAGS">Add</button>
-                </div>
-                @if (designForm().tags.length) {
-                  <div style="display:flex; flex-wrap:wrap; gap:0.4rem; margin-top:0.5rem;">
-                    @for (tag of designForm().tags; track tag) {
-                      <span class="pm-chip" style="display:inline-flex; align-items:center; gap:0.3rem;">
-                        {{ tag }}
-                        <button type="button" (click)="removeTag(tag)" style="background:none; border:none; cursor:pointer; color:var(--pm-text-muted); font-weight:700;">×</button>
-                      </span>
-                    }
-                  </div>
+            <div class="pm-field">
+              <span class="pm-label">Categories (pick one or more)</span>
+              <div style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:0.375rem;">
+                @for (cat of allCategories(); track cat) {
+                  <button
+                    type="button"
+                    class="pm-chip"
+                    [style.background]="isCategory(cat) ? 'var(--pm-primary)' : 'var(--pm-surface-alt)'"
+                    [style.color]="isCategory(cat) ? '#fff' : 'var(--pm-text-muted)'"
+                    [style.border-color]="isCategory(cat) ? 'var(--pm-primary)' : 'var(--pm-border)'"
+                    style="cursor:pointer;"
+                    (click)="toggleCategory(cat)"
+                  >{{ cat }}</button>
                 }
               </div>
+            </div>
 
-              <label class="pm-field">
-                <span class="pm-label">Default description</span>
-                <textarea class="pm-input" rows="2" [ngModel]="designForm().description" (ngModelChange)="designForm.set({...designForm(), description: $event})" style="resize:vertical;"></textarea>
-              </label>
-              <label class="pm-field">
-                <span class="pm-label">Artwork file (PNG/SVG, max 1 MB)</span>
-                <input class="pm-input" type="file" accept="image/*" (change)="onDesignFileChange($event)" style="padding:0.375rem;" />
-              </label>
-
-              <div style="background:var(--pm-surface-alt); border:1px solid var(--pm-border); border-radius:var(--pm-radius); padding:0.875rem 1rem;">
-                <p style="font-size:var(--pm-text-sm); color:var(--pm-text); font-weight:600;">Royalty per sale: {{ royaltyPerSale() }} TND</p>
-                <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted); margin-top:0.25rem; line-height:1.6;">
-                  The platform sets a fixed royalty per sale. Pressrooms set the base price and the platform adds its margin.
-                </p>
+            <div class="pm-field">
+              <span class="pm-label">Tags ({{ designForm().tags.length }}/{{ MAX_TAGS }})</span>
+              <div style="display:flex; gap:0.5rem; margin-top:0.375rem;">
+                <input
+                  class="pm-input"
+                  type="text"
+                  [ngModel]="tagInput()"
+                  (ngModelChange)="tagInput.set($event)"
+                  (keydown.enter)="$event.preventDefault(); addTag()"
+                  [disabled]="designForm().tags.length >= MAX_TAGS"
+                  placeholder="Add a tag and press Enter"
+                />
+                <button type="button" class="btn btn-ghost" (click)="addTag()" [disabled]="designForm().tags.length >= MAX_TAGS">Add</button>
               </div>
-
-              @if (designForm().image) {
-                <img [src]="designForm().image" alt="Preview" style="width:6rem; height:6rem; object-fit:cover; border-radius:var(--pm-radius); border:1px solid var(--pm-border);" />
+              @if (designForm().tags.length) {
+                <div style="display:flex; flex-wrap:wrap; gap:0.4rem; margin-top:0.5rem;">
+                  @for (tag of designForm().tags; track tag) {
+                    <span class="pm-chip" style="display:inline-flex; align-items:center; gap:0.3rem;">
+                      {{ tag }}
+                      <button type="button" (click)="removeTag(tag)" style="background:none; border:none; cursor:pointer; color:var(--pm-text-muted); font-weight:700;">×</button>
+                    </span>
+                  }
+                </div>
               }
-              <div>
-                <button type="button" class="pm-btn pm-btn-primary" (click)="goToStep2()">Next: products &amp; customization →</button>
-              </div>
+            </div>
+
+            <label class="pm-field">
+              <span class="pm-label">Description</span>
+              <textarea class="pm-input" rows="2" [ngModel]="designForm().description" (ngModelChange)="designForm.set({...designForm(), description: $event})" style="resize:vertical;"></textarea>
+            </label>
+            <label class="pm-field">
+              <span class="pm-label">Artwork file (PNG/SVG, max 1 MB)</span>
+              <input class="pm-input" type="file" accept="image/*" (change)="onDesignFileChange($event)" style="padding:0.375rem;" />
+            </label>
+
+            <div style="border-top:1px solid var(--pm-rule); padding-top:14px;">
+              <p style="font-family:var(--pm-font-display); font-weight:700; font-size:14px; color:var(--pm-ink);">Royalty per sale: {{ royaltyPerSale() }} TND</p>
+              <p class="serif-italic" style="font-size:12px; color:var(--pm-text-muted); margin-top:4px; line-height:1.6;">The platform sets a fixed royalty per sale. Pressrooms set the base price and the platform adds its margin.</p>
+            </div>
+
+            @if (designForm().image) {
+              <img [src]="designForm().image" alt="Preview" style="width:6rem; height:6rem; object-fit:cover; border:1px solid var(--pm-rule);" />
+            }
+            <div>
+              <button type="button" class="btn btn-clay" (click)="goToStep2()">Next: products &amp; customization →</button>
             </div>
           </div>
-        }
+        </div>
+      }
 
-        <!-- STEP 2: product checkboxes → per-product customization sections -->
-        @if (wizardStep() === 2) {
-          <div class="pm-panel" style="padding:1.5rem;">
-            <h2 class="pm-heading" style="font-size:var(--pm-text-base); font-weight:700; color:var(--pm-text); margin-bottom:0.5rem;">
-              Choose products &amp; customize per product
-            </h2>
-            <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted); margin-bottom:1.25rem;">
-              Tick each product your design can be printed on. A customization section opens for each — set the placement, colors and copy for that product.
-            </p>
+      <!-- STEP 2 -->
+      @if (wizardStep() === 2) {
+        <div class="desk-section">
+          <h3>Choose products &amp; customize per product</h3>
+          <p class="serif-italic" style="font-size:13px; color:var(--pm-text-muted); margin-top:-10px; margin-bottom:20px;">Tick each product your design can be printed on. A customization section opens for each.</p>
 
-            <div style="display:grid; gap:1rem;">
-              @for (product of allProducts(); track product.id) {
-                <div style="border:1px solid var(--pm-border); border-radius:var(--pm-radius); overflow:hidden;">
-                  <label style="display:flex; align-items:center; gap:0.625rem; padding:0.875rem 1rem; background:var(--pm-surface-alt); cursor:pointer;">
-                    <input type="checkbox" [checked]="configFor(product.id).selected" (change)="toggleProduct(product.id, $any($event.target).checked)" />
-                    <span style="font-size:var(--pm-text-sm); font-weight:700; color:var(--pm-text);">{{ product.name }}</span>
-                    <span style="font-size:var(--pm-text-xs); color:var(--pm-text-muted);">· {{ product.category }}</span>
-                  </label>
+          <div style="display:grid; gap:1rem;">
+            @for (product of allProducts(); track product.id) {
+              <div style="border:1px solid var(--pm-rule); overflow:hidden;">
+                <label style="display:flex; align-items:center; gap:0.625rem; padding:0.875rem 1rem; background:var(--pm-surface-alt); cursor:pointer;">
+                  <input type="checkbox" [checked]="configFor(product.id).selected" (change)="toggleProduct(product.id, $any($event.target).checked)" />
+                  <span style="font-family:var(--pm-font-display); font-weight:700; font-size:15px; color:var(--pm-ink);">{{ product.name }}</span>
+                  <span class="serif-italic" style="font-size:13px; color:var(--pm-text-muted);">{{ product.category }}</span>
+                </label>
 
-                  @if (configFor(product.id).selected) {
-                    <div style="padding:1.25rem; display:grid; gap:1.25rem; lg:grid-template-columns:280px 1fr;" class="grid lg:grid-cols-[280px_1fr]">
-                      <!-- Live preview -->
-                      <div style="position:relative; aspect-ratio:1; border:1px solid var(--pm-border); border-radius:var(--pm-radius); overflow:hidden; background:var(--pm-surface-alt);">
-                        <img [src]="product.images[0] || designForm().image" [alt]="product.name" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.display='none'" />
-                        <div
-                          style="position:absolute; transform:translate(-50%,-50%);"
-                          [style.left.%]="configFor(product.id).x"
-                          [style.top.%]="configFor(product.id).y"
-                        >
-                          <img [src]="designForm().image" alt="design" [style.width.rem]="3.5 * configFor(product.id).scale * 2" style="object-fit:contain; border:1px dashed var(--pm-primary); background:rgba(255,255,255,0.7); padding:2px;" />
-                        </div>
-                      </div>
-
-                      <!-- Per-product settings -->
-                      <div style="display:grid; gap:0.875rem;">
-                        <label class="pm-field">
-                          <span class="pm-label">Title for this product</span>
-                          <input class="pm-input" type="text" [ngModel]="configFor(product.id).title" (ngModelChange)="patchConfig(product.id, { title: $event })" [placeholder]="designForm().title" />
-                        </label>
-                        <label class="pm-field">
-                          <span class="pm-label">Description for this product</span>
-                          <textarea class="pm-input" rows="2" [ngModel]="configFor(product.id).description" (ngModelChange)="patchConfig(product.id, { description: $event })" [placeholder]="designForm().description" style="resize:vertical;"></textarea>
-                        </label>
-                        <div class="pm-field">
-                          <span class="pm-label">Available colours (from this product's palette)</span>
-                          <div style="display:flex; flex-wrap:wrap; gap:0.4rem; margin-top:0.375rem;">
-                            @for (color of productColors(product.id); track color) {
-                              <button
-                                type="button"
-                                class="pm-color-chip"
-                                [style.outline]="configFor(product.id).colors.includes(color) ? '2px solid var(--pm-primary)' : 'none'"
-                                [style.outline-offset]="'2px'"
-                                (click)="toggleConfigColor(product.id, color)"
-                              >
-                                <span class="pm-swatch" [style.background]="color"></span>
-                                {{ color }}
-                              </button>
-                            }
-                          </div>
-                        </div>
-                        <div class="pm-field">
-                          <span class="pm-label">Available sizes (from this product)</span>
-                          <div style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:0.375rem;">
-                            @for (size of productSizes(product.id); track size) {
-                              <button
-                                type="button"
-                                class="pm-size-btn"
-                                [class.is-selected]="configFor(product.id).sizes.includes(size)"
-                                (click)="toggleConfigSize(product.id, size)"
-                              >{{ size }}</button>
-                            }
-                          </div>
-                        </div>
-                        <div class="grid gap-4 sm:grid-cols-3">
-                          <label class="pm-field">
-                            <span class="pm-label">X: {{ configFor(product.id).x }}%</span>
-                            <input class="pm-range" type="range" min="15" max="85" step="1" [value]="configFor(product.id).x" (input)="patchConfig(product.id, { x: +$any($event.target).value })" />
-                          </label>
-                          <label class="pm-field">
-                            <span class="pm-label">Y: {{ configFor(product.id).y }}%</span>
-                            <input class="pm-range" type="range" min="15" max="85" step="1" [value]="configFor(product.id).y" (input)="patchConfig(product.id, { y: +$any($event.target).value })" />
-                          </label>
-                          <label class="pm-field">
-                            <span class="pm-label">Scale: {{ (configFor(product.id).scale * 100).toFixed(0) }}%</span>
-                            <input class="pm-range" type="range" min="0.1" max="1" step="0.01" [value]="configFor(product.id).scale" (input)="patchConfig(product.id, { scale: +$any($event.target).value })" />
-                          </label>
-                        </div>
+                @if (configFor(product.id).selected) {
+                  <div style="padding:1.25rem; display:grid; gap:1.25rem;" class="grid lg:grid-cols-[280px_1fr]">
+                    <div style="position:relative; aspect-ratio:1; border:1px solid var(--pm-rule); overflow:hidden; background:var(--pm-surface-alt);">
+                      <img [src]="product.images[0] || designForm().image" [alt]="product.name" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.display='none'" />
+                      <div style="position:absolute; transform:translate(-50%,-50%);" [style.left.%]="configFor(product.id).x" [style.top.%]="configFor(product.id).y">
+                        <img [src]="designForm().image" alt="design" [style.width.rem]="3.5 * configFor(product.id).scale * 2" style="object-fit:contain; border:1px dashed var(--pm-clay); background:rgba(255,255,255,0.7); padding:2px;" />
                       </div>
                     </div>
-                  }
-                </div>
-              }
-            </div>
-
-            <div style="display:flex; gap:0.75rem; border-top:1px solid var(--pm-border); margin-top:1.25rem; padding-top:1.25rem;">
-              <button type="button" class="pm-btn pm-btn-secondary" (click)="backToStep1()">← Back</button>
-              <button type="button" class="pm-btn pm-btn-primary" style="flex:1; justify-content:center;" (click)="publishDesign()">
-                {{ designForm().id ? 'Save design' : 'Publish design' }}
-              </button>
-            </div>
-            <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted); margin-top:0.75rem;">
-              Published designs are reviewed by an admin before appearing in the marketplace.
-            </p>
-          </div>
-        }
-
-        <!-- Portfolio list -->
-        @if (designs().length) {
-          <div style="display:grid; gap:1rem;">
-            @for (design of designs(); track design.id) {
-              <div class="pm-panel" style="padding:1.25rem 1.5rem;">
-                <div style="display:flex; align-items:flex-start; gap:1rem; flex-wrap:wrap;">
-                  <div style="width:4rem; height:4rem; border-radius:8px; overflow:hidden; flex-shrink:0; background:var(--pm-border);">
-                    <img [src]="design.image" [alt]="design.title" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.display='none'" />
+                    <div style="display:grid; gap:0.875rem;">
+                      <label class="pm-field">
+                        <span class="pm-label">Title for this product</span>
+                        <input class="pm-input" type="text" [ngModel]="configFor(product.id).title" (ngModelChange)="patchConfig(product.id, { title: $event })" [placeholder]="designForm().title" />
+                      </label>
+                      <label class="pm-field">
+                        <span class="pm-label">Description for this product</span>
+                        <textarea class="pm-input" rows="2" [ngModel]="configFor(product.id).description" (ngModelChange)="patchConfig(product.id, { description: $event })" [placeholder]="designForm().description" style="resize:vertical;"></textarea>
+                      </label>
+                      <div class="pm-field">
+                        <span class="pm-label">Available colours</span>
+                        <div style="display:flex; flex-wrap:wrap; gap:0.4rem; margin-top:0.375rem;">
+                          @for (color of productColors(product.id); track color) {
+                            <button type="button" class="pm-color-chip" [style.outline]="configFor(product.id).colors.includes(color) ? '2px solid var(--pm-primary)' : 'none'" [style.outline-offset]="'2px'" (click)="toggleConfigColor(product.id, color)">
+                              <span class="pm-swatch" [style.background]="color"></span>{{ color }}
+                            </button>
+                          }
+                        </div>
+                      </div>
+                      <div class="pm-field">
+                        <span class="pm-label">Available sizes</span>
+                        <div style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:0.375rem;">
+                          @for (size of productSizes(product.id); track size) {
+                            <button type="button" class="pm-size-btn" [class.is-selected]="configFor(product.id).sizes.includes(size)" (click)="toggleConfigSize(product.id, size)">{{ size }}</button>
+                          }
+                        </div>
+                      </div>
+                      <div class="grid gap-4 sm:grid-cols-3">
+                        <label class="pm-field">
+                          <span class="pm-label">X: {{ configFor(product.id).x }}%</span>
+                          <input class="pm-range" type="range" min="15" max="85" step="1" [value]="configFor(product.id).x" (input)="patchConfig(product.id, { x: +$any($event.target).value })" />
+                        </label>
+                        <label class="pm-field">
+                          <span class="pm-label">Y: {{ configFor(product.id).y }}%</span>
+                          <input class="pm-range" type="range" min="15" max="85" step="1" [value]="configFor(product.id).y" (input)="patchConfig(product.id, { y: +$any($event.target).value })" />
+                        </label>
+                        <label class="pm-field">
+                          <span class="pm-label">Scale: {{ (configFor(product.id).scale * 100).toFixed(0) }}%</span>
+                          <input class="pm-range" type="range" min="0.1" max="1" step="0.01" [value]="configFor(product.id).scale" (input)="patchConfig(product.id, { scale: +$any($event.target).value })" />
+                        </label>
+                      </div>
+                    </div>
                   </div>
-                  <div style="flex:1; min-width:0;">
-                    <p style="font-size:var(--pm-text-base); font-weight:700; color:var(--pm-text);">{{ design.title }}</p>
-                    <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted);">{{ design.category }} · {{ design.assignedProductIds.length }} product(s)</p>
-                  </div>
-                  <div style="display:flex; align-items:center; gap:0.5rem; flex-shrink:0; flex-wrap:wrap;">
-                    <span class="pm-chip">{{ design.status }}</span>
-                    <span class="pm-chip">{{ design.moderation ?? 'APPROVED' }}</span>
-                    <button type="button" class="pm-btn pm-btn-ghost pm-btn-sm" (click)="editDesign(design.id)">Edit</button>
-                    <button type="button" class="pm-btn pm-btn-ghost pm-btn-sm" (click)="toggleArchive(design.id, design.status === 'ARCHIVED')">
-                      {{ design.status === 'ARCHIVED' ? 'Restore' : 'Archive' }}
-                    </button>
-                  </div>
-                </div>
+                }
               </div>
             }
           </div>
-        }
-      }
 
-      <!-- ── ANALYTICS ──────────────────────────────────── -->
-      @if (activeTab() === 'analytics') {
-        <!-- KPIs -->
-        <div class="pm-stat-grid">
-          <div class="pm-stat-card">
-            <span class="pm-stat-label">Total earnings</span>
-            <span class="pm-stat-value">{{ totals().earnings | number:'1.0-0' }} <span style="font-size:var(--pm-text-sm); font-weight:600;">TND</span></span>
-          </div>
-          <div class="pm-stat-card">
-            <span class="pm-stat-label">Designs</span>
-            <span class="pm-stat-value">{{ totals().designs }}</span>
-          </div>
-          <div class="pm-stat-card">
-            <span class="pm-stat-label">Orders</span>
-            <span class="pm-stat-value">{{ totals().orders }}</span>
-          </div>
-          <div class="pm-stat-card">
-            <span class="pm-stat-label">Avg conversion</span>
-            <span class="pm-stat-value">{{ totals().avgConversion | number:'1.1-1' }}%</span>
-          </div>
-        </div>
-
-        <!-- Visual charts -->
-        <div class="grid gap-5 lg:grid-cols-2">
-          <div class="pm-panel" style="padding:1.5rem;">
-            <h2 class="pm-heading" style="font-size:var(--pm-text-base); font-weight:700; color:var(--pm-text); margin-bottom:1rem;">Sales by design</h2>
-            <app-donut-chart [data]="salesChart()" title="Sales by design" unit="sales" />
-          </div>
-          <div class="pm-panel" style="padding:1.5rem;">
-            <h2 class="pm-heading" style="font-size:var(--pm-text-base); font-weight:700; color:var(--pm-text); margin-bottom:1rem;">Views by design</h2>
-            <app-donut-chart [data]="viewsChart()" title="Views by design" unit="views" />
-          </div>
-        </div>
-
-        @if (analytics().length) {
-          <div class="pm-panel" style="padding:0; overflow:hidden;">
-            <table style="width:100%; border-collapse:collapse; font-size:var(--pm-text-sm);">
-              <thead>
-                <tr style="border-bottom:1px solid var(--pm-border); background:var(--pm-surface-alt);">
-                  <th style="text-align:left; padding:0.875rem 1.25rem; font-size:var(--pm-text-xs); font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--pm-text-muted);">Design</th>
-                  <th style="text-align:right; padding:0.875rem 1.25rem; font-size:var(--pm-text-xs); font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--pm-text-muted);">Views</th>
-                  <th style="text-align:right; padding:0.875rem 1.25rem; font-size:var(--pm-text-xs); font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--pm-text-muted);">Orders</th>
-                  <th style="text-align:right; padding:0.875rem 1.25rem; font-size:var(--pm-text-xs); font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--pm-text-muted);">Conversion</th>
-                  <th style="text-align:right; padding:0.875rem 1.25rem; font-size:var(--pm-text-xs); font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--pm-text-muted);">Revenue</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (row of analytics(); track row.designId) {
-                  <tr style="border-bottom:1px solid var(--pm-border);">
-                    <td style="padding:0.875rem 1.25rem; color:var(--pm-text); font-weight:600;">{{ workflow.getDesignById(row.designId)?.title ?? row.designId }}</td>
-                    <td style="padding:0.875rem 1.25rem; text-align:right; color:var(--pm-text-muted);">{{ row.views }}</td>
-                    <td style="padding:0.875rem 1.25rem; text-align:right; color:var(--pm-text-muted);">{{ row.sales }}</td>
-                    <td style="padding:0.875rem 1.25rem; text-align:right; color:var(--pm-text-muted);">{{ row.conversion | number:'1.1-1' }}%</td>
-                    <td style="padding:0.875rem 1.25rem; text-align:right; font-weight:700; color:var(--pm-text);">{{ row.revenue | number:'1.0-0' }} TND</td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-        } @else {
-          <div class="pm-empty pm-panel" style="padding:3rem 1.5rem;">
-            <p style="font-size:var(--pm-text-sm); color:var(--pm-text-muted);">No analytics data yet.</p>
-          </div>
-        }
-      }
-
-      <!-- ── PAYOUTS ─────────────────────────────────────── -->
-      @if (activeTab() === 'payouts') {
-
-        <!-- Balance + request (spec "Earnings & Performance") -->
-        <div class="pm-panel" style="padding:1.5rem;">
-          <div style="display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:1rem;">
-            <div>
-              <p class="pm-stat-label">Available balance</p>
-              <p class="pm-heading" style="font-size:var(--pm-text-2xl); font-weight:800; color:var(--pm-text);">{{ payoutBalance() }} TND</p>
-              <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted); margin-top:0.25rem;">
-                Minimum payout: {{ payoutThreshold() }} TND · Royalty per sale: {{ royaltyPerSale() }} TND
-              </p>
-            </div>
-            <div style="text-align:right;">
-              <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted);">Level</p>
-              <p class="pm-heading" style="font-size:var(--pm-text-lg); font-weight:800; color:var(--pm-text);">{{ level() }}</p>
-              <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted);">Sales score: {{ salesScore() }}</p>
-            </div>
-            <button type="button" class="pm-btn pm-btn-primary" [disabled]="!canRequestPayout()" (click)="requestPayout()">
-              Request payout
+          <div style="display:flex; gap:0.75rem; border-top:1px solid var(--pm-rule); margin-top:24px; padding-top:20px;">
+            <button type="button" class="btn btn-ghost" (click)="backToStep1()">← Back</button>
+            <button type="button" class="btn btn-clay" style="flex:1; justify-content:center;" (click)="publishDesign()">
+              {{ designForm().id ? 'Save design' : 'Publish design' }}
             </button>
           </div>
-          @if (payoutMsg()) {
-            <p style="font-size:var(--pm-text-sm); color:var(--pm-text-muted); margin-top:0.875rem;">{{ payoutMsg() }}</p>
+          <p class="serif-italic" style="font-size:12px; color:var(--pm-text-muted); margin-top:10px;">Published designs are reviewed by an admin before appearing in the marketplace.</p>
+        </div>
+      }
+
+      <!-- Portfolio list -->
+      @if (designs().length) {
+        <div class="desk-section">
+          <h3>Portfolio</h3>
+          <table class="news-table">
+            <thead>
+              <tr>
+                <th>Design</th>
+                <th>Category</th>
+                <th class="r">Products</th>
+                <th class="r">Moderation</th>
+                <th class="r">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (design of designs(); track design.id) {
+                <tr>
+                  <td class="title-cell">{{ design.title }}</td>
+                  <td><span class="serif-italic" style="color:var(--pm-text-muted); font-size:13px;">{{ design.category }}</span></td>
+                  <td class="r">{{ design.assignedProductIds.length }}</td>
+                  <td class="r"><span class="status-pill" [class.delivered]="design.moderation === 'APPROVED'" [class.pending]="design.moderation === 'PENDING'" [class.production]="design.moderation === 'REJECTED'">{{ design.moderation ?? 'APPROVED' }}</span></td>
+                  <td class="r">
+                    <div style="display:flex; gap:6px; justify-content:flex-end;">
+                      <button type="button" class="btn btn-ghost" style="font-size:12px; padding:3px 10px;" (click)="editDesign(design.id)">Edit</button>
+                      <button type="button" class="btn btn-ghost" style="font-size:12px; padding:3px 10px;" (click)="toggleArchive(design.id, design.status === 'ARCHIVED')">{{ design.status === 'ARCHIVED' ? 'Restore' : 'Archive' }}</button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    }
+
+    <!-- ── ANALYTICS ──────────────────────────────────────────── -->
+    @if (activeTab() === 'analytics') {
+
+      <div class="kpi-grid">
+        <div class="kpi">
+          <span class="l">Total earnings</span>
+          <span class="v">{{ totals().earnings | number:'1.0-0' }}<small>TND</small></span>
+        </div>
+        <div class="kpi">
+          <span class="l">Designs</span>
+          <span class="v">{{ totals().designs }}</span>
+        </div>
+        <div class="kpi">
+          <span class="l">Orders</span>
+          <span class="v">{{ totals().orders }}</span>
+        </div>
+        <div class="kpi">
+          <span class="l">Avg conversion</span>
+          <span class="v">{{ totals().avgConversion | number:'1.1-1' }}<small>%</small></span>
+        </div>
+      </div>
+
+      <div style="display:grid; gap:24px; grid-template-columns:1fr 1fr; margin-bottom:32px;">
+        <div class="desk-section" style="margin-bottom:0;">
+          <h3>Sales by design</h3>
+          <app-donut-chart [data]="salesChart()" title="Sales by design" unit="sales" />
+        </div>
+        <div class="desk-section" style="margin-bottom:0;">
+          <h3>Views by design</h3>
+          <app-donut-chart [data]="viewsChart()" title="Views by design" unit="views" />
+        </div>
+      </div>
+
+      @if (analytics().length) {
+        <div class="desk-section">
+          <h3>Performance breakdown</h3>
+          <table class="news-table">
+            <thead>
+              <tr>
+                <th>Design</th>
+                <th class="r">Views</th>
+                <th class="r">Orders</th>
+                <th class="r">Conversion</th>
+                <th class="r">Revenue</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of analytics(); track row.designId) {
+                <tr>
+                  <td class="title-cell">{{ workflow.getDesignById(row.designId)?.title ?? row.designId }}</td>
+                  <td class="r">{{ row.views }}</td>
+                  <td class="r">{{ row.sales }}</td>
+                  <td class="r">{{ row.conversion | number:'1.1-1' }}%</td>
+                  <td class="r amt">{{ row.revenue | number:'1.0-0' }}<small>TND</small></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <p class="serif-italic" style="color:var(--pm-text-muted); font-size:15px; padding:24px 0;">No analytics data yet.</p>
+      }
+    }
+
+    <!-- ── PAYOUTS ─────────────────────────────────────────────── -->
+    @if (activeTab() === 'payouts') {
+
+      <div class="kpi-grid" style="margin-bottom:32px;">
+        <div class="kpi">
+          <span class="l">Available balance</span>
+          <span class="v">{{ payoutBalance() }}<small>TND</small></span>
+          <span class="delta">Min payout: {{ payoutThreshold() }} TND</span>
+        </div>
+        <div class="kpi">
+          <span class="l">Level</span>
+          <span class="v">{{ level() }}</span>
+          <span class="delta">Score: {{ salesScore() }}</span>
+        </div>
+        <div class="kpi">
+          <span class="l">Royalty / sale</span>
+          <span class="v">{{ royaltyPerSale() }}<small>TND</small></span>
+        </div>
+        <div class="kpi">
+          <span class="l">Total orders</span>
+          <span class="v">{{ totals().orders }}</span>
+        </div>
+      </div>
+
+      <div class="desk-section">
+        <h3>
+          Request payout
+          @if (canRequestPayout()) {
+            <em><button type="button" class="btn btn-clay" style="font-size:13px; padding:6px 16px;" (click)="requestPayout()">Request payout →</button></em>
           }
-        </div>
-
-        @if (payouts().length) {
-          <div style="display:grid; gap:0.875rem;">
-            @for (payout of payouts(); track payout.id) {
-              <div class="pm-panel" style="padding:1.25rem 1.5rem; display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
-                <div style="flex:1; min-width:0;">
-                  <p style="font-size:var(--pm-text-base); font-weight:700; color:var(--pm-text);">Ref: {{ payout.reference }}</p>
-                  <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted);">Due {{ payout.dueDate }}</p>
-                </div>
-                <span class="pm-heading" style="font-size:var(--pm-text-xl); font-weight:800; color:var(--pm-text);">{{ payout.amount }} TND</span>
-                <span class="pm-chip">{{ payout.status }}</span>
-              </div>
-            }
-          </div>
-        } @else {
-          <div class="pm-empty pm-panel" style="padding:3rem 1.5rem;">
-            <p style="font-size:var(--pm-text-sm); color:var(--pm-text-muted);">No payouts yet.</p>
-          </div>
+        </h3>
+        @if (!canRequestPayout()) {
+          <p class="serif-italic" style="color:var(--pm-text-muted); font-size:14px; margin-top:-8px; margin-bottom:16px;">Minimum {{ payoutThreshold() }} TND required to request a payout.</p>
         }
+        @if (payoutMsg()) {
+          <p class="serif-italic" style="font-size:13px; color:var(--pm-text-muted);">{{ payoutMsg() }}</p>
+        }
+      </div>
+
+      @if (payouts().length) {
+        <div class="desk-section">
+          <h3>Payout history</h3>
+          <table class="news-table">
+            <thead>
+              <tr>
+                <th>Reference</th>
+                <th class="r">Due date</th>
+                <th class="r">Amount</th>
+                <th class="r">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (payout of payouts(); track payout.id) {
+                <tr>
+                  <td class="id">{{ payout.reference }}</td>
+                  <td class="r"><span class="serif-italic" style="color:var(--pm-text-muted);">{{ payout.dueDate }}</span></td>
+                  <td class="r amt">{{ payout.amount }}<small>TND</small></td>
+                  <td class="r"><span class="status-pill">{{ payout.status }}</span></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <p class="serif-italic" style="color:var(--pm-text-muted); font-size:15px; padding:16px 0;">No payouts yet.</p>
       }
+    }
 
-      <!-- ── STOREFRONT SETTINGS (account + public storefront) ─ -->
-      @if (activeTab() === 'profile') {
+    <!-- ── STOREFRONT SETTINGS ─────────────────────────────────── -->
+    @if (activeTab() === 'profile') {
 
-        <!-- Account settings -->
-        <div class="pm-panel" style="padding:1.5rem;">
-          <h2 class="pm-heading" style="font-size:var(--pm-text-base); font-weight:700; color:var(--pm-text); margin-bottom:1.25rem;">Account settings</h2>
-          <div style="display:grid; gap:1rem; max-width:560px;">
-            <label class="pm-field">
-              <span class="pm-label">Display name</span>
-              <input class="pm-input" type="text" [value]="user()?.name ?? ''" (change)="auth.updateProfile({name: $any($event.target).value})" />
-            </label>
-            <label class="pm-field">
-              <span class="pm-label">Email</span>
-              <input class="pm-input" type="email" [value]="user()?.email ?? ''" (change)="auth.updateProfile({email: $any($event.target).value})" />
-            </label>
-            <label class="pm-field">
-              <span class="pm-label">Payout account</span>
-              <input class="pm-input" type="text" [value]="user()?.designerProfile?.payoutAccount ?? ''" (change)="auth.updateDesignerProfile({payoutAccount: $any($event.target).value})" placeholder="Bank / D17 account for royalties" />
-            </label>
+      <div class="desk-section">
+        <h3>Account settings</h3>
+        <div style="display:grid; gap:1rem; max-width:560px;">
+          <label class="pm-field">
+            <span class="pm-label">Display name</span>
+            <input class="pm-input" type="text" [value]="user()?.name ?? ''" (change)="auth.updateProfile({name: $any($event.target).value})" />
+          </label>
+          <label class="pm-field">
+            <span class="pm-label">Email</span>
+            <input class="pm-input" type="email" [value]="user()?.email ?? ''" (change)="auth.updateProfile({email: $any($event.target).value})" />
+          </label>
+          <label class="pm-field">
+            <span class="pm-label">Payout account</span>
+            <input class="pm-input" type="text" [value]="user()?.designerProfile?.payoutAccount ?? ''" (change)="auth.updateDesignerProfile({payoutAccount: $any($event.target).value})" placeholder="Bank / D17 account for royalties" />
+          </label>
+        </div>
+      </div>
+
+      <div class="desk-section">
+        <h3>
+          Public storefront
+          @if (user()) {
+            <em><a class="btn btn-ghost" style="font-size:13px; padding:4px 12px;" [routerLink]="['/storefront', user()!.id]">View →</a></em>
+          }
+        </h3>
+        <div style="display:grid; gap:1rem; max-width:560px;">
+          <label class="pm-field">
+            <span class="pm-label">Bio</span>
+            <textarea class="pm-input" rows="3" [value]="user()?.designerProfile?.bio ?? ''" (change)="auth.updateDesignerProfile({bio: $any($event.target).value})" placeholder="Tell customers about your work…" style="resize:vertical;"></textarea>
+          </label>
+          <label class="pm-field">
+            <span class="pm-label">Profile picture URL</span>
+            <input class="pm-input" type="text" [value]="user()?.designerProfile?.profilePicture ?? ''" (change)="auth.updateDesignerProfile({profilePicture: $any($event.target).value})" placeholder="https://…" />
+          </label>
+          <label class="pm-field">
+            <span class="pm-label">Banner image URL</span>
+            <input class="pm-input" type="text" [value]="user()?.designerProfile?.banner ?? ''" (change)="auth.updateDesignerProfile({banner: $any($event.target).value})" placeholder="https://…" />
+          </label>
+          <label class="pm-field">
+            <span class="pm-label">Portfolio links (one per line)</span>
+            <textarea class="pm-input" rows="4" [ngModel]="profileLinks()" (ngModelChange)="profileLinks.set($event)" placeholder="https://…" style="resize:vertical;"></textarea>
+          </label>
+          <div>
+            <button type="button" class="btn btn-clay" (click)="saveProfile()">Save storefront</button>
           </div>
         </div>
+      </div>
+    }
 
-        <!-- Public storefront -->
-        <div class="pm-panel" style="padding:1.5rem;">
-          <div style="display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap; margin-bottom:1.25rem;">
-            <h2 class="pm-heading" style="font-size:var(--pm-text-base); font-weight:700; color:var(--pm-text);">Public storefront</h2>
-            @if (user()) {
-              <a class="pm-btn pm-btn-secondary pm-btn-sm" [routerLink]="['/storefront', user()!.id]">View my storefront →</a>
-            }
-          </div>
-          <div style="display:grid; gap:1rem; max-width:560px;">
-            <label class="pm-field">
-              <span class="pm-label">Bio</span>
-              <textarea class="pm-input" rows="3" [value]="user()?.designerProfile?.bio ?? ''" (change)="auth.updateDesignerProfile({bio: $any($event.target).value})" placeholder="Tell customers about your work…" style="resize:vertical;"></textarea>
-            </label>
-            <label class="pm-field">
-              <span class="pm-label">Profile picture URL</span>
-              <input class="pm-input" type="text" [value]="user()?.designerProfile?.profilePicture ?? ''" (change)="auth.updateDesignerProfile({profilePicture: $any($event.target).value})" placeholder="https://…" />
-            </label>
-            <label class="pm-field">
-              <span class="pm-label">Banner image URL</span>
-              <input class="pm-input" type="text" [value]="user()?.designerProfile?.banner ?? ''" (change)="auth.updateDesignerProfile({banner: $any($event.target).value})" placeholder="https://…" />
-            </label>
-            <label class="pm-field">
-              <span class="pm-label">Portfolio links (one per line)</span>
-              <textarea class="pm-input" rows="4" [ngModel]="profileLinks()" (ngModelChange)="profileLinks.set($event)" placeholder="https://…" style="resize:vertical;"></textarea>
-            </label>
-            <div>
-              <button type="button" class="pm-btn pm-btn-primary" (click)="saveProfile()">Save storefront</button>
-            </div>
-          </div>
-        </div>
-      }
-
-    </div>
   </div>
 
 </div>

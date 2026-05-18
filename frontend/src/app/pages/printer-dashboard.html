@@ -1,4 +1,4 @@
-<div class="pm-dashboard">
+<div class="desk">
 
   <!-- Sidebar -->
   <app-dashboard-sidebar
@@ -11,441 +11,445 @@
   />
 
   <!-- Main -->
-  <div class="pm-dashboard-main">
+  <div class="desk-main">
 
-    <!-- Section header -->
-    <div class="pm-dash-header">
-      <button type="button" class="pm-sidebar-mobile-btn" style="align-items:center; justify-content:center; background:transparent; cursor:pointer;" (click)="sidebarOpen.set(true)">
+    <!-- Editorial header -->
+    <div class="desk-header">
+      <button type="button" class="desk-hamburger" (click)="sidebarOpen.set(true)" aria-label="Open menu">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
       </button>
       <div style="flex:1; min-width:0;">
         @switch (activeTab()) {
-          @case ('overview')  { <h1 class="pm-heading" style="font-size:var(--pm-text-lg); font-weight:800; color:var(--pm-text);">Overview</h1> }
-          @case ('requests')  { <h1 class="pm-heading" style="font-size:var(--pm-text-lg); font-weight:800; color:var(--pm-text);">Order requests</h1> }
-          @case ('queue')     { <h1 class="pm-heading" style="font-size:var(--pm-text-lg); font-weight:800; color:var(--pm-text);">Print queue</h1> }
-          @case ('products')  { <h1 class="pm-heading" style="font-size:var(--pm-text-lg); font-weight:800; color:var(--pm-text);">Products</h1> }
-          @case ('analytics') { <h1 class="pm-heading" style="font-size:var(--pm-text-lg); font-weight:800; color:var(--pm-text);">Analytics</h1> }
-          @case ('earnings')  { <h1 class="pm-heading" style="font-size:var(--pm-text-lg); font-weight:800; color:var(--pm-text);">Earnings</h1> }
-          @case ('account')   { <h1 class="pm-heading" style="font-size:var(--pm-text-lg); font-weight:800; color:var(--pm-text);">Account settings</h1> }
+          @case ('overview')  { <h1 class="h-title">Overview<br /><em>desk.</em></h1> }
+          @case ('requests')  { <h1 class="h-title">Order requests<br /><em>inbox.</em></h1> }
+          @case ('queue')     { <h1 class="h-title">Print queue<br /><em>press.</em></h1> }
+          @case ('products')  { <h1 class="h-title">Products<br /><em>catalog.</em></h1> }
+          @case ('analytics') { <h1 class="h-title">Analytics<br /><em>numbers.</em></h1> }
+          @case ('earnings')  { <h1 class="h-title">Earnings<br /><em>ledger.</em></h1> }
+          @case ('account')   { <h1 class="h-title">Account<br /><em>settings.</em></h1> }
         }
       </div>
-      <div style="display:flex; align-items:center; gap:0.75rem; flex-shrink:0;">
-        <!-- Availability toggle (spec: set OFF when busy instead of rejecting) -->
-        <label class="pm-field" style="margin:0;">
-          <select class="pm-select" style="font-size:var(--pm-text-sm);" [ngModel]="availability()" (ngModelChange)="setAvailability($event)">
-            <option value="available">🟢 Available</option>
-            <option value="busy">🟠 Busy</option>
-            <option value="holiday">⚪ On holiday</option>
+      <div class="h-meta">
+        <span class="meta-name">{{ user()?.name ?? 'Pressroom' }}</span>
+        <span class="meta-role" style="display:flex; align-items:center; gap:8px;">
+          <select class="pm-select" style="font-size:11px; padding:2px 6px; border:1px solid var(--pm-rule); background:transparent;" [ngModel]="availability()" (ngModelChange)="setAvailability($event)">
+            <option value="available">Available</option>
+            <option value="busy">Busy</option>
+            <option value="holiday">On holiday</option>
           </select>
-        </label>
-        @if (requests().length) {
-          <span class="pm-chip" style="background:var(--pm-primary-soft); color:var(--pm-primary); border-color:rgba(199,74,43,0.2);">
-            {{ requests().length }} request{{ requests().length === 1 ? '' : 's' }}
-          </span>
-        }
-        <span class="pm-chip">{{ user()?.name ?? 'Pressroom' }}</span>
+          @if (requests().length) {
+            <span style="font-family:var(--pm-font-display); font-size:10px; font-weight:800; background:var(--pm-clay); color:#fff; padding:1px 8px; border-radius:999px;">{{ requests().length }}</span>
+          }
+        </span>
       </div>
     </div>
 
-    <!-- Section body -->
-    <div class="pm-dash-body">
+    @if (error()) {
+      <div style="border:1px solid var(--pm-danger); color:var(--pm-danger); padding:10px 14px; margin-bottom:20px; font-size:13px;">{{ error() }}</div>
+    }
 
-      @if (error()) {
-        <div style="background:var(--pm-danger-soft); border:1px solid rgba(185,28,28,0.2); border-radius:var(--pm-radius); padding:0.875rem 1rem; font-size:var(--pm-text-sm); color:var(--pm-danger);">{{ error() }}</div>
-      }
+    <!-- ── OVERVIEW ──────────────────────────────────────────── -->
+    @if (activeTab() === 'overview') {
 
-      <!-- ── OVERVIEW ──────────────────────────────────── -->
-      @if (activeTab() === 'overview') {
-
-        <div class="pm-stat-grid">
-          <div class="pm-stat-card">
-            <span class="pm-stat-label">Pending requests</span>
-            <span class="pm-stat-value">{{ requests().length }}</span>
-          </div>
-          <div class="pm-stat-card">
-            <span class="pm-stat-label">In fulfillment</span>
-            <span class="pm-stat-value">{{ fulfillmentLines().length }}</span>
-          </div>
-          <div class="pm-stat-card">
-            <span class="pm-stat-label">Total revenue</span>
-            <span class="pm-stat-value">{{ totals().revenue }} <span style="font-size:var(--pm-text-sm); font-weight:600;">TND</span></span>
-          </div>
-          <div class="pm-stat-card">
-            <span class="pm-stat-label">Rating</span>
-            <span class="pm-stat-value">{{ totals().rating | number:'1.1-1' }} <span style="font-size:var(--pm-text-sm);">★</span></span>
-          </div>
+      <div class="kpi-grid">
+        <div class="kpi">
+          <span class="l">Pending requests</span>
+          <span class="v">{{ requests().length }}</span>
         </div>
-
-        <!-- Requests preview -->
-        <div class="pm-panel" style="padding:1.5rem;">
-          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.25rem;">
-            <h2 class="pm-heading" style="font-size:var(--pm-text-base); font-weight:700; color:var(--pm-text);">Order requests awaiting your decision</h2>
-            <button type="button" class="pm-btn pm-btn-ghost pm-btn-sm" (click)="activeTab.set('requests')">View all →</button>
-          </div>
-          @if (requests().length) {
-            <div style="display:grid; gap:0.625rem;">
-              @for (order of requests().slice(0, 4); track order.id) {
-                <div style="display:flex; align-items:center; gap:1rem; padding:0.75rem 1rem; background:var(--pm-surface-alt); border:1px solid var(--pm-border); border-radius:var(--pm-radius);">
-                  <div style="flex:1; min-width:0;">
-                    <p style="font-size:var(--pm-text-sm); font-weight:700; color:var(--pm-text);">Request #{{ order.id }}</p>
-                    <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted);">{{ order.lines.length }} item{{ order.lines.length === 1 ? '' : 's' }} · {{ order.total }} TND</p>
-                  </div>
-                  <span class="pm-chip">Requested</span>
-                </div>
-              }
-            </div>
-          } @else {
-            <div class="pm-empty">
-              <p style="font-size:var(--pm-text-sm); color:var(--pm-text-muted);">No requests right now. Keep your availability on to receive orders.</p>
-            </div>
-          }
+        <div class="kpi">
+          <span class="l">In fulfillment</span>
+          <span class="v">{{ fulfillmentLines().length }}</span>
         </div>
-      }
+        <div class="kpi">
+          <span class="l">Total revenue</span>
+          <span class="v">{{ totals().revenue }}<small>TND</small></span>
+        </div>
+        <div class="kpi">
+          <span class="l">Rating</span>
+          <span class="v">{{ totals().rating | number:'1.1-1' }}<small>★</small></span>
+        </div>
+      </div>
 
-      <!-- ── ORDER REQUESTS (accept / reject) ───────────── -->
-      @if (activeTab() === 'requests') {
+      <div class="desk-section">
+        <h3>
+          Order requests
+          <em><button type="button" class="btn btn-ghost" style="font-size:13px; padding:4px 10px;" (click)="activeTab.set('requests')">View all →</button></em>
+        </h3>
         @if (requests().length) {
-          <div style="display:grid; gap:1rem;">
-            @for (order of requests(); track order.id) {
-              <div class="pm-panel" style="padding:1.25rem 1.5rem;">
-                <div style="display:flex; align-items:flex-start; gap:1rem; flex-wrap:wrap; margin-bottom:1rem;">
-                  <div style="flex:1; min-width:0;">
-                    <p style="font-size:var(--pm-text-base); font-weight:700; color:var(--pm-text);">Request #{{ order.id }}</p>
-                    <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted);">{{ order.createdAt }} · Ships to {{ order.shippingAddress }}</p>
-                  </div>
-                  <span class="pm-heading" style="font-size:var(--pm-text-lg); font-weight:800; color:var(--pm-text);">{{ order.total }} TND</span>
-                </div>
-
-                <div style="display:grid; gap:0.5rem; margin-bottom:1rem;">
-                  @for (line of order.lines; track line.id) {
-                    <div style="display:flex; gap:0.75rem; align-items:center; padding:0.625rem 0.875rem; background:var(--pm-surface-alt); border:1px solid var(--pm-border); border-radius:var(--pm-radius);">
-                      <div style="width:2.5rem; height:2.5rem; border-radius:6px; overflow:hidden; flex-shrink:0; background:var(--pm-border);">
-                        <img [src]="line.designImage" [alt]="line.designTitle" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.display='none'" />
-                      </div>
-                      <div style="flex:1; min-width:0;">
-                        <p style="font-size:var(--pm-text-sm); font-weight:600; color:var(--pm-text);">{{ line.designTitle }}</p>
-                        <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted);">{{ line.productName }} · {{ line.color }} · {{ line.size }}</p>
-                      </div>
-                    </div>
-                  }
-                </div>
-
-                <div style="display:flex; gap:0.75rem; border-top:1px solid var(--pm-border); padding-top:1rem;">
-                  <button type="button" class="pm-btn pm-btn-primary" style="flex:1; justify-content:center;" (click)="accept(order.id)">Accept request</button>
-                  <button type="button" class="pm-btn pm-btn-danger" (click)="reject(order.id)">Reject</button>
-                </div>
-                <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted); margin-top:0.625rem;">
-                  Accepting commits you to fulfill this order once the customer pays. Excessive rejection reduces your ranking — set availability to Busy when you can't take work.
-                </p>
-              </div>
-            }
-          </div>
-        } @else {
-          <div class="pm-empty pm-panel" style="padding:3rem 1.5rem;">
-            <p style="font-size:var(--pm-text-sm); font-weight:600; color:var(--pm-text);">No pending requests</p>
-            <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted); margin-top:0.375rem;">New order requests appear here for you to accept or reject.</p>
-          </div>
-        }
-
-        @if (canceledOrders().length) {
-          <div class="pm-panel" style="padding:1.25rem 1.5rem; margin-top:1.25rem;">
-            <h3 class="pm-heading" style="font-size:var(--pm-text-sm); font-weight:700; color:var(--pm-text); margin-bottom:0.875rem;">Canceled by customer</h3>
-            <div style="display:grid; gap:0.5rem;">
-              @for (order of canceledOrders(); track order.id) {
-                <div style="display:flex; align-items:center; gap:0.75rem; padding:0.625rem 0.875rem; background:var(--pm-surface-alt); border:1px solid var(--pm-border); border-radius:var(--pm-radius);">
-                  <div style="flex:1; min-width:0;">
-                    <p style="font-size:var(--pm-text-sm); font-weight:600; color:var(--pm-text);">Order #{{ order.id }}</p>
-                    <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted);">{{ order.lines.length }} item(s) · {{ order.total }} TND</p>
-                  </div>
-                  <span class="pm-chip" style="background:var(--pm-danger-soft); color:var(--pm-danger); border-color:rgba(185,28,28,0.2);">Canceled by customer</span>
-                </div>
+          <table class="news-table">
+            <thead>
+              <tr>
+                <th>Request</th>
+                <th class="r">Items</th>
+                <th class="r">Total</th>
+                <th class="r">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (order of requests().slice(0, 4); track order.id) {
+                <tr>
+                  <td class="id">#{{ order.id }}</td>
+                  <td class="r">{{ order.lines.length }}</td>
+                  <td class="r amt">{{ order.total }}<small>TND</small></td>
+                  <td class="r"><span class="status-pill pending">Requested</span></td>
+                </tr>
               }
-            </div>
-          </div>
+            </tbody>
+          </table>
+        } @else {
+          <p class="serif-italic" style="color:var(--pm-text-muted); font-size:15px; padding:24px 0;">No requests right now. Keep your availability on to receive orders.</p>
         }
-      }
+      </div>
+    }
 
-      <!-- ── PRINT QUEUE (paid orders to fulfill) ───────── -->
-      @if (activeTab() === 'queue') {
-        @if (fulfillmentLines().length) {
-          <div style="display:grid; gap:1rem;">
-            @for (line of fulfillmentLines(); track line.id) {
-              <div class="pm-panel" style="padding:1.25rem 1.5rem;">
-                <div style="display:flex; align-items:flex-start; gap:1rem; flex-wrap:wrap;">
-                  <div style="width:3.5rem; height:3.5rem; border-radius:8px; overflow:hidden; flex-shrink:0; background:var(--pm-border);">
-                    <img [src]="line.designImage" [alt]="line.designTitle" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.display='none'" />
-                  </div>
+    <!-- ── ORDER REQUESTS ─────────────────────────────────────── -->
+    @if (activeTab() === 'requests') {
+      @if (requests().length) {
+        <div class="desk-section">
+          <h3>Awaiting your decision</h3>
+          <div style="display:grid; gap:16px;">
+            @for (order of requests(); track order.id) {
+              <div style="border:1px solid var(--pm-rule); padding:20px;">
+                <div style="display:flex; align-items:flex-start; gap:1rem; flex-wrap:wrap; margin-bottom:14px;">
                   <div style="flex:1; min-width:0;">
-                    <p style="font-size:var(--pm-text-base); font-weight:700; color:var(--pm-text);">{{ line.designTitle }}</p>
-                    <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted);">{{ line.productName }} · {{ line.color }} · Size {{ line.size }}</p>
-                    <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted); margin-top:0.125rem;">Order #{{ line.orderId }} · {{ line.price }} TND</p>
+                    <p style="font-family:var(--pm-font-display); font-weight:700; font-size:18px; letter-spacing:-0.02em; color:var(--pm-ink);">Request #{{ order.id }}</p>
+                    <p class="serif-italic" style="font-size:13px; color:var(--pm-text-muted);">{{ order.createdAt }} · Ships to {{ order.shippingAddress }}</p>
                   </div>
-                  <div style="display:flex; align-items:center; gap:0.75rem; flex-shrink:0;">
-                    <span class="pm-chip">{{ line.status }}</span>
-                    @if (nextStep(line.status); as next) {
-                      <button type="button" class="pm-btn pm-btn-primary pm-btn-sm" (click)="advance(line.orderId, line.id)">
-                        Mark {{ next }}
-                      </button>
-                    } @else {
-                      <span class="pm-chip" style="background:var(--pm-success-soft); color:var(--pm-success); border-color:rgba(21,128,61,0.2);">Completed</span>
-                    }
-                  </div>
+                  <p style="font-family:var(--pm-font-display); font-weight:800; font-size:24px; letter-spacing:-0.03em; color:var(--pm-ink);">{{ order.total }} <span style="font-size:14px; font-weight:600; color:var(--pm-text-muted);">TND</span></p>
                 </div>
+
+                <table class="news-table" style="margin-bottom:14px;">
+                  <tbody>
+                    @for (line of order.lines; track line.id) {
+                      <tr>
+                        <td class="title-cell">{{ line.designTitle }}<small>{{ line.productName }}</small></td>
+                        <td>{{ line.color }} · {{ line.size }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+
+                <div style="display:flex; gap:10px; border-top:1px solid var(--pm-rule); padding-top:14px;">
+                  <button type="button" class="btn btn-clay" style="flex:1; justify-content:center;" (click)="accept(order.id)">Accept request</button>
+                  <button type="button" class="btn btn-ghost" style="color:var(--pm-danger);" (click)="reject(order.id)">Reject</button>
+                </div>
+                <p class="serif-italic" style="font-size:12px; color:var(--pm-text-muted); margin-top:10px;">Accepting commits you to fulfill this order once the customer pays. Excessive rejection reduces your ranking.</p>
               </div>
             }
           </div>
-        } @else {
-          <div class="pm-empty pm-panel" style="padding:3rem 1.5rem;">
-            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 1rem; opacity:0.3;" aria-hidden="true"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-            <p style="font-size:var(--pm-text-sm); font-weight:600; color:var(--pm-text);">Nothing to fulfill yet</p>
-            <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted); margin-top:0.375rem;">Accepted orders appear here once the customer has paid.</p>
-          </div>
-        }
+        </div>
+      } @else {
+        <div class="desk-section">
+          <h3>Awaiting your decision</h3>
+          <p class="serif-italic" style="color:var(--pm-text-muted); font-size:15px; padding:24px 0;">No pending requests. New order requests appear here for you to accept or reject.</p>
+        </div>
       }
 
-      <!-- ── PRODUCTS ───────────────────────────────────── -->
-      @if (activeTab() === 'products') {
+      @if (canceledOrders().length) {
+        <div class="desk-section">
+          <h3>Canceled by customer</h3>
+          <table class="news-table">
+            <tbody>
+              @for (order of canceledOrders(); track order.id) {
+                <tr>
+                  <td class="id">#{{ order.id }}</td>
+                  <td>{{ order.lines.length }} item(s)</td>
+                  <td class="r amt">{{ order.total }}<small>TND</small></td>
+                  <td class="r"><span class="status-pill" style="color:var(--pm-danger); border-color:var(--pm-danger);">Canceled</span></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    }
 
-        <!-- Fulfillment setup (spec: methods + processing time) -->
-        <div class="pm-panel" style="padding:1.5rem;">
-          <h2 class="pm-heading" style="font-size:var(--pm-text-base); font-weight:700; color:var(--pm-text); margin-bottom:1rem;">Fulfillment setup</h2>
-          <p class="pm-label" style="margin-bottom:0.5rem;">Printing methods</p>
-          <div style="display:flex; flex-wrap:wrap; gap:0.75rem; margin-bottom:1.25rem;">
+    <!-- ── PRINT QUEUE ─────────────────────────────────────────── -->
+    @if (activeTab() === 'queue') {
+      @if (fulfillmentLines().length) {
+        <div class="desk-section">
+          <h3>Active queue</h3>
+          <table class="news-table">
+            <thead>
+              <tr>
+                <th>Design / product</th>
+                <th>Order</th>
+                <th class="r">Price</th>
+                <th class="r">Status</th>
+                <th class="r">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (line of fulfillmentLines(); track line.id) {
+                <tr>
+                  <td class="title-cell">{{ line.designTitle }}<small>{{ line.productName }} · {{ line.color }} · {{ line.size }}</small></td>
+                  <td class="serif-italic" style="color:var(--pm-text-muted); font-size:13px;">#{{ line.orderId }}</td>
+                  <td class="r amt">{{ line.price }}<small>TND</small></td>
+                  <td class="r"><span class="status-pill production">{{ line.status }}</span></td>
+                  <td class="r">
+                    @if (nextStep(line.status); as next) {
+                      <button type="button" class="btn btn-clay" style="font-size:12px; padding:4px 12px;" (click)="advance(line.orderId, line.id)">Mark {{ next }}</button>
+                    } @else {
+                      <span class="status-pill delivered">Completed</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <div class="desk-section">
+          <h3>Active queue</h3>
+          <p class="serif-italic" style="color:var(--pm-text-muted); font-size:15px; padding:24px 0;">Nothing to fulfill yet. Accepted orders appear here once the customer has paid.</p>
+        </div>
+      }
+    }
+
+    <!-- ── PRODUCTS ────────────────────────────────────────────── -->
+    @if (activeTab() === 'products') {
+
+      <div class="desk-section">
+        <h3>Fulfillment setup</h3>
+        <div style="margin-bottom:20px;">
+          <p class="pm-label" style="margin-bottom:8px;">Printing methods</p>
+          <div style="display:flex; flex-wrap:wrap; gap:12px;">
             @for (m of allMethods; track m) {
-              <label style="display:inline-flex; align-items:center; gap:0.375rem; font-size:var(--pm-text-sm); color:var(--pm-text); cursor:pointer;">
+              <label style="display:inline-flex; align-items:center; gap:0.375rem; font-size:14px; color:var(--pm-ink); cursor:pointer; font-family:var(--pm-font-sans);">
                 <input type="checkbox" [checked]="methods().includes(m)" (change)="toggleMethod(m, $any($event.target).checked)" />
                 {{ m }}
               </label>
             }
           </div>
-          <label class="pm-field" style="max-width:240px;">
-            <span class="pm-label">Processing time (days)</span>
-            <input class="pm-input" type="number" min="1" [value]="processingDays()" (change)="saveProcessingDays($any($event.target).value)" />
-          </label>
-          @if (settingsMsg()) {
-            <p style="font-size:var(--pm-text-xs); color:var(--pm-success); margin-top:0.625rem;">{{ settingsMsg() }}</p>
-          }
         </div>
+        <label class="pm-field" style="max-width:240px;">
+          <span class="pm-label">Processing time (days)</span>
+          <input class="pm-input" type="number" min="1" [value]="processingDays()" (change)="saveProcessingDays($any($event.target).value)" />
+        </label>
+        @if (settingsMsg()) {
+          <p class="serif-italic" style="font-size:12px; color:var(--pm-success); margin-top:8px;">{{ settingsMsg() }}</p>
+        }
+      </div>
 
-        <!-- Global catalog opt-in (printers choose + price predefined products only) -->
-        <div class="pm-panel" style="padding:1.5rem;">
-          <h2 class="pm-heading" style="font-size:var(--pm-text-base); font-weight:700; color:var(--pm-text); margin-bottom:0.5rem;">
-            Products you print
-          </h2>
-          <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted); margin-bottom:1.25rem; line-height:1.6;">
-            The product catalog is managed by Printymand. Tick the products you can fulfill and set
-            your production price for each. Need a product type that isn't listed? Contact the admins
-            and they'll add it to the catalog.
-          </p>
+      <div class="desk-section">
+        <h3>Products you print</h3>
+        <p class="serif-italic" style="font-size:13px; color:var(--pm-text-muted); margin-top:-10px; margin-bottom:20px; line-height:1.7;">Tick the products you can fulfill and set your production price. The product catalog is managed by Printymand.</p>
 
-          <div style="display:grid; gap:0.875rem;">
-            @for (product of catalog(); track product.id) {
-              <div style="padding:1rem; background:var(--pm-surface-alt); border:1px solid var(--pm-border); border-radius:var(--pm-radius);">
-                <div style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
-                  <div style="width:3rem; height:3rem; border-radius:var(--pm-radius); overflow:hidden; flex-shrink:0; background:var(--pm-border);">
-                    <img [src]="product.images[0]" [alt]="product.name" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.display='none'" />
-                  </div>
-                  <div style="flex:1; min-width:140px;">
-                    <p style="font-size:var(--pm-text-sm); font-weight:700; color:var(--pm-text);">{{ product.name }}</p>
-                    <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted);">{{ product.category }} · sizes: {{ product.sizes.join(', ') }} · min {{ floorFor(product.id) }} TND</p>
-                  </div>
-                  <label style="display:inline-flex; align-items:center; gap:0.4rem; font-size:var(--pm-text-sm); color:var(--pm-text); cursor:pointer; flex-shrink:0;">
-                    <input type="checkbox" [checked]="isSupported(product.id)" (change)="toggleSupport(product.id, $any($event.target).checked)" />
-                    I print this
-                  </label>
+        <div style="display:grid; gap:12px;">
+          @for (product of catalog(); track product.id) {
+            <div style="border:1px solid var(--pm-rule);">
+              <div style="display:flex; align-items:center; gap:1rem; padding:14px 16px; flex-wrap:wrap;">
+                <div style="width:3rem; height:3rem; overflow:hidden; flex-shrink:0; background:var(--pm-surface-alt);">
+                  <img [src]="product.images[0]" [alt]="product.name" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.display='none'" />
                 </div>
-
-                @if (isSupported(product.id)) {
-                  <div style="display:flex; gap:1rem; flex-wrap:wrap; align-items:flex-end; margin-top:0.875rem; padding-top:0.875rem; border-top:1px solid var(--pm-border);">
-                    <label class="pm-field" style="margin:0; max-width:170px;">
-                      <span class="pm-label">Your price (TND)</span>
-                      <input class="pm-input" type="number" [min]="floorFor(product.id)" [value]="priceFor(product.id)" (input)="setPriceDraft(product.id, +$any($event.target).value)" />
-                    </label>
-                    <label class="pm-field" style="margin:0; flex:1; min-width:220px;">
-                      <span class="pm-label">Your description for this product</span>
-                      <input class="pm-input" type="text" [value]="descFor(product.id)" (input)="setDescDraft(product.id, $any($event.target).value)" placeholder="e.g. DTF print, premium cotton, 48h turnaround" />
-                    </label>
-                    <label style="display:inline-flex; align-items:center; gap:0.4rem; font-size:var(--pm-text-xs); color:var(--pm-text-muted); cursor:pointer;">
-                      <input type="checkbox" [checked]="offeringFor(product.id)?.available !== false" (change)="toggleOfferingAvailable(product.id, $any($event.target).checked)" />
-                      Available
-                    </label>
-                    <button type="button" class="pm-btn pm-btn-primary pm-btn-sm" (click)="saveOffering(product.id)">Save</button>
-                  </div>
-                  @if (offeringMsg()[product.id]) {
-                    <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted); margin-top:0.5rem;">{{ offeringMsg()[product.id] }}</p>
-                  }
-                }
+                <div style="flex:1; min-width:140px;">
+                  <p style="font-family:var(--pm-font-display); font-weight:700; font-size:15px; color:var(--pm-ink);">{{ product.name }}</p>
+                  <p class="serif-italic" style="font-size:12px; color:var(--pm-text-muted);">{{ product.category }} · sizes: {{ product.sizes.join(', ') }} · min {{ floorFor(product.id) }} TND</p>
+                </div>
+                <label style="display:inline-flex; align-items:center; gap:0.4rem; font-size:14px; color:var(--pm-ink); cursor:pointer; flex-shrink:0;">
+                  <input type="checkbox" [checked]="isSupported(product.id)" (change)="toggleSupport(product.id, $any($event.target).checked)" />
+                  I print this
+                </label>
               </div>
-            }
-          </div>
-        </div>
-      }
 
-      <!-- ── ANALYTICS ──────────────────────────────────── -->
-      @if (activeTab() === 'analytics') {
-        <div class="pm-stat-grid">
-          <div class="pm-stat-card">
-            <span class="pm-stat-label">Confirmed orders</span>
-            <span class="pm-stat-value">{{ confirmedCount() }}</span>
-          </div>
-          <div class="pm-stat-card">
-            <span class="pm-stat-label">Delivered</span>
-            <span class="pm-stat-value">{{ deliveredCount() }}</span>
-          </div>
-          <div class="pm-stat-card">
-            <span class="pm-stat-label">Revenue</span>
-            <span class="pm-stat-value">{{ totals().revenue }} <span style="font-size:var(--pm-text-sm); font-weight:600;">TND</span></span>
-          </div>
-          <div class="pm-stat-card">
-            <span class="pm-stat-label">Customers</span>
-            <span class="pm-stat-value">{{ customersCount() }}</span>
-          </div>
-        </div>
-
-        <div class="pm-stat-grid">
-          <div class="pm-stat-card">
-            <span class="pm-stat-label">Avg rating</span>
-            <span class="pm-stat-value">{{ totals().rating | number:'1.1-1' }} ★</span>
-          </div>
-          <div class="pm-stat-card">
-            <span class="pm-stat-label">Fulfillment rate</span>
-            <span class="pm-stat-value">{{ totals().fulfillmentRate | number:'1.0-0' }}%</span>
-          </div>
-          <div class="pm-stat-card">
-            <span class="pm-stat-label">Level</span>
-            <span class="pm-stat-value">{{ level() }}</span>
-          </div>
-          <div class="pm-stat-card">
-            <span class="pm-stat-label">Products offered</span>
-            <span class="pm-stat-value">{{ products().length }}</span>
-          </div>
-        </div>
-
-        <div class="grid gap-5 lg:grid-cols-2">
-          <div class="pm-panel" style="padding:1.5rem;">
-            <h2 class="pm-heading" style="font-size:var(--pm-text-base); font-weight:700; color:var(--pm-text); margin-bottom:1rem;">Orders by status</h2>
-            <app-donut-chart [data]="statusChart()" title="Orders by status" unit="orders" />
-          </div>
-          <div class="pm-panel" style="padding:1.5rem;">
-            <h2 class="pm-heading" style="font-size:var(--pm-text-base); font-weight:700; color:var(--pm-text); margin-bottom:1rem;">Product mix</h2>
-            <app-donut-chart [data]="productMixChart()" title="Product mix" unit="units" />
-          </div>
-        </div>
-      }
-
-      <!-- ── EARNINGS ───────────────────────────────────── -->
-      @if (activeTab() === 'earnings') {
-        <div class="pm-stat-grid" style="margin-bottom:0;">
-          <div class="pm-stat-card">
-            <span class="pm-stat-label">Total revenue</span>
-            <span class="pm-stat-value">{{ totals().revenue }} <span style="font-size:var(--pm-text-sm); font-weight:600;">TND</span></span>
-            <span class="pm-stat-hint">Paid orders, production price</span>
-          </div>
-          <div class="pm-stat-card">
-            <span class="pm-stat-label">Fulfillment rate</span>
-            <span class="pm-stat-value">{{ totals().fulfillmentRate | number:'1.0-0' }}%</span>
-          </div>
-          <div class="pm-stat-card">
-            <span class="pm-stat-label">Avg rating</span>
-            <span class="pm-stat-value">{{ totals().rating | number:'1.1-1' }} ★</span>
-          </div>
-          <div class="pm-stat-card">
-            <span class="pm-stat-label">In fulfillment</span>
-            <span class="pm-stat-value">{{ fulfillmentLines().length }}</span>
-          </div>
-        </div>
-
-        <div class="pm-panel" style="padding:1.5rem;">
-          <div style="display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:1rem;">
-            <div>
-              <p class="pm-stat-label">Pressroom level</p>
-              <p class="pm-heading" style="font-size:var(--pm-text-lg); font-weight:800; color:var(--pm-text);">{{ level() }}</p>
-            </div>
-            <div style="text-align:right;">
-              <p class="pm-stat-label">Fulfillment score</p>
-              <p class="pm-heading" style="font-size:var(--pm-text-lg); font-weight:800; color:var(--pm-text);">{{ fulfillmentScore() }}</p>
-            </div>
-          </div>
-          <p style="font-size:var(--pm-text-sm); color:var(--pm-text-muted); line-height:1.7;">
-            You earn the full production price you set per product. The platform adds its
-            own fixed margin on top — it does not take a share of your revenue. Earnings are
-            released automatically when an order is delivered.
-          </p>
-        </div>
-
-        <div class="pm-panel" style="padding:1.5rem;">
-          <h2 class="pm-heading" style="font-size:var(--pm-text-base); font-weight:700; color:var(--pm-text); margin-bottom:1rem;">Released payouts</h2>
-          @if (payouts().length) {
-            <div style="display:grid; gap:0.5rem;">
-              @for (p of payouts(); track p.id) {
-                <div style="display:flex; align-items:center; gap:1rem; padding:0.625rem 0.875rem; background:var(--pm-surface-alt); border:1px solid var(--pm-border); border-radius:var(--pm-radius);">
-                  <div style="flex:1; min-width:0;">
-                    <p style="font-size:var(--pm-text-sm); font-weight:600; color:var(--pm-text);">Order {{ p.orderId }}</p>
-                    <p style="font-size:var(--pm-text-xs); color:var(--pm-text-muted);">{{ p.releasedAt | slice:0:10 }}</p>
-                  </div>
-                  <span class="pm-heading" style="font-size:var(--pm-text-base); font-weight:800; color:var(--pm-text);">{{ p.amount }} TND</span>
-                  <span class="pm-chip" style="background:var(--pm-success-soft); color:var(--pm-success); border-color:rgba(21,128,61,0.2);">{{ p.status }}</span>
+              @if (isSupported(product.id)) {
+                <div style="display:flex; gap:1rem; flex-wrap:wrap; align-items:flex-end; padding:14px 16px; border-top:1px solid var(--pm-rule); background:var(--pm-surface-alt);">
+                  <label class="pm-field" style="margin:0; max-width:170px;">
+                    <span class="pm-label">Your price (TND)</span>
+                    <input class="pm-input" type="number" [min]="floorFor(product.id)" [value]="priceFor(product.id)" (input)="setPriceDraft(product.id, +$any($event.target).value)" />
+                  </label>
+                  <label class="pm-field" style="margin:0; flex:1; min-width:220px;">
+                    <span class="pm-label">Description</span>
+                    <input class="pm-input" type="text" [value]="descFor(product.id)" (input)="setDescDraft(product.id, $any($event.target).value)" placeholder="e.g. DTF print, premium cotton, 48h turnaround" />
+                  </label>
+                  <label style="display:inline-flex; align-items:center; gap:0.4rem; font-size:12px; color:var(--pm-text-muted); cursor:pointer;">
+                    <input type="checkbox" [checked]="offeringFor(product.id)?.available !== false" (change)="toggleOfferingAvailable(product.id, $any($event.target).checked)" />
+                    Available
+                  </label>
+                  <button type="button" class="btn btn-clay" style="font-size:13px; padding:6px 16px;" (click)="saveOffering(product.id)">Save</button>
                 </div>
+                @if (offeringMsg()[product.id]) {
+                  <p class="serif-italic" style="font-size:12px; color:var(--pm-text-muted); padding:6px 16px 10px;">{{ offeringMsg()[product.id] }}</p>
+                }
               }
             </div>
-          } @else {
-            <p style="font-size:var(--pm-text-sm); color:var(--pm-text-muted);">No payouts released yet. Payouts appear here once orders are delivered.</p>
           }
         </div>
-      }
+      </div>
+    }
 
-      <!-- ── ACCOUNT SETTINGS (profile integrated into dashboard) ─ -->
-      @if (activeTab() === 'account') {
-        <div class="pm-panel" style="padding:1.5rem;">
-          <h2 class="pm-heading" style="font-size:var(--pm-text-base); font-weight:700; color:var(--pm-text); margin-bottom:1.25rem;">Account</h2>
-          <div style="display:grid; gap:1rem; max-width:560px;">
-            <label class="pm-field">
-              <span class="pm-label">Name</span>
-              <input class="pm-input" type="text" [value]="user()?.name ?? ''" (change)="auth.updateProfile({name: $any($event.target).value})" />
-            </label>
-            <label class="pm-field">
-              <span class="pm-label">Email</span>
-              <input class="pm-input" type="email" [value]="user()?.email ?? ''" (change)="auth.updateProfile({email: $any($event.target).value})" />
-            </label>
+    <!-- ── ANALYTICS ──────────────────────────────────────────── -->
+    @if (activeTab() === 'analytics') {
+
+      <div class="kpi-grid">
+        <div class="kpi">
+          <span class="l">Confirmed orders</span>
+          <span class="v">{{ confirmedCount() }}</span>
+        </div>
+        <div class="kpi">
+          <span class="l">Delivered</span>
+          <span class="v">{{ deliveredCount() }}</span>
+        </div>
+        <div class="kpi">
+          <span class="l">Revenue</span>
+          <span class="v">{{ totals().revenue }}<small>TND</small></span>
+        </div>
+        <div class="kpi">
+          <span class="l">Customers</span>
+          <span class="v">{{ customersCount() }}</span>
+        </div>
+      </div>
+
+      <div class="kpi-grid" style="margin-bottom:32px;">
+        <div class="kpi">
+          <span class="l">Avg rating</span>
+          <span class="v">{{ totals().rating | number:'1.1-1' }}<small>★</small></span>
+        </div>
+        <div class="kpi">
+          <span class="l">Fulfillment rate</span>
+          <span class="v">{{ totals().fulfillmentRate | number:'1.0-0' }}<small>%</small></span>
+        </div>
+        <div class="kpi">
+          <span class="l">Level</span>
+          <span class="v">{{ level() }}</span>
+        </div>
+        <div class="kpi">
+          <span class="l">Products offered</span>
+          <span class="v">{{ products().length }}</span>
+        </div>
+      </div>
+
+      <div style="display:grid; gap:24px; grid-template-columns:1fr 1fr; margin-bottom:32px;">
+        <div class="desk-section" style="margin-bottom:0;">
+          <h3>Orders by status</h3>
+          <app-donut-chart [data]="statusChart()" title="Orders by status" unit="orders" />
+        </div>
+        <div class="desk-section" style="margin-bottom:0;">
+          <h3>Product mix</h3>
+          <app-donut-chart [data]="productMixChart()" title="Product mix" unit="units" />
+        </div>
+      </div>
+    }
+
+    <!-- ── EARNINGS ────────────────────────────────────────────── -->
+    @if (activeTab() === 'earnings') {
+
+      <div class="kpi-grid">
+        <div class="kpi">
+          <span class="l">Total revenue</span>
+          <span class="v">{{ totals().revenue }}<small>TND</small></span>
+          <span class="delta">Paid orders, production price</span>
+        </div>
+        <div class="kpi">
+          <span class="l">Fulfillment rate</span>
+          <span class="v">{{ totals().fulfillmentRate | number:'1.0-0' }}<small>%</small></span>
+        </div>
+        <div class="kpi">
+          <span class="l">Avg rating</span>
+          <span class="v">{{ totals().rating | number:'1.1-1' }}<small>★</small></span>
+        </div>
+        <div class="kpi">
+          <span class="l">In fulfillment</span>
+          <span class="v">{{ fulfillmentLines().length }}</span>
+        </div>
+      </div>
+
+      <div class="desk-section">
+        <h3>Level &amp; score</h3>
+        <div style="display:flex; gap:40px; flex-wrap:wrap; margin-bottom:16px;">
+          <div>
+            <p style="font-family:var(--pm-font-display); font-size:40px; font-weight:800; letter-spacing:-0.03em; color:var(--pm-ink);">{{ level() }}</p>
+            <p class="serif-italic" style="font-size:13px; color:var(--pm-text-muted);">Pressroom level</p>
+          </div>
+          <div>
+            <p style="font-family:var(--pm-font-display); font-size:40px; font-weight:800; letter-spacing:-0.03em; color:var(--pm-ink);">{{ fulfillmentScore() }}</p>
+            <p class="serif-italic" style="font-size:13px; color:var(--pm-text-muted);">Fulfillment score</p>
           </div>
         </div>
+        <p class="serif-italic" style="font-size:14px; color:var(--pm-text-muted); line-height:1.7; max-width:60ch;">You earn the full production price you set per product. The platform adds its own fixed margin on top — it does not take a share of your revenue. Earnings are released automatically when an order is delivered.</p>
+      </div>
 
-        <div class="pm-panel" style="padding:1.5rem;">
-          <h2 class="pm-heading" style="font-size:var(--pm-text-base); font-weight:700; color:var(--pm-text); margin-bottom:1.25rem;">Business profile</h2>
-          <div style="display:grid; gap:1rem; max-width:560px;">
+      <div class="desk-section">
+        <h3>Released payouts</h3>
+        @if (payouts().length) {
+          <table class="news-table">
+            <thead>
+              <tr>
+                <th>Order</th>
+                <th class="r">Released</th>
+                <th class="r">Amount</th>
+                <th class="r">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of payouts(); track p.id) {
+                <tr>
+                  <td class="id">#{{ p.orderId }}</td>
+                  <td class="r"><span class="serif-italic" style="color:var(--pm-text-muted);">{{ p.releasedAt | slice:0:10 }}</span></td>
+                  <td class="r amt">{{ p.amount }}<small>TND</small></td>
+                  <td class="r"><span class="status-pill delivered">{{ p.status }}</span></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        } @else {
+          <p class="serif-italic" style="color:var(--pm-text-muted); font-size:15px; padding:24px 0;">No payouts released yet. Payouts appear here once orders are delivered.</p>
+        }
+      </div>
+    }
+
+    <!-- ── ACCOUNT SETTINGS ───────────────────────────────────── -->
+    @if (activeTab() === 'account') {
+
+      <div class="desk-section">
+        <h3>Account</h3>
+        <div style="display:grid; gap:1rem; max-width:560px;">
+          <label class="pm-field">
+            <span class="pm-label">Name</span>
+            <input class="pm-input" type="text" [value]="user()?.name ?? ''" (change)="auth.updateProfile({name: $any($event.target).value})" />
+          </label>
+          <label class="pm-field">
+            <span class="pm-label">Email</span>
+            <input class="pm-input" type="email" [value]="user()?.email ?? ''" (change)="auth.updateProfile({email: $any($event.target).value})" />
+          </label>
+        </div>
+      </div>
+
+      <div class="desk-section">
+        <h3>Business profile</h3>
+        <div style="display:grid; gap:1rem; max-width:560px;">
+          <label class="pm-field">
+            <span class="pm-label">Business name</span>
+            <input class="pm-input" type="text" [value]="user()?.printerProfile?.businessName ?? ''" (change)="auth.updatePrinterProfile({businessName: $any($event.target).value})" />
+          </label>
+          <div class="desk-field-group">
             <label class="pm-field">
-              <span class="pm-label">Business name</span>
-              <input class="pm-input" type="text" [value]="user()?.printerProfile?.businessName ?? ''" (change)="auth.updatePrinterProfile({businessName: $any($event.target).value})" />
+              <span class="pm-label">Contact email</span>
+              <input class="pm-input" type="email" [value]="user()?.printerProfile?.contactEmail ?? ''" (change)="auth.updatePrinterProfile({contactEmail: $any($event.target).value})" />
             </label>
-            <div class="grid gap-4 sm:grid-cols-2">
-              <label class="pm-field">
-                <span class="pm-label">Contact email</span>
-                <input class="pm-input" type="email" [value]="user()?.printerProfile?.contactEmail ?? ''" (change)="auth.updatePrinterProfile({contactEmail: $any($event.target).value})" />
-              </label>
-              <label class="pm-field">
-                <span class="pm-label">Contact phone</span>
-                <input class="pm-input" type="tel" [value]="user()?.printerProfile?.contactPhone ?? ''" (change)="auth.updatePrinterProfile({contactPhone: $any($event.target).value})" />
-              </label>
-            </div>
-            <div class="grid gap-4 sm:grid-cols-2">
-              <label class="pm-field">
-                <span class="pm-label">Location</span>
-                <input class="pm-input" type="text" [value]="user()?.printerProfile?.location ?? ''" (change)="auth.updatePrinterProfile({location: $any($event.target).value})" />
-              </label>
-              <label class="pm-field">
-                <span class="pm-label">Governorate</span>
-                <input class="pm-input" type="text" [value]="user()?.printerProfile?.governorate ?? ''" (change)="auth.updatePrinterProfile({governorate: $any($event.target).value})" />
-              </label>
-            </div>
             <label class="pm-field">
-              <span class="pm-label">About your shop</span>
-              <textarea class="pm-input" rows="3" [value]="user()?.printerProfile?.about ?? ''" (change)="auth.updatePrinterProfile({about: $any($event.target).value})" style="resize:vertical;"></textarea>
+              <span class="pm-label">Contact phone</span>
+              <input class="pm-input" type="tel" [value]="user()?.printerProfile?.contactPhone ?? ''" (change)="auth.updatePrinterProfile({contactPhone: $any($event.target).value})" />
             </label>
           </div>
+          <div class="desk-field-group">
+            <label class="pm-field">
+              <span class="pm-label">Location</span>
+              <input class="pm-input" type="text" [value]="user()?.printerProfile?.location ?? ''" (change)="auth.updatePrinterProfile({location: $any($event.target).value})" />
+            </label>
+            <label class="pm-field">
+              <span class="pm-label">Governorate</span>
+              <input class="pm-input" type="text" [value]="user()?.printerProfile?.governorate ?? ''" (change)="auth.updatePrinterProfile({governorate: $any($event.target).value})" />
+            </label>
+          </div>
+          <label class="pm-field">
+            <span class="pm-label">About your shop</span>
+            <textarea class="pm-input" rows="3" [value]="user()?.printerProfile?.about ?? ''" (change)="auth.updatePrinterProfile({about: $any($event.target).value})" style="resize:vertical;"></textarea>
+          </label>
         </div>
-      }
+      </div>
+    }
 
-    </div>
   </div>
 
 </div>

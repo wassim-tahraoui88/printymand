@@ -496,7 +496,6 @@ a { color: inherit; text-decoration: none; }
   line-height: 1.45;
   color: var(--pm-ink);
   font-weight: 400;
-  max-width: 28ch;
 }
 .manifesto-body .dropcap {
   float: left;

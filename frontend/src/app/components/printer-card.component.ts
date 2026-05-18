@@ -27,7 +27,7 @@ import { PrinterBadgeComponent } from './rank-badge.component';
           <app-printer-badge [rank]="printer().rank" />
         </div>
 
-        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:0.5rem; text-align:center;">
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(72px, 1fr)); gap:0.5rem; text-align:center;">
           @for (stat of [
             { val: printer().rating, label: 'rating' },
             { val: printer().fulfillmentRate + '%', label: 'fulfilled' },

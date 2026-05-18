@@ -28,7 +28,7 @@ import { ImageWithFallbackComponent } from './image-with-fallback.component';
               @for (img of product().images; track img; let i = $index) {
                 <button
                   type="button"
-                  style="width:0.45rem; height:0.45rem; border-radius:999px; border:1px solid rgba(255,255,255,0.6); cursor:pointer; padding:0; transition:background 200ms;"
+                  style="width:0.75rem; height:0.75rem; border-radius:999px; border:1px solid rgba(255,255,255,0.6); cursor:pointer; padding:0; transition:background 200ms;"
                   [style.background]="i === imageIndex() ? '#fff' : 'rgba(255,255,255,0.25)'"
                   [attr.aria-label]="'View image ' + (i + 1)"
                   (click)="$event.preventDefault(); $event.stopPropagation(); imageIndex.set(i)"
