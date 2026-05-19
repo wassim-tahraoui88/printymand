@@ -2203,7 +2203,43 @@ input[type="range"].pm-range, input[type="range"] { accent-color: var(--pm-clay)
 @media (max-width: 640px) { .hide-sm { display: none; } }
 
 /* Masthead */
-.masthead { border-top: 6px solid var(--pm-ink); border-bottom: 1px solid var(--pm-rule-strong); background: color-mix(in srgb, var(--pm-bg) 92%, transparent); backdrop-filter: blur(8px); }
+.masthead {
+  border-top: 6px solid var(--pm-ink);
+  border-bottom: 1px solid var(--pm-rule-strong);
+  background: color-mix(in srgb, var(--pm-bg) 92%, transparent);
+  backdrop-filter: blur(8px);
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  transition: top 380ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.masthead.nav-hidden { top: -200px; }
+
+/* Mobile menu overlay */
+.pm-mobile-menu-wrapper {
+  position: fixed;
+  inset: 0;
+  z-index: 58;
+}
+@media (min-width: 1024px) { .pm-mobile-menu-wrapper { display: none; } }
+.pm-site-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+}
+.pm-mobile-menu {
+  position: relative;
+  z-index: 1;
+  background: var(--pm-surface, var(--pm-bg));
+  border-bottom: 2px solid var(--pm-rule-strong);
+  max-height: calc(100vh - 80px);
+  overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+}
+
+/* Hide theme toggle from masthead on mobile — it lives inside hamburger menu */
+@media (max-width: 640px) { .masthead-theme-btn { display: none !important; } }
 .masthead-row { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 1rem; padding: 14px 0 12px; }
 .masthead-meta { display: flex; gap: 18px; align-items: baseline; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--pm-text-muted); font-weight: 600; }
 .masthead-meta .dot { width: 4px; height: 4px; border-radius: 50%; background: var(--pm-clay); display: inline-block; }
@@ -2801,7 +2837,11 @@ input[type="range"].pm-range, input[type="range"] { accent-color: var(--pm-clay)
   .masthead-meta { display: none; }
   .masthead-row { grid-template-columns: 1fr auto; gap: 0.5rem; }
   .masthead-title { text-align: left; }
-  .masthead .btn { padding: 8px 14px; font-size: 11px; letter-spacing: 0.12em; }
+  /* Sign-in button: compact but not squished */
+  .masthead-actions .btn,
+  .masthead-actions a.btn { padding: 7px 13px; font-size: 11px; letter-spacing: 0.1em; gap: 5px; white-space: nowrap; }
+  /* Register link: hide on very small screens, visible in hamburger menu */
+  .masthead-actions .pm-btn-ghost { display: none; }
 }
 
 /* ── Cover CTA: keep both buttons on one row on mobile ── */

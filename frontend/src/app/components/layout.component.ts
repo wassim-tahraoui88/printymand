@@ -14,10 +14,12 @@ import { WorkflowService } from '../services/workflow.service';
   templateUrl: './layout.html',
 })
 export class LayoutComponent {
-  readonly siteMenu   = signal(false);
-  readonly userMenu   = signal(false);
+  readonly siteMenu    = signal(false);
+  readonly userMenu    = signal(false);
   readonly searchQuery = signal('');
   readonly isScrolled  = signal(false);
+  readonly navHidden   = signal(false);
+  private lastScrollY  = 0;
 
   readonly currentYear = new Date().getFullYear();
 
@@ -82,9 +84,29 @@ export class LayoutComponent {
         this.userMenu.set(false);
       });
 
-    // Scroll-aware nav backdrop
+    // Scroll-aware nav: hide on down-scroll, reveal on up-scroll
     if (typeof window !== 'undefined') {
-      const onScroll = () => this.isScrolled.set(window.scrollY > 24);
+      const onScroll = () => {
+        const y  = window.scrollY;
+        const dy = y - this.lastScrollY;
+
+        // Never hide while mobile menu is open
+        if (!this.siteMenu()) {
+          if (y <= 80) {
+            // Near the top — always show
+            this.navHidden.set(false);
+          } else if (dy > 8) {
+            // Scrolling down — hide
+            this.navHidden.set(true);
+          } else if (dy < -8) {
+            // Scrolling up — reveal
+            this.navHidden.set(false);
+          }
+        }
+
+        this.isScrolled.set(y > 24);
+        this.lastScrollY = y;
+      };
       window.addEventListener('scroll', onScroll, { passive: true });
     }
   }
