@@ -1,23 +1,27 @@
 import { Component, input } from '@angular/core';
 
+/**
+ * Page shell for the standalone profile pages.
+ *
+ * Uses the editorial vocabulary (`page`, `desk-header`, `h-title`) so these
+ * pages read the same as the dashboards and the rest of the site.
+ */
 @Component({
   selector: 'app-dashboard-shell',
   standalone: true,
   template: `
-    <section class="pm-page">
-      <div class="pm-hero" style="padding:2rem 2.5rem;">
-        <div style="position:relative; z-index:1;">
-          <p class="pm-kicker mb-3">{{ eyebrow() }}</p>
-          <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <h1 class="pm-heading font-extrabold text-white" style="font-size:clamp(1.8rem,4vw,2.8rem); letter-spacing:-0.02em; line-height:1.1;">{{ title() }}</h1>
-              @if (description()) {
-                <p style="max-width:600px; font-size:0.9rem; line-height:1.7; color:rgba(255,255,255,0.65); margin-top:0.6rem;">{{ description() }}</p>
-              }
-            </div>
-            <ng-content select="[dashboard-actions]" />
-          </div>
+    <section class="page" style="padding-block:38px 28px;">
+      <div class="desk-header">
+        <div style="flex:1; min-width:0;">
+          <p class="kicker kicker-clay" style="margin-bottom:10px;">{{ eyebrow() }}</p>
+          <h1 class="h-title">{{ title() }}</h1>
+          @if (description()) {
+            <p class="serif-italic" style="font-size:15px; line-height:1.6; color:var(--pm-text-muted); max-width:60ch; margin:12px 0 0;">
+              {{ description() }}
+            </p>
+          }
         </div>
+        <ng-content select="[dashboard-actions]" />
       </div>
       <ng-content />
     </section>

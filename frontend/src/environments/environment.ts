@@ -1,15 +1,18 @@
+import type { Environment } from './environment.model';
+
 /**
- * Frontend runtime configuration.
+ * Development runtime configuration.
  *
- * The whole app currently runs on an in-memory mock store (PlatformStoreService)
- * so it is fully functional without a backend. When the NestJS backend is ready,
- * flip `useRealApi` to true (or use environment.prod.ts) and implement the
- * matching endpoints in ApiService — every store mutation already has a 1:1
- * ApiService method, so integration is a switch, not a rewrite.
+ * The app runs on an in-memory/localStorage store (PlatformStoreService) so it
+ * is fully functional without a backend. `useRealApi` is read by
+ * `PlatformStoreService.tryApi()`: when false no HTTP call is attempted at all,
+ * when true every store mutation mirrors itself to the matching ApiService
+ * endpoint.
+ *
+ * `angular.json` swaps this file for `environment.prod.ts` in production builds.
  */
-export const environment = {
+export const environment: Environment = {
   production: false,
-  /** When true, ApiService responses are trusted; when false, the mock store is authoritative. */
   useRealApi: false,
   apiBaseUrl: '/api/v1',
 };

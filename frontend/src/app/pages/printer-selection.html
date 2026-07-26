@@ -65,7 +65,7 @@
       <div>
         <div class="ftot-label">Selected pressroom</div>
         <div class="ftot-amt" style="font-size:28px;">
-          {{ selectedPrinterId() ? workflow.getPrinterById(selectedPrinterId()!)?.businessName : 'None selected' }}
+          {{ selectedPrinterId() ? store.getPrinterById(selectedPrinterId()!)?.businessName : 'None selected' }}
         </div>
         <div class="ftot-note">
           @if (selectedPrinterId()) {
@@ -85,5 +85,12 @@
       <div class="serif-italic" style="border:1px solid var(--pm-danger); color:var(--pm-danger); padding:12px 16px; margin-top:16px;">{{ error() }}</div>
     }
 
+  </section>
+} @else {
+  <section class="page" style="padding-block:80px;">
+    <div style="text-align:center;">
+      <p class="serif-italic" style="font-size:22px; color:var(--pm-text-muted);">Design not found.</p>
+      <a routerLink="/marketplace" class="btn btn-ghost" style="margin-top:18px;">← Browse marketplace</a>
+    </div>
   </section>
 }

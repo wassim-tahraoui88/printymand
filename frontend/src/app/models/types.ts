@@ -76,14 +76,6 @@ export interface LoginPayload {
   password: string;
 }
 
-export interface RegisterPayload {
-  name: string;
-  email: string;
-  address: string;
-  password: string;
-  role: Extract<UserRole, 'customer' | 'designer' | 'printer'>;
-}
-
 export interface Address {
   id: number;
   label: string;
@@ -220,6 +212,12 @@ export interface Design {
   isUserUpload?: boolean;
   /** Owning customer id when isUserUpload is true. */
   uploadedByUserId?: number;
+  /**
+   * Products this design can be printed on. This is the ONE side of the
+   * design↔product relation — the reverse (which designs a product carries) is
+   * derived via PlatformStoreService.availableDesignsForProduct(), never stored,
+   * so the two directions cannot disagree.
+   */
   assignedProductIds: number[];
   productConfigurations: DesignProductConfiguration[];
   createdAt: string;
@@ -253,7 +251,6 @@ export interface Product {
   leadTimeDays: number;
   rating: number;
   totalOrders: number;
-  assignedDesignIds: number[];
 }
 
 /**
@@ -286,6 +283,12 @@ export interface PrinterPartner {
   location: string;
   images: string[];
   availability: PrinterAvailability;
+  /**
+   * Set when the owning user is no longer a printer. The partner record is kept
+   * so historical order lines and offerings still resolve, but it is excluded
+   * from printer selection. (Defaulted at load.)
+   */
+  retired?: boolean;
 }
 
 export interface PlatformSettings {
@@ -486,10 +489,6 @@ export interface PayoutRecord {
 export interface PlaceOrderPayload {
   paymentMethod: PaymentMethod;
   shippingAddress?: string;
-}
-
-export interface PaymentResponse {
-  paymentUrl: string;
 }
 
 export interface ReviewPayload {

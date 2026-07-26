@@ -6,7 +6,7 @@ import { DashboardSidebarComponent, DashboardNavSection } from '../components/da
 import { DonutChartComponent, type DonutSlice } from '../components/donut-chart.component';
 import type { PrintingMethod } from '../models/types';
 import { AuthService } from '../services/auth.service';
-import { WorkflowService } from '../services/workflow.service';
+import { PlatformStoreService } from '../services/platform-store.service';
 
 const CHART_COLORS = ['#C74A2B', '#E89E1C', '#2E7D5B', '#3B6EA5', '#7C3AED', '#0E7490'];
 
@@ -18,7 +18,7 @@ const CHART_COLORS = ['#C74A2B', '#E89E1C', '#2E7D5B', '#3B6EA5', '#7C3AED', '#0
 })
 export class PrinterDashboardPageComponent {
   readonly auth = inject(AuthService);
-  readonly workflow = inject(WorkflowService);
+  readonly store = inject(PlatformStoreService);
 
   readonly activeTab = signal('overview');
   readonly sidebarOpen = signal(false);
@@ -38,14 +38,14 @@ export class PrinterDashboardPageComponent {
   ];
 
   readonly user = computed(() => this.auth.user());
-  readonly products = computed(() => (this.user() ? this.workflow.productsForPrinterUser(this.user()!.id) : []));
+  readonly products = computed(() => (this.user() ? this.store.productsForPrinterUser(this.user()!.id) : []));
   /** Spec step 3: requests awaiting accept/reject. */
-  readonly requests = computed(() => (this.user() ? this.workflow.ordersAwaitingPrinter(this.user()!.id) : []));
+  readonly requests = computed(() => (this.user() ? this.store.ordersAwaitingPrinter(this.user()!.id) : []));
   /** Requests the customer canceled (incl. after the printer accepted, pre-payment). */
-  readonly canceledOrders = computed(() => (this.user() ? this.workflow.canceledOrdersForPrinter(this.user()!.id) : []));
+  readonly canceledOrders = computed(() => (this.user() ? this.store.canceledOrdersForPrinter(this.user()!.id) : []));
   /** Accepted + paid lines this printer fulfills. */
-  readonly fulfillmentLines = computed(() => (this.user() ? this.workflow.fulfillmentLinesForPrinter(this.user()!.id) : []));
-  readonly totals = computed(() => (this.user() ? this.workflow.printerTotals(this.user()!.id) : { products: 0, revenue: 0, fulfillmentRate: 0, rating: 0 }));
+  readonly fulfillmentLines = computed(() => (this.user() ? this.store.fulfillmentLinesForPrinter(this.user()!.id) : []));
+  readonly totals = computed(() => (this.user() ? this.store.printerTotals(this.user()!.id) : { products: 0, revenue: 0, fulfillmentRate: 0, rating: 0 }));
 
   // ── Analytics ──
   readonly confirmedCount = computed(() => this.fulfillmentLines().length);
@@ -69,7 +69,7 @@ export class PrinterDashboardPageComponent {
   });
   readonly availability = computed(() => {
     const u = this.user();
-    return u ? this.workflow.getPrinterByUserId(u.id)?.availability ?? 'available' : 'available';
+    return u ? this.store.getPrinterByUserId(u.id)?.availability ?? 'available' : 'available';
   });
 
   readonly error = signal('');
@@ -79,7 +79,7 @@ export class PrinterDashboardPageComponent {
   // ── Performance / level (spec "Printer roles") ──
   readonly level = computed(() => this.user()?.printerRank ?? 'Verified');
   readonly fulfillmentScore = computed(() => this.user()?.printerProfile?.fulfillmentScore ?? 0);
-  readonly payouts = computed(() => (this.user() ? this.workflow.printerPayoutsForUser(this.user()!.id) : []));
+  readonly payouts = computed(() => (this.user() ? this.store.printerPayoutsForUser(this.user()!.id) : []));
 
   // ── Fulfillment setup (spec) ──
   readonly allMethods: PrintingMethod[] = ['DTF', 'sublimation', 'screen-printing', 'embroidery', 'vinyl'];
@@ -90,7 +90,7 @@ export class PrinterDashboardPageComponent {
 
   // ── Global catalog opt-in (printers choose + price predefined products only) ──
   /** The full platform catalog — printers cannot create or upload products. */
-  readonly catalog = computed(() => this.workflow.products());
+  readonly catalog = computed(() => this.store.products());
   /** Local drafts so typing doesn't commit every keystroke. */
   readonly priceDraft = signal<Record<number, number>>({});
   readonly descDraft = signal<Record<number, string>>({});
@@ -98,7 +98,7 @@ export class PrinterDashboardPageComponent {
 
   offeringFor(productId: number) {
     const u = this.user();
-    return u ? this.workflow.getOffering(this.workflow.getPrinterByUserId(u.id)?.id ?? -1, productId) : undefined;
+    return u ? this.store.getOffering(this.store.getPrinterByUserId(u.id)?.id ?? -1, productId) : undefined;
   }
 
   isSupported(productId: number): boolean {
@@ -107,7 +107,7 @@ export class PrinterDashboardPageComponent {
 
   /** Admin-set minimum price (floor) for a product. */
   floorFor(productId: number): number {
-    return this.workflow.getProductById(productId)?.basePrice ?? 0;
+    return this.store.getProductById(productId)?.basePrice ?? 0;
   }
 
   priceFor(productId: number): number {
@@ -136,9 +136,9 @@ export class PrinterDashboardPageComponent {
     const user = this.user();
     if (!user) return;
     if (checked) {
-      this.workflow.setPrinterOffering(user.id, productId, Math.max(this.priceFor(productId), this.floorFor(productId)), true, this.descFor(productId));
+      this.store.setPrinterOffering(user.id, productId, Math.max(this.priceFor(productId), this.floorFor(productId)), true, this.descFor(productId));
     } else {
-      this.workflow.removePrinterOffering(user.id, productId);
+      this.store.removePrinterOffering(user.id, productId);
     }
   }
 
@@ -146,7 +146,7 @@ export class PrinterDashboardPageComponent {
     const user = this.user();
     if (!user) return;
     const existing = this.offeringFor(productId);
-    const res = this.workflow.setPrinterOffering(
+    const res = this.store.setPrinterOffering(
       user.id,
       productId,
       this.priceFor(productId),
@@ -162,7 +162,7 @@ export class PrinterDashboardPageComponent {
   toggleOfferingAvailable(productId: number, available: boolean): void {
     const user = this.user();
     if (!user) return;
-    this.workflow.setPrinterOffering(user.id, productId, this.priceFor(productId), available, this.descFor(productId));
+    this.store.setPrinterOffering(user.id, productId, this.priceFor(productId), available, this.descFor(productId));
   }
 
   toggleMethod(method: PrintingMethod, checked: boolean): void {
@@ -179,16 +179,16 @@ export class PrinterDashboardPageComponent {
 
   setAvailability(value: 'available' | 'busy' | 'holiday'): void {
     const u = this.user();
-    if (u) this.workflow.setPrinterAvailability(u.id, value);
+    if (u) this.store.setPrinterAvailability(u.id, value);
   }
 
   accept(orderId: number | string): void {
-    const result = this.workflow.acceptOrderRequest(orderId);
+    const result = this.store.acceptOrderRequest(orderId);
     if (!result.success) this.error.set(result.error ?? 'Could not accept the request.');
   }
 
   reject(orderId: number | string): void {
-    const result = this.workflow.rejectOrderRequest(orderId);
+    const result = this.store.rejectOrderRequest(orderId);
     if (!result.success) this.error.set(result.error ?? 'Could not reject the request.');
   }
 
@@ -199,6 +199,6 @@ export class PrinterDashboardPageComponent {
   }
 
   advance(orderId: number | string, lineId: number): void {
-    this.workflow.advanceOrderLineStatus(orderId, lineId);
+    this.store.advanceOrderLineStatus(orderId, lineId);
   }
 }

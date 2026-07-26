@@ -51,7 +51,11 @@
       class="title"
       style="color:inherit;"
     >{{ design().title }}</a>
-    <span class="price">{{ design().price }} TND</span>
+    @if (fromPrice() !== null) {
+      <span class="price">from {{ fromPrice() }} TND</span>
+    } @else {
+      <span class="price" style="font-size:12px; color:var(--pm-text-muted);">not yet printable</span>
+    }
     <span class="designer">by {{ design().designer }} · {{ design().designerRank }}</span>
     <span class="meta">{{ design().rating.toFixed(1) }} ★ · {{ design().category }}</span>
   </div>

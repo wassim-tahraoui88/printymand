@@ -1,8 +1,8 @@
 <app-dashboard-shell eyebrow="Pressroom" title="Business profile" description="Manage your business identity and contact details.">
-  <div class="grid gap-6 lg:grid-cols-2 lg:items-start">
-    <div class="pm-panel" style="padding:1.5rem;">
-      <h2 class="font-bold text-lg mb-4" style="color:var(--pm-text);">Business details</h2>
-      <div class="grid gap-3">
+  <div class="desk-field-group" style="align-items:start;">
+    <div class="desk-section">
+      <h3>Business details</h3>
+      <div style="display:grid; gap:14px;">
         <label class="pm-field">
           <span class="pm-label">Business name</span>
           <input class="pm-input" [ngModel]="user()?.printerProfile?.businessName" (ngModelChange)="auth.updatePrinterProfile({ businessName: $event })" />
@@ -17,9 +17,9 @@
         </label>
       </div>
     </div>
-    <div class="pm-panel" style="padding:1.5rem;">
-      <h2 class="font-bold text-lg mb-4" style="color:var(--pm-text);">Location & about</h2>
-      <div class="grid gap-3">
+    <div class="desk-section">
+      <h3>Location & about</h3>
+      <div style="display:grid; gap:14px;">
         <label class="pm-field">
           <span class="pm-label">Location</span>
           <input class="pm-input" [ngModel]="user()?.printerProfile?.location" (ngModelChange)="auth.updatePrinterProfile({ location: $event })" />
@@ -36,8 +36,8 @@
     </div>
   </div>
 
-  <section class="pm-panel" style="padding:1.5rem;">
-    <h2 class="font-bold text-lg mb-2" style="color:var(--pm-text);">Products you fulfill</h2>
+  <section class="desk-section">
+    <h3>Products you fulfill</h3>
     <p style="font-size:var(--pm-text-sm); color:var(--pm-text-muted); line-height:1.6; margin-bottom:1rem;">
       The product catalogue is managed by Printymand. You choose which predefined products you
       print and set your pricing &amp; availability from your
@@ -48,7 +48,7 @@
     @if (products().length) {
       <div style="display:flex; flex-wrap:wrap; gap:0.625rem;">
         @for (product of products(); track product.id) {
-          <span class="pm-chip">{{ product.name }}</span>
+          <span class="chip">{{ product.name }}</span>
         }
       </div>
     } @else {

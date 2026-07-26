@@ -107,7 +107,23 @@
                   <tr>
                     <td class="title-cell">{{ user.name }}</td>
                     <td><span class="serif-italic" style="color:var(--pm-text-muted); font-size:13px;">{{ user.email }}</span></td>
-                    <td><span class="status-pill">{{ user.role }}</span></td>
+                    <td>
+                      @if (user.role === 'admin') {
+                        <span class="status-pill">{{ user.role }}</span>
+                      } @else {
+                        <select
+                          class="pm-select"
+                          style="font-size:12px; padding:2px 6px;"
+                          [ngModel]="user.role"
+                          (ngModelChange)="setUserRole(user.id, $event)"
+                          [attr.aria-label]="'Role for ' + user.name"
+                        >
+                          @for (role of assignableRoles; track role) {
+                            <option [value]="role">{{ role }}</option>
+                          }
+                        </select>
+                      }
+                    </td>
                     <td>
                       <span class="status-pill"
                         [class.delivered]="accountStatus(user) === 'ACTIVE'"
@@ -199,7 +215,7 @@
             <label class="pm-field">
               <span class="pm-label">Category</span>
               <select class="pm-select" [ngModel]="productForm().category" (ngModelChange)="productForm.set({...productForm(), category: $event})">
-                @for (c of ['Apparel','Drinkware','Accessories','Home']; track c) { <option [value]="c">{{ c }}</option> }
+                @for (c of productCategories; track c) { <option [value]="c">{{ c }}</option> }
               </select>
             </label>
           </div>
@@ -208,8 +224,9 @@
             <input class="pm-input" type="text" [ngModel]="productForm().description" (ngModelChange)="productForm.set({...productForm(), description: $event})" />
           </label>
           <label class="pm-field">
-            <span class="pm-label">Placeholder / mockup image URL</span>
-            <input class="pm-input" type="text" [ngModel]="productForm().image" (ngModelChange)="productForm.set({...productForm(), image: $event})" placeholder="https://…" />
+            <span class="pm-label">Placeholder / mockup image URLs — one per line</span>
+            <textarea class="pm-input" rows="3" [ngModel]="productForm().images" (ngModelChange)="productForm.set({...productForm(), images: $event})" placeholder="https://…&#10;https://…"></textarea>
+            <span style="font-size:11px; color:var(--pm-text-muted); margin-top:4px; display:block;">All mockups are kept when you save.</span>
           </label>
           <div class="desk-field-group" style="grid-template-columns:1fr 1fr 1fr;">
             <label class="pm-field">
@@ -226,8 +243,23 @@
               <input class="pm-input" type="text" [ngModel]="productForm().sizes" (ngModelChange)="productForm.set({...productForm(), sizes: $event})" />
             </label>
           </div>
+          <div class="desk-field-group">
+            <label class="pm-field">
+              <span class="pm-label">Availability</span>
+              <select class="pm-select" [ngModel]="productForm().availability" (ngModelChange)="productForm.set({...productForm(), availability: $event})">
+                @for (a of availabilities; track a) { <option [value]="a">{{ a }}</option> }
+              </select>
+            </label>
+            <label class="pm-field">
+              <span class="pm-label">Lead time (days)</span>
+              <input class="pm-input" type="number" min="1" [ngModel]="productForm().leadTimeDays" (ngModelChange)="productForm.set({...productForm(), leadTimeDays: +$event})" />
+            </label>
+          </div>
           <div style="display:flex; gap:12px; align-items:center;">
             <button type="button" class="btn btn-clay" (click)="saveProduct()">{{ productForm().id ? 'Save changes' : 'Add to catalog' }}</button>
+            @if (productForm().id) {
+              <button type="button" class="btn btn-ghost" (click)="cancelProductEdit()">Cancel</button>
+            }
             @if (catalogMsg()) {
               <span class="serif-italic" style="font-size:13px; color:var(--pm-success);">{{ catalogMsg() }}</span>
             }
@@ -342,7 +374,7 @@
                     <td class="id">#{{ order.id }}</td>
                     <td><span class="serif-italic" style="color:var(--pm-text-muted); font-size:13px;">User {{ order.userId }}</span></td>
                     <td><span class="status-pill">{{ order.paymentMethod }}</span></td>
-                    <td><span class="status-pill" [class.delivered]="workflow.getOrderStatus(order) === 'Delivered'" [class.production]="workflow.getOrderStatus(order) === 'In production'" [class.pending]="workflow.getOrderStatus(order) === 'Requested'">{{ workflow.getOrderStatus(order) }}</span></td>
+                    <td><span [class]="statusClass(store.getOrderStatus(order))">{{ store.getOrderStatus(order) }}</span></td>
                     <td class="r amt">{{ order.total }}<small>TND</small></td>
                   </tr>
                 }
@@ -377,6 +409,28 @@
             @if (settingsMsg()) {
               <span class="serif-italic" style="font-size:13px; color:var(--pm-success);">{{ settingsMsg() }}</span>
             }
+          </div>
+        </div>
+      </div>
+
+      <div class="desk-section">
+        <h3>Marketplace categories</h3>
+        <p class="serif-italic" style="font-size:13px; color:var(--pm-text-muted); margin-top:-10px; margin-bottom:20px; line-height:1.7;">
+          One list, used everywhere: the marketplace filter, the designer upload wizard and the cover mood tiles.
+          Removing a category does not retag designs already filed under it.
+        </p>
+        <div style="display:grid; gap:1rem; max-width:620px;">
+          <label class="pm-field">
+            <span class="pm-label">Categories (comma separated)</span>
+            <input class="pm-input" type="text" [ngModel]="categoriesForm()" (ngModelChange)="categoriesForm.set($event)" />
+          </label>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            @for (cat of store.categories(); track cat) {
+              <span class="chip">{{ cat }}</span>
+            }
+          </div>
+          <div>
+            <button type="button" class="btn btn-clay" (click)="saveCategories()">Save categories</button>
           </div>
         </div>
       </div>

@@ -1,7 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, input, signal } from '@angular/core';
+import { Component, computed, inject, input, signal } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import type { Product } from '../models/types';
+import { PlatformStoreService } from '../services/platform-store.service';
 import { ImageWithFallbackComponent } from './image-with-fallback.component';
 
 @Component({
@@ -46,7 +47,7 @@ import { ImageWithFallbackComponent } from './image-with-fallback.component';
           class="title"
           style="color:inherit;"
         >{{ product().name }}</a>
-        <span class="price">{{ product().basePrice }} TND</span>
+        <span class="price">from {{ fromPrice() }} TND</span>
         <span class="designer">{{ product().colors.length }} colour{{ product().colors.length === 1 ? '' : 's' }} · {{ product().sizes.join(' · ') }}</span>
         <span class="meta">{{ product().rating.toFixed(1) }} ★ · {{ product().leadTimeDays }}d lead</span>
       </div>
@@ -63,7 +64,18 @@ import { ImageWithFallbackComponent } from './image-with-fallback.component';
   `,
 })
 export class ProductCardComponent {
+  private readonly store = inject(PlatformStoreService);
+
   readonly product = input.required<Product>();
   readonly imageIndex = signal(0);
-  readonly currentImage = computed(() => this.product().images[this.imageIndex()] ?? this.product().images[0] ?? '/placeholder-image.svg');
+  readonly currentImage = computed(
+    () => this.product().images.at(this.imageIndex()) ?? this.product().images.at(0) ?? '/placeholder-image.svg',
+  );
+
+  /**
+   * What the buyer actually pays at minimum: the product floor price plus the
+   * platform margin. Showing the bare basePrice understated every product,
+   * and disagreed with the design detail page.
+   */
+  readonly fromPrice = computed(() => this.product().basePrice + this.store.platformSettings().margin);
 }

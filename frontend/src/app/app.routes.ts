@@ -23,7 +23,11 @@ import { VerificationPendingPageComponent } from './pages/verification-pending.p
 import { NotificationsPageComponent } from './pages/notifications.page';
 import { StorefrontPageComponent } from './pages/storefront.page';
 import { NotFoundPageComponent } from './pages/not-found.page';
-import { authRoleGuard } from './guards/auth-role.guard';
+import { authRoleGuard, pendingVerificationGuard } from './guards/auth-role.guard';
+import type { UserRole } from './models/types';
+
+/** Roles allowed to place an order. Printers fulfil orders; they do not buy. */
+const BUYER_ROLES: UserRole[] = ['customer', 'designer', 'admin'];
 
 export const routes: Routes = [
   {
@@ -37,16 +41,20 @@ export const routes: Routes = [
       { path: 'storefront/:id', component: StorefrontPageComponent },
       { path: 'login', component: LoginPageComponent },
       { path: 'register', component: RegisterPageComponent },
-      { path: 'verification-pending', component: VerificationPendingPageComponent },
-      { path: 'upload-design', component: UploadDesignPageComponent, canActivate: [authRoleGuard(['customer', 'designer', 'admin'])] },
-      { path: 'customize/:id', component: CustomizePageComponent, canActivate: [authRoleGuard(['customer', 'designer', 'admin'])] },
-      { path: 'printers/:id', component: PrinterSelectionPageComponent, canActivate: [authRoleGuard(['customer', 'designer', 'admin'])] },
-      { path: 'checkout', component: CheckoutPageComponent, canActivate: [authRoleGuard(['customer', 'designer', 'admin'])] },
-      { path: 'cart', component: CheckoutPageComponent, canActivate: [authRoleGuard(['customer', 'designer', 'admin'])] },
+      { path: 'verification-pending', component: VerificationPendingPageComponent, canActivate: [pendingVerificationGuard] },
+      // Personal artwork upload is a buying flow: printers cannot order, and a
+      // designer publishing work uses the designer dashboard wizard instead.
+      { path: 'upload-design', component: UploadDesignPageComponent, canActivate: [authRoleGuard(['customer', 'admin'])] },
+      { path: 'customize/:id', component: CustomizePageComponent, canActivate: [authRoleGuard(BUYER_ROLES)] },
+      { path: 'printers/:id', component: PrinterSelectionPageComponent, canActivate: [authRoleGuard(BUYER_ROLES)] },
+      { path: 'checkout', component: CheckoutPageComponent, canActivate: [authRoleGuard(BUYER_ROLES)] },
+      { path: 'cart', component: CheckoutPageComponent, canActivate: [authRoleGuard(BUYER_ROLES)] },
+      // Shared across roles by design — a printer opens tracking for their jobs.
       { path: 'tracking/:orderId', component: OrderTrackingPageComponent, canActivate: [authRoleGuard()] },
       { path: 'notifications', component: NotificationsPageComponent, canActivate: [authRoleGuard()] },
-      { path: 'dashboard', component: CustomerDashboardPageComponent, canActivate: [authRoleGuard()] },
-      { path: 'profile', component: CustomerProfilePageComponent, canActivate: [authRoleGuard()] },
+      // Customer-shaped pages: other roles are redirected to their own workspace.
+      { path: 'dashboard', component: CustomerDashboardPageComponent, canActivate: [authRoleGuard(['customer', 'admin'])] },
+      { path: 'profile', component: CustomerProfilePageComponent, canActivate: [authRoleGuard(['customer', 'admin'])] },
       { path: 'designer-dashboard', component: DesignerDashboardPageComponent, canActivate: [authRoleGuard(['designer'])] },
       { path: 'designer-profile', component: DesignerProfilePageComponent, canActivate: [authRoleGuard(['designer'])] },
       { path: 'printer-dashboard', component: PrinterDashboardPageComponent, canActivate: [authRoleGuard(['printer'])] },

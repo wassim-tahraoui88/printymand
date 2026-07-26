@@ -3,7 +3,7 @@ import { Component, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DashboardShellComponent } from '../components/dashboard-shell.component';
 import { AuthService } from '../services/auth.service';
-import { WorkflowService } from '../services/workflow.service';
+import { PlatformStoreService } from '../services/platform-store.service';
 
 @Component({
   selector: 'app-printer-profile-page',
@@ -13,9 +13,9 @@ import { WorkflowService } from '../services/workflow.service';
 })
 export class PrinterProfilePageComponent {
   readonly auth = inject(AuthService);
-  readonly workflow = inject(WorkflowService);
+  readonly store = inject(PlatformStoreService);
   readonly user = computed(() => this.auth.user());
 
   /** Global products this printer has opted into (managed in the dashboard). */
-  readonly products = computed(() => (this.user() ? this.workflow.productsForPrinterUser(this.user()!.id) : []));
+  readonly products = computed(() => (this.user() ? this.store.productsForPrinterUser(this.user()!.id) : []));
 }

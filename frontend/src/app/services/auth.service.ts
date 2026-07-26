@@ -5,22 +5,24 @@ import type {
   Address,
   CustomerProfile,
   DesignerProfile,
-  DesignerRank,
   PaymentPreference,
   PrinterProfile,
-  PrinterRank,
   RegisterData,
   User,
   UserRole,
 } from '../models/types';
 import { PlatformStoreService } from './platform-store.service';
 
+/**
+ * Session facade: who is signed in, and edits that user makes to their OWN
+ * account. Operations an admin performs on other users (account status, roles,
+ * ranks) live on PlatformStoreService — they are not session concerns.
+ */
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly store = inject(PlatformStoreService);
 
   readonly user = computed(() => this.store.currentUser());
-  readonly users = computed(() => this.store.users());
   readonly isAuthenticated = computed(() => !!this.store.currentUser());
   readonly backendMode = computed(() => this.store.backendMode());
   readonly demoAccounts = demoAccounts;
@@ -84,26 +86,6 @@ export class AuthService {
     const user = this.user();
     if (!user) return;
     this.store.upsertPaymentPreference(user.id, preference);
-  }
-
-  updateUserRole(userId: number, role: UserRole): void {
-    this.store.updateUserRole(userId, role);
-  }
-
-  updateDesignerRank(userId: number, rank: DesignerRank): void {
-    this.store.updateDesignerRank(userId, rank);
-  }
-
-  updatePrinterRank(userId: number, rank: PrinterRank): void {
-    this.store.updatePrinterRank(userId, rank);
-  }
-
-  toggleUserSuspended(userId: number): void {
-    this.store.toggleUserSuspended(userId);
-  }
-
-  setAccountStatus(userId: number, status: AccountStatus): void {
-    this.store.setAccountStatus(userId, status);
   }
 
   /** Current user's verification state (defaults to ACTIVE for legacy/customer accounts). */

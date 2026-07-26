@@ -11,7 +11,27 @@
       "Bash(npm run *)",
       "Bash(git -C \"D:\\\\University\\\\Engineer\\\\Second Year\\\\Second Semester\\\\PFA\\\\Project\\\\printymand\" diff --stat HEAD)",
       "Read(//d/University/Engineer/Second Year/Second Semester/PFA/**)",
-      "Read(//d/University/**)"
+      "Read(//d/University/**)",
+      "Bash(node -e \"console.log\\(JSON.stringify\\(require\\('./package.json'\\).scripts,null,2\\)\\)\")",
+      "Bash(node -e \"const p=require\\('./angular.json'\\);console.log\\(JSON.stringify\\(p.projects[Object.keys\\(p.projects\\)[0]].architect.build,null,1\\)\\)\")",
+      "Bash(node -e ' *)",
+      "Bash(python -)",
+      "Bash(npx tsc *)",
+      "Bash(node -e \"const p=require\\('./package.json'\\);console.log\\('test target:',JSON.stringify\\(require\\('./angular.json'\\).projects.Printymand.architect.test||null\\)\\);console.log\\('devDeps:',Object.keys\\(p.devDependencies||{}\\).join\\(', '\\)\\)\")",
+      "Bash(mkdir -p ../.tmpspec)",
+      "Bash(mv src/app/models/order-status.spec.ts src/app/services/platform-store.service.spec.ts ../.tmpspec/)",
+      "Bash(mv ../.tmpspec/order-status.spec.ts src/app/models/)",
+      "Bash(mv ../.tmpspec/platform-store.service.spec.ts src/app/services/)",
+      "Bash(rmdir ../.tmpspec)",
+      "Read(//tmp/pmd-base/**)",
+      "Bash(cp -r \"D:/University/Engineer/Second Year/Second Semester/PFA/Project/printymand/frontend/node_modules\" .)",
+      "Bash(cd /tmp/pmd-base/frontend && ls node_modules >/dev/null 2>&1 && echo \"deps present\" || echo \"deps missing\"; du -sh node_modules 2>/dev/null | head -1)",
+      "Bash(rm -rf node_modules)",
+      "Bash(cmd //c \"mklink /J node_modules \\\\\"D:\\\\\\\\University\\\\\\\\Engineer\\\\\\\\Second Year\\\\\\\\Second Semester\\\\\\\\PFA\\\\\\\\Project\\\\\\\\printymand\\\\\\\\frontend\\\\\\\\node_modules\\\\\"\")",
+      "Bash(cmd //c \"rmdir /S /Q node_modules\")",
+      "Bash(cmd //c \"mklink /J node_modules \\\\\"D:\\\\University\\\\Engineer\\\\Second Year\\\\Second Semester\\\\PFA\\\\Project\\\\printymand\\\\frontend\\\\node_modules\\\\\"\")",
+      "PowerShell($base = \"$env:TEMP\\\\pmd-base\\\\frontend\"; if \\(Test-Path \"$base\\\\node_modules\"\\) { cmd /c \"rmdir `\"$base\\\\node_modules`\"\" }; New-Item -ItemType Junction -Path \"$base\\\\node_modules\" -Target \"D:\\\\University\\\\Engineer\\\\Second Year\\\\Second Semester\\\\PFA\\\\Project\\\\printymand\\\\frontend\\\\node_modules\" | Select-Object -ExpandProperty FullName)",
+      "PowerShell(cmd /c \"rmdir `\"$env:TEMP\\\\pmd-base\\\\frontend\\\\node_modules`\"\"; cd \"D:\\\\University\\\\Engineer\\\\Second Year\\\\Second Semester\\\\PFA\\\\Project\\\\printymand\"; git worktree remove --force \"$env:TEMP\\\\pmd-base\"; git worktree list)"
     ]
   }
 }

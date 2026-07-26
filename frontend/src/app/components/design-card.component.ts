@@ -1,7 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, inject, input } from '@angular/core';
 import { RouterModule } from '@angular/router';
+import { DEFAULT_PLACEMENT } from '../models/placement';
 import type { Design, Product } from '../models/types';
+import { PlatformStoreService } from '../services/platform-store.service';
 import { ImageWithFallbackComponent } from './image-with-fallback.component';
 
 @Component({
@@ -11,7 +13,16 @@ import { ImageWithFallbackComponent } from './image-with-fallback.component';
   templateUrl: './design-card.html',
 })
 export class DesignCardComponent {
+  private readonly store = inject(PlatformStoreService);
+
   readonly design = input.required<Design>();
+
+  /**
+   * Lowest total the buyer could pay (cheapest printable product + platform
+   * margin). `Design.price` is a legacy design fee and is NOT what is charged,
+   * so it is never shown. Null when nothing is printable yet.
+   */
+  readonly fromPrice = computed(() => this.store.designFromPrice(this.design()));
   readonly preferredProductId = input<number | null>(null);
 
   /**
@@ -30,15 +41,6 @@ export class DesignCardComponent {
   readonly placement = computed(() => {
     const p = this.product();
     const cfg = p ? this.design().productConfigurations.find((c) => c.productId === p.id) : undefined;
-    return cfg?.defaultPlacement ?? { x: 50, y: 48, scale: 0.42 };
-  });
-
-  readonly statusTone = computed(() => {
-    const map: Record<Design['status'], string> = {
-      ACTIVE: 'border-emerald-400/20 bg-emerald-400/10 text-emerald-200',
-      ARCHIVED: 'border-amber-400/20 bg-amber-400/10 text-amber-200',
-      REMOVED: 'border-rose-400/20 bg-rose-400/10 text-rose-200',
-    };
-    return map[this.design().status];
+    return cfg?.defaultPlacement ?? DEFAULT_PLACEMENT;
   });
 }

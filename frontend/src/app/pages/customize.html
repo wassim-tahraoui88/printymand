@@ -38,7 +38,7 @@
 
           <div class="cust-body">
             <div class="cust-preview">
-              <app-image-with-fallback [src]="p.images[0] ?? d.image" [alt]="p.name" [imgClass]="'bg w-full h-full object-cover'" />
+              <app-image-with-fallback [src]="previewImage(p)" [alt]="p.name" [imgClass]="'bg w-full h-full object-cover'" />
               <div
                 class="overlay"
                 style="transform:translate(-50%,-50%);"
@@ -121,5 +121,12 @@
       </div>
     }
 
+  </section>
+} @else {
+  <section class="page" style="padding-block:80px;">
+    <div style="text-align:center;">
+      <p class="serif-italic" style="font-size:22px; color:var(--pm-text-muted);">Design not found.</p>
+      <a routerLink="/marketplace" class="btn btn-ghost" style="margin-top:18px;">← Browse marketplace</a>
+    </div>
   </section>
 }

@@ -3,8 +3,10 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { DashboardSidebarComponent, DashboardNavSection } from '../components/dashboard-sidebar.component';
+import { TUNISIA_GOVERNORATES } from '../models/tunisia';
+import { isInFlight, orderStatusClass } from '../models/order-status';
 import { AuthService } from '../services/auth.service';
-import { WorkflowService } from '../services/workflow.service';
+import { PlatformStoreService } from '../services/platform-store.service';
 
 @Component({
   selector: 'app-customer-dashboard-page',
@@ -14,7 +16,7 @@ import { WorkflowService } from '../services/workflow.service';
 })
 export class CustomerDashboardPageComponent {
   private readonly auth = inject(AuthService);
-  readonly workflow = inject(WorkflowService);
+  readonly store = inject(PlatformStoreService);
 
   readonly activeTab = signal('overview');
   readonly sidebarOpen = signal(false);
@@ -30,15 +32,15 @@ export class CustomerDashboardPageComponent {
   ];
 
   readonly user = computed(() => this.auth.user());
-  readonly orders = computed(() => (this.user() ? this.workflow.currentOrders() : []));
-  readonly reviews = computed(() => this.workflow.reviews().filter((r) => r.customerId === this.user()?.id));
+  readonly orders = computed(() => (this.user() ? this.store.currentUserOrders() : []));
+  readonly reviews = computed(() => this.store.reviews().filter((r) => r.customerId === this.user()?.id));
   readonly addresses = computed(() => this.user()?.customerProfile?.savedAddresses ?? []);
   readonly paymentPreferences = computed(() => this.user()?.customerProfile?.paymentPreferences ?? []);
 
   readonly stats = computed(() => {
     const orders = this.orders();
-    const delivered = orders.filter((o) => this.workflow.getOrderStatus(o) === 'Delivered').length;
-    const inFlight = orders.filter((o) => ['Pending', 'Accepted', 'Printing', 'Shipped'].includes(this.workflow.getOrderStatus(o))).length;
+    const delivered = orders.filter((o) => this.store.getOrderStatus(o) === 'Delivered').length;
+    const inFlight = orders.filter((o) => isInFlight(this.store.getOrderStatus(o))).length;
     return {
       orders: orders.length,
       delivered,
@@ -55,7 +57,7 @@ export class CustomerDashboardPageComponent {
   readonly reviewError = signal('');
   readonly reviewOrder = computed(() => {
     const id = this.reviewOrderId();
-    return id ? this.workflow.getOrderById(id) : undefined;
+    return id ? this.store.getOrderById(id) : undefined;
   });
   hasReview(orderId: number | string, target: 'design' | 'printer'): boolean {
     return this.reviews().some((r) => r.orderId === orderId && r.target === target);
@@ -82,16 +84,9 @@ export class CustomerDashboardPageComponent {
     enabled: true,
   });
 
-  readonly governorates = [
-    'Ariana', 'Béja', 'Ben Arous', 'Bizerte', 'Gabès', 'Gafsa',
-    'Jendouba', 'Kairouan', 'Kasserine', 'Kébili', 'Kef', 'Mahdia',
-    'Manouba', 'Médenine', 'Monastir', 'Nabeul', 'Sfax', 'Sidi Bouzid',
-    'Siliana', 'Sousse', 'Tataouine', 'Tozeur', 'Tunis', 'Zaghouan',
-  ] as const;
+  readonly governorates = TUNISIA_GOVERNORATES;
 
-  statusClass(status: string): string {
-    return `pm-status pm-status-${status.toLowerCase().replace(/\s+/g, '-')}`;
-  }
+  readonly statusClass = orderStatusClass;
 
   openReviewModal(orderId: number | string): void {
     this.reviewOrderId.set(orderId);
@@ -115,7 +110,7 @@ export class CustomerDashboardPageComponent {
     this.reviewError.set('');
 
     if (firstLine && !this.hasReview(order.id, 'design')) {
-      const res = await this.workflow.submitReview(order.id, user.id, {
+      const res = await this.store.submitReview(order.id, user.id, {
         target: 'design',
         designId: firstLine.designId,
         rating: this.reviewRating(),
@@ -128,7 +123,7 @@ export class CustomerDashboardPageComponent {
     }
 
     if (firstLine?.printerId && !this.hasReview(order.id, 'printer')) {
-      const res = await this.workflow.submitReview(order.id, user.id, {
+      const res = await this.store.submitReview(order.id, user.id, {
         target: 'printer',
         printerId: firstLine.printerId,
         rating: this.reviewPrinterRating(),

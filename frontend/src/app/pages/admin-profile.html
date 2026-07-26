@@ -1,8 +1,8 @@
 <app-dashboard-shell eyebrow="Admin" title="Admin profile" description="Platform operator identity settings.">
   <div style="max-width:540px;">
-    <div class="pm-panel" style="padding:1.5rem;">
-      <h2 class="font-bold text-lg mb-4" style="color:var(--pm-text);">Account</h2>
-      <div class="grid gap-3">
+    <div class="desk-section">
+      <h3>Account</h3>
+      <div style="display:grid; gap:14px;">
         <label class="pm-field">
           <span class="pm-label">Name</span>
           <input class="pm-input" [ngModel]="user()?.name" (ngModelChange)="auth.updateProfile({ name: $event })" />

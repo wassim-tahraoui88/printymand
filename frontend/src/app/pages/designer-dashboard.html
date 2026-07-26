@@ -51,7 +51,7 @@
         </div>
         <div class="kpi">
           <span class="l">Avg conversion</span>
-          <span class="v">{{ totals().avgConversion | number:'1.1-1' }}<small>%</small></span>
+          <span class="v">{{ totals().avgConversion * 100 | number:'1.1-1' }}<small>%</small></span>
         </div>
       </div>
 
@@ -152,7 +152,7 @@
                 @for (cat of allCategories(); track cat) {
                   <button
                     type="button"
-                    class="pm-chip"
+                    class="chip"
                     [style.background]="isCategory(cat) ? 'var(--pm-primary)' : 'var(--pm-surface-alt)'"
                     [style.color]="isCategory(cat) ? '#fff' : 'var(--pm-text-muted)'"
                     [style.border-color]="isCategory(cat) ? 'var(--pm-primary)' : 'var(--pm-border)'"
@@ -180,7 +180,7 @@
               @if (designForm().tags.length) {
                 <div style="display:flex; flex-wrap:wrap; gap:0.4rem; margin-top:0.5rem;">
                   @for (tag of designForm().tags; track tag) {
-                    <span class="pm-chip" style="display:inline-flex; align-items:center; gap:0.3rem;">
+                    <span class="chip" style="display:inline-flex; align-items:center; gap:0.3rem;">
                       {{ tag }}
                       <button type="button" (click)="removeTag(tag)" style="background:none; border:none; cursor:pointer; color:var(--pm-text-muted); font-weight:700;">×</button>
                     </span>
@@ -347,7 +347,7 @@
         </div>
         <div class="kpi">
           <span class="l">Avg conversion</span>
-          <span class="v">{{ totals().avgConversion | number:'1.1-1' }}<small>%</small></span>
+          <span class="v">{{ totals().avgConversion * 100 | number:'1.1-1' }}<small>%</small></span>
         </div>
       </div>
 
@@ -378,10 +378,10 @@
             <tbody>
               @for (row of analytics(); track row.designId) {
                 <tr>
-                  <td class="title-cell">{{ workflow.getDesignById(row.designId)?.title ?? row.designId }}</td>
+                  <td class="title-cell">{{ store.getDesignById(row.designId)?.title ?? row.designId }}</td>
                   <td class="r">{{ row.views }}</td>
                   <td class="r">{{ row.sales }}</td>
-                  <td class="r">{{ row.conversion | number:'1.1-1' }}%</td>
+                  <td class="r">{{ row.conversion * 100 | number:'1.1-1' }}%</td>
                   <td class="r amt">{{ row.revenue | number:'1.0-0' }}<small>TND</small></td>
                 </tr>
               }

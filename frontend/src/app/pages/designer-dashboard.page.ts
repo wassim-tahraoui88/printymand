@@ -4,8 +4,10 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { DashboardSidebarComponent, DashboardNavSection } from '../components/dashboard-sidebar.component';
 import { DonutChartComponent, type DonutSlice } from '../components/donut-chart.component';
+import { DEFAULT_PLACEMENT } from '../models/placement';
+import { MAX_ARTWORK_BYTES, readArtworkFile } from '../utils/read-file';
 import { AuthService } from '../services/auth.service';
-import { WorkflowService } from '../services/workflow.service';
+import { PlatformStoreService } from '../services/platform-store.service';
 
 const CHART_COLORS = ['#C74A2B', '#E89E1C', '#2E7D5B', '#3B6EA5', '#7C3AED', '#0E7490', '#B45309', '#9A3412'];
 
@@ -17,7 +19,7 @@ const CHART_COLORS = ['#C74A2B', '#E89E1C', '#2E7D5B', '#3B6EA5', '#7C3AED', '#0
 })
 export class DesignerDashboardPageComponent {
   readonly auth = inject(AuthService);
-  readonly workflow = inject(WorkflowService);
+  readonly store = inject(PlatformStoreService);
   private readonly route = inject(ActivatedRoute);
 
   readonly activeTab = signal('overview');
@@ -44,15 +46,15 @@ export class DesignerDashboardPageComponent {
   ];
 
   readonly user = computed(() => this.auth.user());
-  readonly designs = computed(() => (this.user() ? this.workflow.designsForDesigner(this.user()!.id) : []));
-  readonly analytics = computed(() => (this.user() ? this.workflow.designerAnalytics(this.user()!.id) : []));
+  readonly designs = computed(() => (this.user() ? this.store.designsForDesigner(this.user()!.id) : []));
+  readonly analytics = computed(() => (this.user() ? this.store.designerAnalytics(this.user()!.id) : []));
 
   /** Pie data: sales split across the designer's designs. */
   readonly salesChart = computed<DonutSlice[]>(() =>
     this.analytics()
       .filter((a) => a.sales > 0)
       .map((a, i) => ({
-        label: this.workflow.getDesignById(a.designId)?.title ?? `#${a.designId}`,
+        label: this.store.getDesignById(a.designId)?.title ?? `#${a.designId}`,
         value: a.sales,
         color: CHART_COLORS[i % CHART_COLORS.length],
       })),
@@ -63,18 +65,18 @@ export class DesignerDashboardPageComponent {
     this.analytics()
       .filter((a) => a.views > 0)
       .map((a, i) => ({
-        label: this.workflow.getDesignById(a.designId)?.title ?? `#${a.designId}`,
+        label: this.store.getDesignById(a.designId)?.title ?? `#${a.designId}`,
         value: a.views,
         color: CHART_COLORS[i % CHART_COLORS.length],
       })),
   );
-  readonly totals = computed(() => (this.user() ? this.workflow.designerTotals(this.user()!.id) : { earnings: 0, designs: 0, orders: 0, avgConversion: 0 }));
-  readonly payouts = computed(() => this.workflow.payouts().filter((p) => p.designerId === this.user()?.id));
+  readonly totals = computed(() => (this.user() ? this.store.designerTotals(this.user()!.id) : { earnings: 0, designs: 0, orders: 0, avgConversion: 0 }));
+  readonly payouts = computed(() => this.store.payouts().filter((p) => p.designerId === this.user()?.id));
 
   // ── Upload wizard ──────────────────────────────────────────────
   // Step 1: upload artwork (≤ 1 MB). Step 2: pick compatible products and
   // customize the design per product (placement, colors, copy).
-  readonly MAX_IMAGE_BYTES = 1024 * 1024;
+  readonly MAX_IMAGE_BYTES = MAX_ARTWORK_BYTES;
   readonly wizardStep = signal<1 | 2>(1);
   readonly uploadError = signal('');
 
@@ -91,7 +93,7 @@ export class DesignerDashboardPageComponent {
   readonly MAX_TAGS = 10;
 
   /** Platform-controlled category list (admin owns it). */
-  readonly allCategories = computed(() => this.workflow.platformSettings().categories);
+  readonly allCategories = computed(() => this.store.platformSettings().categories);
 
   toggleCategory(cat: string): void {
     const f = this.designForm();
@@ -126,10 +128,10 @@ export class DesignerDashboardPageComponent {
     Record<number, { selected: boolean; x: number; y: number; scale: number; colors: string[]; sizes: string[]; title: string; description: string }>
   >({});
 
-  readonly allProducts = computed(() => this.workflow.products());
+  readonly allProducts = computed(() => this.store.products());
 
   private blankConfig() {
-    return { selected: false, x: 50, y: 48, scale: 0.42, colors: [] as string[], sizes: [] as string[], title: '', description: '' };
+    return { selected: false, ...DEFAULT_PLACEMENT, colors: [] as string[], sizes: [] as string[], title: '', description: '' };
   }
 
   configFor(productId: number) {
@@ -143,10 +145,10 @@ export class DesignerDashboardPageComponent {
 
   /** Predefined colours/sizes for a product (admin-owned, designer picks a subset). */
   productColors(productId: number): string[] {
-    return this.workflow.getProductById(productId)?.colors ?? [];
+    return this.store.getProductById(productId)?.colors ?? [];
   }
   productSizes(productId: number): string[] {
-    return this.workflow.getProductById(productId)?.sizes ?? [];
+    return this.store.getProductById(productId)?.sizes ?? [];
   }
 
   toggleProduct(productId: number, checked: boolean): void {
@@ -211,7 +213,7 @@ export class DesignerDashboardPageComponent {
       this.wizardStep.set(2);
       return;
     }
-    const created = this.workflow.addOrUpdateDesign(
+    const created = this.store.addOrUpdateDesign(
       {
         id: f.id || undefined,
         title: f.title,
@@ -224,10 +226,10 @@ export class DesignerDashboardPageComponent {
       user.id,
     );
     const ids = this.selectedProductIds();
-    this.workflow.assignProductsToDesign(created.id, ids);
+    this.store.assignProductsToDesign(created.id, ids);
     for (const pid of ids) {
       const c = this.configFor(pid);
-      this.workflow.saveDesignProductConfiguration(created.id, {
+      this.store.saveDesignProductConfiguration(created.id, {
         productId: pid,
         defaultPlacement: { x: c.x, y: c.y, scale: c.scale },
         availableColors: c.colors.length ? c.colors : this.productColors(pid),
@@ -246,8 +248,8 @@ export class DesignerDashboardPageComponent {
   }
 
   /** Platform-fixed royalty the designer earns per sale (read-only, spec §5). */
-  readonly royaltyPerSale = computed(() => this.workflow.platformSettings().designerRoyalty);
-  readonly payoutThreshold = computed(() => this.workflow.platformSettings().payoutThreshold);
+  readonly royaltyPerSale = computed(() => this.store.platformSettings().designerRoyalty);
+  readonly payoutThreshold = computed(() => this.store.platformSettings().payoutThreshold);
   readonly payoutBalance = computed(() => this.user()?.designerProfile?.payoutBalance ?? 0);
   readonly salesScore = computed(() => this.user()?.designerProfile?.salesScore ?? 0);
   readonly level = computed(() => this.user()?.designerRank ?? 'Novice');
@@ -257,7 +259,7 @@ export class DesignerDashboardPageComponent {
   requestPayout(): void {
     const user = this.user();
     if (!user) return;
-    const res = this.workflow.requestDesignerPayout(user.id);
+    const res = this.store.requestDesignerPayout(user.id);
     this.payoutMsg.set(res.success ? 'Payout requested. It will be processed within 7 days.' : res.error ?? 'Unable to request payout.');
   }
 
@@ -284,8 +286,8 @@ export class DesignerDashboardPageComponent {
         x: cfg?.defaultPlacement.x ?? 50,
         y: cfg?.defaultPlacement.y ?? 48,
         scale: cfg?.defaultPlacement.scale ?? 0.42,
-        colors: cfg?.availableColors ?? this.workflow.getProductById(pid)?.colors ?? [],
-        sizes: cfg?.availableSizes ?? this.workflow.getProductById(pid)?.sizes ?? [],
+        colors: cfg?.availableColors ?? this.store.getProductById(pid)?.colors ?? [],
+        sizes: cfg?.availableSizes ?? this.store.getProductById(pid)?.sizes ?? [],
         title: cfg?.title ?? '',
         description: cfg?.description ?? '',
       };
@@ -296,22 +298,22 @@ export class DesignerDashboardPageComponent {
     this.uploadError.set('');
   }
 
-  /** Step 1: validate the artwork is ≤ 1 MB before accepting it. */
+  /** Step 1: validate type + size before accepting the artwork. */
   async onDesignFileChange(event: Event): Promise<void> {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (!file) return;
-    if (file.size > this.MAX_IMAGE_BYTES) {
-      this.uploadError.set(`Image is too large (${(file.size / 1024 / 1024).toFixed(2)} MB). Maximum is 1 MB.`);
+    const { dataUrl, error } = await readArtworkFile(file);
+    if (error) {
+      this.uploadError.set(error);
       this.designForm.set({ ...this.designForm(), image: '' });
       return;
     }
     this.uploadError.set('');
-    const result = await readFileAsDataUrl(file);
-    this.designForm.set({ ...this.designForm(), image: result });
+    this.designForm.set({ ...this.designForm(), image: dataUrl! });
   }
 
   toggleArchive(designId: number, archived: boolean): void {
-    this.workflow.setDesignStatus(designId, archived ? 'ACTIVE' : 'ARCHIVED');
+    this.store.setDesignStatus(designId, archived ? 'ACTIVE' : 'ARCHIVED');
   }
 
   saveProfile(): void {
@@ -323,13 +325,4 @@ export class DesignerDashboardPageComponent {
         .map((url, i) => ({ id: `link-${i}`, label: `Link ${i + 1}`, url })),
     });
   }
-}
-
-function readFileAsDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(file);
-  });
 }

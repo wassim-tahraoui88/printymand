@@ -1,8 +1,8 @@
 <app-dashboard-shell eyebrow="Designer" title="Designer profile" description="Manage your public creative identity and payout details.">
-  <div class="grid gap-6 lg:grid-cols-2 lg:items-start">
-    <div class="pm-panel" style="padding:1.5rem;">
-      <h2 class="font-bold text-lg mb-4" style="color:var(--pm-text);">Identity</h2>
-      <div class="grid gap-3">
+  <div class="desk-field-group" style="align-items:start;">
+    <div class="desk-section">
+      <h3>Identity</h3>
+      <div style="display:grid; gap:14px;">
         <label class="pm-field">
           <span class="pm-label">Name</span>
           <input class="pm-input" [ngModel]="user()?.name" (ngModelChange)="auth.updateProfile({ name: $event })" />
@@ -17,9 +17,9 @@
         </label>
       </div>
     </div>
-    <div class="pm-panel" style="padding:1.5rem;">
-      <h2 class="font-bold text-lg mb-4" style="color:var(--pm-text);">Public profile</h2>
-      <div class="grid gap-3">
+    <div class="desk-section">
+      <h3>Public profile</h3>
+      <div style="display:grid; gap:14px;">
         <label class="pm-field">
           <span class="pm-label">Banner URL</span>
           <input class="pm-input" [ngModel]="user()?.designerProfile?.banner" (ngModelChange)="auth.updateDesignerProfile({ banner: $event })" />

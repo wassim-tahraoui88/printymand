@@ -3,8 +3,9 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import type { Order } from '../models/types';
+import { TUNISIA_GOVERNORATES } from '../models/tunisia';
 import { AuthService } from '../services/auth.service';
-import { WorkflowService } from '../services/workflow.service';
+import { PlatformStoreService } from '../services/platform-store.service';
 
 /**
  * Cart / payment page.
@@ -21,12 +22,12 @@ import { WorkflowService } from '../services/workflow.service';
 })
 export class CheckoutPageComponent {
   private readonly auth = inject(AuthService);
-  private readonly workflow = inject(WorkflowService);
+  private readonly store = inject(PlatformStoreService);
   private readonly router = inject(Router);
 
   readonly user = computed(() => this.auth.user());
   readonly orders = computed<Order[]>(() =>
-    this.user() ? this.workflow.awaitingPaymentOrdersForUser(this.user()!.id) : [],
+    this.user() ? this.store.awaitingPaymentOrdersForUser(this.user()!.id) : [],
   );
   readonly defaultAddress = computed(() => this.user()?.customerProfile?.savedAddresses.find((a) => a.isDefault));
 
@@ -40,12 +41,7 @@ export class CheckoutPageComponent {
   readonly governorate = signal('');
   readonly phone = signal('');
 
-  readonly governorates = [
-    'Ariana', 'Béja', 'Ben Arous', 'Bizerte', 'Gabès', 'Gafsa',
-    'Jendouba', 'Kairouan', 'Kasserine', 'Kébili', 'Kef', 'Mahdia',
-    'Manouba', 'Médenine', 'Monastir', 'Nabeul', 'Sfax', 'Sidi Bouzid',
-    'Siliana', 'Sousse', 'Tataouine', 'Tozeur', 'Tunis', 'Zaghouan',
-  ] as const;
+  readonly governorates = TUNISIA_GOVERNORATES;
 
   readonly shippingAddress = computed(() =>
     [this.recipientName(), this.addressLine(), this.city(), this.governorate(), this.phone()]
@@ -72,9 +68,9 @@ export class CheckoutPageComponent {
     this.busy.set(order.id);
     this.error.set('');
     const shipping = this.shippingAddress().trim();
-    if (shipping) this.workflow.setOrderShippingAddress(order.id, shipping);
-    this.workflow.setOrderPaymentMethod(order.id, this.paymentMethod());
-    const result = await this.workflow.payForOrder(order.id);
+    if (shipping) this.store.setOrderShippingAddress(order.id, shipping);
+    this.store.setOrderPaymentMethod(order.id, this.paymentMethod());
+    const result = await this.store.payForOrder(order.id);
     this.busy.set(null);
     if (!result.success) {
       this.error.set(result.error ?? 'Payment could not be completed.');
@@ -88,7 +84,7 @@ export class CheckoutPageComponent {
     const user = this.user();
     if (!user) return;
     this.error.set('');
-    const result = this.workflow.cancelOrderRequest(order.id, user.id);
+    const result = this.store.cancelOrderRequest(order.id, user.id);
     if (!result.success) {
       this.error.set(result.error ?? 'Could not remove this order.');
     }

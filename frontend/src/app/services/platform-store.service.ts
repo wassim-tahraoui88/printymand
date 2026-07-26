@@ -1,5 +1,5 @@
 import { Injectable, computed, effect, inject, signal } from '@angular/core';
-import { demoAccounts, designCategories, seedDesigns, seedOfferings, seedOrders, seedPayouts, seedPrinters, seedProducts, seedReviews, seedUsers } from '../data/mock';
+import { demoAccounts, seedDesigns, seedOfferings, seedOrders, seedPayouts, seedPrinters, seedProducts, seedReviews, seedUsers } from '../data/mock';
 import type {
   Address,
   AnalyticsPoint,
@@ -41,9 +41,10 @@ import type {
   User,
   UserRole,
 } from '../models/types';
+import { environment } from '../../environments/environment';
 import { ApiService } from './api.service';
 
-const STORAGE_KEY = 'printymand_platform_state_v6';
+export const STORAGE_KEY = 'printymand_platform_state_v7';
 
 const DEFAULT_PLATFORM_SETTINGS: PlatformSettings = {
   // Spec example: printer 30 TND + platform 10 TND = 40 TND final price.
@@ -54,6 +55,12 @@ const DEFAULT_PLATFORM_SETTINGS: PlatformSettings = {
   payoutThreshold: 50,
   categories: ['Culture', 'Typography', 'Minimal', 'Nature', 'Streetwear', 'Retro'],
 };
+
+const MS_PER_DAY = 86_400_000;
+/** Days a designer payout request takes to clear. */
+const PAYOUT_TERM_DAYS = 7;
+/** Fulfillment score a printer earns per fully delivered order. */
+const FULFILLMENT_SCORE_PER_ORDER = 5;
 
 /** Spec "Designer Roles": level auto-derived from cumulative sales score. */
 function designerLevelForScore(score: number): DesignerRank {
@@ -70,14 +77,42 @@ function printerLevelForScore(score: number): PrinterRank {
   return 'Verified';
 }
 
+/**
+ * Local credential record for the offline demo store.
+ *
+ * NOTE: this is NOT a security control. The digest below only avoids keeping
+ * readable passwords in localStorage; anything derived in the browser can be
+ * recomputed by the browser. Real authentication must live behind the backend
+ * (`environment.useRealApi = true`), which is the only mode that should ever be
+ * used with real user accounts.
+ */
 interface StoredCredential {
   email: string;
-  password: string;
+  passwordHash: string;
   userId: number;
 }
 
-interface PlatformState {
-  backendMode: 'mock' | 'hybrid' | 'api';
+/** Non-cryptographic digest (FNV-1a) — see the StoredCredential note above. */
+function digestPassword(password: string): string {
+  let hash = 0x811c9dc5;
+  const salted = `printymand::${password}`;
+  for (let i = 0; i < salted.length; i++) {
+    hash ^= salted.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+  }
+  return hash.toString(16).padStart(8, '0');
+}
+
+/**
+ * How the store last interacted with the backend.
+ * - `mock`   — `environment.useRealApi` is false; no HTTP is attempted.
+ * - `api`    — the last backend call succeeded.
+ * - `hybrid` — the backend is enabled but unreachable/failing; serving local state.
+ */
+type BackendMode = 'mock' | 'hybrid' | 'api';
+
+export interface PlatformState {
+  backendMode: BackendMode;
   currentUserId: number | null;
   nextId: number;
   users: User[];
@@ -104,8 +139,11 @@ type PaymentPreferenceInput = Omit<PaymentPreference, 'id'> & Partial<Pick<Payme
 @Injectable({ providedIn: 'root' })
 export class PlatformStoreService {
   private readonly api = inject(ApiService);
+  /** Set when localStorage rejects a write (typically the quota). */
+  private readonly persistError = signal<string | null>(null);
   private readonly state = signal<PlatformState>(this.readState());
 
+  readonly storageWarning = this.persistError.asReadonly();
   readonly backendMode = computed(() => this.state().backendMode);
   readonly currentUser = computed(() => this.state().users.find((user) => user.id === this.state().currentUserId) ?? null);
   readonly users = computed(() => this.state().users);
@@ -130,7 +168,12 @@ export class PlatformStoreService {
     return u ? this.awaitingPaymentOrdersForUser(u.id) : [];
   });
   readonly customizationDraft = computed(() => this.state().customizationDraft);
-  readonly categories = computed(() => designCategories.slice());
+  /**
+   * The ONE marketplace category list, owned by platform settings and editable
+   * by an admin. It contains real categories only — "All" is a UI affordance and
+   * must not live in the data.
+   */
+  readonly categories = computed(() => this.state().platformSettings.categories);
   readonly currentCart = computed(() => {
     const currentUser = this.currentUser();
     return currentUser ? this.cartForUser(currentUser.id) : { items: [], total: 0 };
@@ -150,24 +193,33 @@ export class PlatformStoreService {
     });
   }
 
-  async login(email: string, password: string): Promise<{ success: boolean; error?: string }> {
+  /**
+   * Run a backend call when `environment.useRealApi` is on, recording the
+   * outcome in `backendMode`. Returns null when the API is disabled or failed,
+   * which tells the caller to fall back to purely local state.
+   */
+  private async tryApi<T>(call: () => Promise<T>): Promise<T | null> {
+    if (!environment.useRealApi) return null;
     try {
-      const response = await this.api.login({ email, password });
-      if (response.user) {
-        this.syncApiUser(response.user);
-        this.patchState({ currentUserId: response.user.id, backendMode: 'api' });
-        return { success: true };
-      }
+      const result = await call();
+      this.patchState({ backendMode: 'api' });
+      return result;
     } catch {
       this.patchState({ backendMode: 'hybrid' });
+      return null;
     }
+  }
 
-    const credential = this.state().credentials.find((entry) => entry.email.toLowerCase() === email.trim().toLowerCase());
-    if (!credential || credential.password !== password) {
-      return { success: false, error: 'Invalid email or password.' };
-    }
+  /** Mirror a local mutation to the backend without blocking the UI. */
+  private syncApi(call: () => Promise<unknown>): void {
+    void this.tryApi(call);
+  }
 
-    const user = this.getUserById(credential.userId);
+  /**
+   * Gate a sign-in on the account lifecycle. Applied to BOTH the backend and the
+   * local credential path so a suspended/banned account can never get a session.
+   */
+  private accountGate(user: User | undefined): { success: boolean; error?: string } {
     if (!user) {
       return { success: false, error: 'Account data is unavailable. Please refresh and try again.' };
     }
@@ -178,8 +230,29 @@ export class PlatformStoreService {
     if (status === 'BANNED') {
       return { success: false, error: 'This account has been banned for policy violations.' };
     }
+    return { success: true };
+  }
 
-    this.patchState({ currentUserId: user.id });
+  async login(email: string, password: string): Promise<{ success: boolean; error?: string }> {
+    const response = await this.tryApi(() => this.api.login({ email, password }));
+    if (response?.user) {
+      this.syncApiUser(response.user);
+      const gate = this.accountGate(this.getUserById(response.user.id));
+      if (!gate.success) return gate;
+      this.patchState({ currentUserId: response.user.id });
+      return { success: true };
+    }
+
+    const credential = this.state().credentials.find((entry) => entry.email.toLowerCase() === email.trim().toLowerCase());
+    if (!credential || credential.passwordHash !== digestPassword(password)) {
+      return { success: false, error: 'Invalid email or password.' };
+    }
+
+    const user = this.getUserById(credential.userId);
+    const gate = this.accountGate(user);
+    if (!gate.success) return gate;
+
+    this.patchState({ currentUserId: user!.id });
     return { success: true };
   }
 
@@ -195,18 +268,15 @@ export class PlatformStoreService {
       return { success: false, error: 'An account with this email already exists.' };
     }
 
-    try {
-      await this.api.register({
+    await this.tryApi(() =>
+      this.api.register({
         name: input.name,
         email: input.email,
         password: input.password,
         address: input.address,
         role: input.role,
-      });
-      this.patchState({ backendMode: 'hybrid' });
-    } catch {
-      this.patchState({ backendMode: 'hybrid' });
-    }
+      }),
+    );
 
     const userId = this.takeNextId();
     const createdUser = createUserForRole({
@@ -225,7 +295,10 @@ export class PlatformStoreService {
       ...current,
       currentUserId: createdUser.id,
       users: [createdUser, ...current.users],
-      credentials: [...current.credentials, { email: createdUser.email, password: input.password, userId: createdUser.id }],
+      credentials: [
+        ...current.credentials,
+        { email: createdUser.email, passwordHash: digestPassword(input.password), userId: createdUser.id },
+      ],
       printers: nextPrinter ? [nextPrinter, ...current.printers] : current.printers,
     }));
 
@@ -233,11 +306,7 @@ export class PlatformStoreService {
   }
 
   async logout(): Promise<void> {
-    try {
-      await this.api.logout();
-    } catch {
-      this.patchState({ backendMode: 'hybrid' });
-    }
+    await this.tryApi(() => this.api.logout());
     this.patchState({ currentUserId: null });
   }
 
@@ -422,28 +491,40 @@ export class PlatformStoreService {
     }));
   }
 
+  /**
+   * Move a user between roles.
+   *
+   * Demoting a printer retires their PrinterPartner rather than deleting it, so
+   * historical order lines and offerings keep resolving. A retired partner is
+   * marked unavailable and is filtered out of printer selection.
+   */
   updateUserRole(userId: number, role: UserRole): void {
-    this.state.update((current) => {
-      const updatedUsers = current.users.map((user) => {
-        if (user.id !== userId) return user;
-        return ensureRoleDefaults({ ...user, role });
-      });
-      const updatedUser = updatedUsers.find((user) => user.id === userId);
-      const existingPrinter = current.printers.find((printer) => printer.userId === userId);
-      const shouldCreatePrinter = role === 'printer' && updatedUser && !existingPrinter;
-      const nextPrinterId = shouldCreatePrinter ? current.nextId + 1 : current.nextId;
+    const existingPrinter = this.getPrinterByUserId(userId);
+    // Reserved before the updater; takeNextId() writes to the same signal.
+    const newPrinterId = role === 'printer' && !existingPrinter ? this.takeNextId() : null;
 
-      return {
-        ...current,
-        nextId: nextPrinterId,
-        users: updatedUsers,
-        printers:
-          role === 'printer' && updatedUser
-            ? existingPrinter
-              ? current.printers
-              : [...current.printers, createPrinterPartner({ id: nextPrinterId, user: updatedUser })]
-            : current.printers.filter((printer) => printer.userId !== userId),
-      };
+    this.state.update((current) => {
+      const updatedUsers = current.users.map((user) =>
+        user.id === userId ? ensureRoleDefaults({ ...user, role }) : user,
+      );
+      const updatedUser = updatedUsers.find((user) => user.id === userId);
+      if (!updatedUser) return current;
+
+      let printers = current.printers;
+      if (role === 'printer') {
+        printers = existingPrinter
+          ? printers.map((printer) =>
+              printer.userId === userId ? { ...printer, retired: false } : printer,
+            )
+          : [...printers, createPrinterPartner({ id: newPrinterId!, user: updatedUser })];
+      } else {
+        // Retire instead of removing: orders/offerings still reference this id.
+        printers = printers.map((printer) =>
+          printer.userId === userId ? { ...printer, retired: true, availability: 'holiday' as const } : printer,
+        );
+      }
+
+      return { ...current, users: updatedUsers, printers };
     });
   }
 
@@ -466,14 +547,9 @@ export class PlatformStoreService {
     }));
   }
 
-  toggleUserSuspended(userId: number): void {
-    const user = this.getUserById(userId);
-    const currentlySuspended = (user?.accountStatus ?? (user?.suspended ? 'SUSPENDED' : 'ACTIVE')) === 'SUSPENDED';
-    this.setAccountStatus(userId, currentlySuspended ? 'ACTIVE' : 'SUSPENDED');
-  }
-
   /** Admin moves an account through the verification lifecycle. */
   setAccountStatus(userId: number, status: AccountStatus): void {
+    this.syncApi(() => this.api.setAccountStatus(userId, status));
     this.state.update((current) => ({
       ...current,
       // Force-logout the affected user if they are no longer permitted to be active.
@@ -500,6 +576,7 @@ export class PlatformStoreService {
   setPrinterAvailability(printerUserId: number, availability: PrinterAvailability): void {
     const printer = this.getPrinterByUserId(printerUserId);
     if (!printer) return;
+    this.syncApi(() => this.api.setPrinterAvailability(availability));
     this.state.update((current) => ({
       ...current,
       printers: current.printers.map((entry) =>
@@ -532,16 +609,11 @@ export class PlatformStoreService {
     const cart = this.cartForUser(userId);
     if (!cart.items.length) return null;
 
-    const orderId = `PMD-${Date.now()}`;
-    let order: Order;
-    try {
-      const response = await this.api.placeOrder(payload);
-      this.patchState({ backendMode: 'hybrid' });
-      order = this.finalizeLocalOrder(userId, payload, response.orderId ?? orderId);
-    } catch {
-      this.patchState({ backendMode: 'hybrid' });
-      order = this.finalizeLocalOrder(userId, payload, orderId);
-    }
+    const localOrderId = this.newOrderId();
+    const response = await this.tryApi(() =>
+      this.api.submitOrderRequest({ paymentMethod: payload.paymentMethod, shippingAddress: payload.shippingAddress }),
+    );
+    const order = this.finalizeLocalOrder(userId, payload, response?.orderId ?? localOrderId);
 
     // Notify the printer(s) of the incoming request and confirm to the customer.
     const printerUserIds = new Set<number>();
@@ -571,7 +643,7 @@ export class PlatformStoreService {
     const user = this.getUserById(userId);
     const margin = this.state().platformSettings.margin;
     const royalty = design.isUserUpload ? 0 : this.state().platformSettings.designerRoyalty;
-    const orderId = `PMD-${Date.now()}`;
+    const orderId = this.newOrderId();
 
     // One line per chosen product (the buyer can order the design on several products).
     const lines: OrderLine[] = draft.items
@@ -610,8 +682,8 @@ export class PlatformStoreService {
     const order: Order = {
       id: orderId,
       userId,
-      createdAt: new Date().toISOString().slice(0, 10),
-      trackingCode: `PMD-${String(orderId).slice(-6)}`,
+      createdAt: today(),
+      trackingCode: String(orderId),
       total: lines.reduce((s, l) => s + l.price, 0),
       paymentMethod: 'd17',
       paymentStatus: 'unpaid',
@@ -624,8 +696,7 @@ export class PlatformStoreService {
       lines,
     };
 
-    void this.api.submitOrderRequest({ paymentMethod: 'd17', shippingAddress: order.shippingAddress }).catch(() => undefined);
-    this.patchState({ backendMode: 'hybrid' });
+    this.syncApi(() => this.api.submitOrderRequest({ paymentMethod: 'd17', shippingAddress: order.shippingAddress }));
 
     this.state.update((current) => ({
       ...current,
@@ -652,6 +723,7 @@ export class PlatformStoreService {
     if (order.requestStatus !== 'REQUESTED') {
       return { success: false, error: 'This request has already been processed.' };
     }
+    this.syncApi(() => this.api.acceptOrderRequest(orderId));
     this.state.update((current) => ({
       ...current,
       orders: current.orders.map((entry) =>
@@ -669,6 +741,7 @@ export class PlatformStoreService {
     if (order.requestStatus !== 'REQUESTED') {
       return { success: false, error: 'This request has already been processed.' };
     }
+    this.syncApi(() => this.api.rejectOrderRequest(orderId, reason));
     this.state.update((current) => ({
       ...current,
       orders: current.orders.map((entry) =>
@@ -700,6 +773,7 @@ export class PlatformStoreService {
     if (order.requestStatus !== 'REQUESTED' && order.requestStatus !== 'ACCEPTED') {
       return { success: false, error: 'This request can no longer be cancelled.' };
     }
+    this.syncApi(() => this.api.cancelOrderRequest(orderId));
     this.state.update((current) => ({
       ...current,
       orders: current.orders.map((entry) =>
@@ -737,12 +811,8 @@ export class PlatformStoreService {
     }
     if (order.paymentStatus === 'paid') return { success: true };
 
-    try {
-      await this.api.initiatePayment(orderId);
-      this.patchState({ backendMode: 'hybrid' });
-    } catch {
-      this.patchState({ backendMode: 'hybrid' });
-    }
+    // Spec step 4-5 endpoint (the old POST /payment/:id predates this flow).
+    await this.tryApi(() => this.api.payOrder(orderId, order.paymentMethod));
 
     this.state.update((current) => ({
       ...current,
@@ -815,12 +885,7 @@ export class PlatformStoreService {
       return { success: false, error: `You already reviewed the ${review.target} for this order.` };
     }
 
-    try {
-      await this.api.submitReview(orderId, review);
-      this.patchState({ backendMode: 'hybrid' });
-    } catch {
-      this.patchState({ backendMode: 'hybrid' });
-    }
+    await this.tryApi(() => this.api.submitReview(orderId, review));
 
     const nextReview: Review = {
       id: this.takeNextId(),
@@ -828,7 +893,7 @@ export class PlatformStoreService {
       customerId,
       rating: review.rating,
       comment: review.comment.trim(),
-      createdAt: new Date().toISOString().slice(0, 10),
+      createdAt: today(),
       target: review.target,
       designId: review.designId,
       printerId: review.printerId,
@@ -890,8 +955,8 @@ export class PlatformStoreService {
       uploadedByUserId: existing?.uploadedByUserId,
       assignedProductIds: input.assignedProductIds ?? existing?.assignedProductIds ?? [],
       productConfigurations: input.productConfigurations ?? existing?.productConfigurations ?? [],
-      createdAt: existing?.createdAt ?? new Date().toISOString().slice(0, 10),
-      updatedAt: new Date().toISOString().slice(0, 10),
+      createdAt: existing?.createdAt ?? today(),
+      updatedAt: today(),
     };
 
     this.state.update((current) => ({
@@ -937,8 +1002,8 @@ export class PlatformStoreService {
       uploadedByUserId: userId,
       assignedProductIds: allProductIds,
       productConfigurations: [],
-      createdAt: new Date().toISOString().slice(0, 10),
-      updatedAt: new Date().toISOString().slice(0, 10),
+      createdAt: today(),
+      updatedAt: today(),
     };
     this.state.update((current) => ({ ...current, designs: [nextDesign, ...current.designs] }));
     return nextDesign;
@@ -955,7 +1020,7 @@ export class PlatformStoreService {
   setDesignStatus(designId: number, status: Design['status']): void {
     this.state.update((current) => ({
       ...current,
-      designs: current.designs.map((design) => (design.id === designId ? { ...design, status, updatedAt: new Date().toISOString().slice(0, 10) } : design)),
+      designs: current.designs.map((design) => (design.id === designId ? { ...design, status, updatedAt: today() } : design)),
     }));
   }
 
@@ -963,16 +1028,20 @@ export class PlatformStoreService {
   moderateDesign(adminId: number, designId: number, decision: 'APPROVED' | 'REJECTED', reason?: string): void {
     const design = this.getDesignById(designId);
     if (!design) return;
+    // IDs are taken BEFORE the updater — takeNextId() writes to the same signal,
+    // and a nested write would be discarded by the outer updater's return value.
+    const logId = `mod-${this.takeNextId()}`;
+    this.syncApi(() => this.api.moderateDesign(designId, decision, reason));
     this.state.update((current) => ({
       ...current,
       designs: current.designs.map((d) =>
         d.id === designId
-          ? { ...d, moderation: decision, status: decision === 'REJECTED' ? 'REMOVED' : d.status, updatedAt: new Date().toISOString().slice(0, 10) }
+          ? { ...d, moderation: decision, status: decision === 'REJECTED' ? 'REMOVED' : d.status, updatedAt: today() }
           : d,
       ),
       moderationLog: [
         {
-          id: `mod-${this.takeNextId()}`,
+          id: logId,
           adminId,
           targetType: 'design',
           targetId: designId,
@@ -993,19 +1062,21 @@ export class PlatformStoreService {
 
   /** Admin features/unfeatures a design, designer, or printer on the marketplace. */
   toggleFeatured(adminId: number, targetType: FeaturedContent['targetType'], targetId: number): void {
+    // Both IDs are reserved up front: takeNextId() writes to the state signal,
+    // so calling it inside the updater below would lose the increment.
+    const featureId = `feat-${this.takeNextId()}`;
+    const logId = `mod-${this.takeNextId()}`;
+    this.syncApi(() => this.api.toggleFeatured(targetType, targetId));
     this.state.update((current) => {
       const existing = current.featured.find((f) => f.targetType === targetType && f.targetId === targetId);
       return {
         ...current,
         featured: existing
           ? current.featured.filter((f) => f !== existing)
-          : [
-              { id: `feat-${this.takeNextId()}`, targetType, targetId, createdAt: new Date().toISOString() },
-              ...current.featured,
-            ],
+          : [{ id: featureId, targetType, targetId, createdAt: new Date().toISOString() }, ...current.featured],
         moderationLog: [
           {
-            id: `mod-${this.takeNextId()}`,
+            id: logId,
             adminId,
             targetType,
             targetId,
@@ -1033,6 +1104,9 @@ export class PlatformStoreService {
       return { success: false, error: `You need at least ${threshold} TND to request a payout.` };
     }
     const amount = balance;
+    // Reserved before the updater — takeNextId() mutates the same signal.
+    const payoutId = `pay-${this.takeNextId()}`;
+    this.syncApi(() => this.api.requestDesignerPayout());
     this.state.update((current) => ({
       ...current,
       users: current.users.map((u) =>
@@ -1040,11 +1114,11 @@ export class PlatformStoreService {
       ),
       payouts: [
         {
-          id: `pay-${this.takeNextId()}`,
+          id: payoutId,
           designerId: userId,
           amount,
           status: 'requested',
-          dueDate: new Date(Date.now() + 7 * 864e5).toISOString().slice(0, 10),
+          dueDate: new Date(Date.now() + PAYOUT_TERM_DAYS * MS_PER_DAY).toISOString().slice(0, 10),
           reference: `PO-${Date.now().toString().slice(-6)}`,
         },
         ...current.payouts,
@@ -1054,16 +1128,14 @@ export class PlatformStoreService {
     return { success: true };
   }
 
+  /**
+   * Set which products a design can be printed on. Only the design side is
+   * stored; the reverse view comes from availableDesignsForProduct().
+   */
   assignProductsToDesign(designId: number, productIds: number[]): void {
     this.state.update((current) => ({
       ...current,
       designs: current.designs.map((design) => (design.id === designId ? { ...design, assignedProductIds: productIds } : design)),
-      products: current.products.map((product) => ({
-        ...product,
-        assignedDesignIds: productIds.includes(product.id)
-          ? Array.from(new Set([...product.assignedDesignIds, designId]))
-          : product.assignedDesignIds.filter((assignedId) => assignedId !== designId),
-      })),
     }));
   }
 
@@ -1104,7 +1176,6 @@ export class PlatformStoreService {
       leadTimeDays: input.leadTimeDays ?? existing?.leadTimeDays ?? 3,
       rating: existing?.rating ?? 0,
       totalOrders: existing?.totalOrders ?? 0,
-      assignedDesignIds: existing?.assignedDesignIds ?? [],
     };
     this.state.update((current) => ({
       ...current,
@@ -1152,7 +1223,7 @@ export class PlatformStoreService {
     const printerIds = new Set(
       this.state().offerings.filter((o) => o.productId === productId && o.available).map((o) => o.printerId),
     );
-    return this.state().printers.filter((p) => printerIds.has(p.id));
+    return this.state().printers.filter((p) => printerIds.has(p.id) && !p.retired);
   }
 
   /** Printer opts into / prices / toggles a global product. Cannot create products. */
@@ -1173,6 +1244,11 @@ export class PlatformStoreService {
     const floor = product.basePrice;
     const clamped = basePrice < floor;
     const finalPrice = clamped ? floor : basePrice;
+    // Reserved before the updater — takeNextId() mutates the same signal.
+    const offeringId = this.takeNextId();
+    this.syncApi(() =>
+      this.api.savePrinterProduct({ productId, basePrice: finalPrice, available, description }),
+    );
     this.state.update((current) => {
       const existing = current.offerings.find((o) => o.printerId === printer.id && o.productId === productId);
       if (existing) {
@@ -1187,13 +1263,13 @@ export class PlatformStoreService {
         ...current,
         offerings: [
           {
-            id: this.takeNextId(),
+            id: offeringId,
             printerId: printer.id,
             productId,
             basePrice: finalPrice,
             description,
             available,
-            createdAt: new Date().toISOString().slice(0, 10),
+            createdAt: today(),
           },
           ...current.offerings,
         ],
@@ -1484,6 +1560,21 @@ export class PlatformStoreService {
     };
   }
 
+  /**
+   * Non-sensitive headline figures safe to render on public pages.
+   * Deliberately excludes revenue and the total user count — see adminOverview().
+   */
+  publicStats(): { designers: number; designs: number; pressrooms: number; deliveredOrders: number } {
+    const state = this.state();
+    return {
+      designers: state.users.filter((user) => user.role === 'designer').length,
+      designs: this.marketplaceDesigns().filter((design) => design.status === 'ACTIVE').length,
+      pressrooms: state.printers.filter((printer) => !printer.retired).length,
+      deliveredOrders: state.orders.filter((order) => this.getOrderStatus(order) === 'Delivered').length,
+    };
+  }
+
+  /** ADMIN-ONLY aggregate — never render this on a public page. */
   adminOverview(): { users: number; orders: number; revenue: number; activeDesigns: number; activePrinters: number } {
     return {
       users: this.state().users.length,
@@ -1492,6 +1583,20 @@ export class PlatformStoreService {
       activeDesigns: this.state().designs.filter((design) => design.status === 'ACTIVE').length,
       activePrinters: this.state().printers.length,
     };
+  }
+
+  /**
+   * Cheapest total a buyer could pay for this design: the lowest floor price
+   * among the products it is assigned to, plus the platform margin. Returns
+   * null when the design has no printable product.
+   *
+   * This is the only correct "price" for a design — `Design.price` is a legacy
+   * design fee that no longer forms part of what the customer pays.
+   */
+  designFromPrice(design: Design): number | null {
+    const products = this.availableProductsForDesign(design.id).filter((p) => p.availability !== 'DRAFT');
+    if (!products.length) return null;
+    return Math.min(...products.map((p) => p.basePrice)) + this.state().platformSettings.margin;
   }
 
   availableProductsForDesign(designId: number): Product[] {
@@ -1514,6 +1619,14 @@ export class PlatformStoreService {
   marketplaceDesigns(): Design[] {
     return this.state().designs.filter(
       (design) => !design.isUserUpload && (design.moderation ?? 'APPROVED') === 'APPROVED',
+    );
+  }
+
+  /** Public storefront listing for one designer: approved, active, non-upload. */
+  storefrontDesigns(designerId: number): Design[] {
+    return this.designsForDesigner(designerId).filter(
+      (design) =>
+        design.status === 'ACTIVE' && (design.moderation ?? 'APPROVED') === 'APPROVED' && !design.isUserUpload,
     );
   }
 
@@ -1557,8 +1670,8 @@ export class PlatformStoreService {
     const createdOrder: Order = {
       id: orderId,
       userId,
-      createdAt: new Date().toISOString().slice(0, 10),
-      trackingCode: `PMD-${String(orderId).slice(-6)}`,
+      createdAt: today(),
+      trackingCode: String(orderId),
       total: lines.reduce((sum, line) => sum + line.price, 0),
       paymentMethod: payload.paymentMethod,
       // Approval-gated: no payment until the printer accepts the request.
@@ -1640,6 +1753,14 @@ export class PlatformStoreService {
       }
     }
 
+    // Derive the printer's new score/rank ONCE, before the updater, so the users
+    // map and the printers map below cannot disagree (they previously recomputed
+    // it independently, one of them reading pre-update state).
+    const scoredPrinterUser = printerScoreUserId !== null ? this.getUserById(printerScoreUserId) : undefined;
+    const nextFulfillmentScore = (scoredPrinterUser?.printerProfile?.fulfillmentScore ?? 0) + FULFILLMENT_SCORE_PER_ORDER;
+    const nextPrinterRank = printerLevelForScore(nextFulfillmentScore);
+    const printerRevenueDelta = order.lines.reduce((sum, line) => sum + (line.printerAmount ?? 0), 0);
+
     this.state.update((current) => ({
       ...current,
       printerPayouts: [...printerPayouts, ...current.printerPayouts],
@@ -1661,18 +1782,17 @@ export class PlatformStoreService {
         // Printer: bump fulfillment score, recompute level.
         if (printerScoreUserId === user.id) {
           const profile = { ...createDefaultPrinterProfile(user), ...user.printerProfile };
-          const fulfillmentScore = (profile.fulfillmentScore ?? 0) + 5;
           return {
             ...user,
-            printerRank: printerLevelForScore(fulfillmentScore),
-            printerProfile: { ...profile, fulfillmentScore },
+            printerRank: nextPrinterRank,
+            printerProfile: { ...profile, fulfillmentScore: nextFulfillmentScore },
           };
         }
         return user;
       }),
       printers: current.printers.map((p) =>
         p.userId === printerScoreUserId
-          ? { ...p, revenue: p.revenue + order.lines.reduce((s, l) => s + (l.printerAmount ?? 0), 0), rank: printerLevelForScore((this.getUserById(p.userId)?.printerProfile?.fulfillmentScore ?? 0) + 5) }
+          ? { ...p, revenue: p.revenue + printerRevenueDelta, rank: nextPrinterRank }
           : p,
       ),
     }));
@@ -1702,6 +1822,11 @@ export class PlatformStoreService {
     });
   }
 
+  /** Test-only escape hatch for asserting on persistence/migration behaviour. */
+  snapshotForTesting(): PlatformState {
+    return this.state();
+  }
+
   private patchState(partial: Partial<PlatformState>): void {
     this.state.update((current) => ({ ...current, ...partial }));
   }
@@ -1712,26 +1837,31 @@ export class PlatformStoreService {
     return nextId;
   }
 
-  private readState(): PlatformState {
-    const fallback: PlatformState = {
-      backendMode: 'mock',
+  /**
+   * Human-readable order reference, matching the seed shape `PMD-YYMMDD-<seq>`.
+   * The same value is used as the tracking code so an order has one canonical
+   * reference rather than two formats that drift apart.
+   */
+  private newOrderId(): string {
+    return `PMD-${dateStamp()}-${this.takeNextId()}`;
+  }
+
+  private seededState(): PlatformState {
+    return {
+      backendMode: environment.useRealApi ? 'hybrid' : 'mock',
       currentUserId: null,
       nextId: 10000,
       users: seedUsers.map((user) => ensureRoleDefaults(user)),
-      credentials: demoAccounts.map((account) => {
-        const user = seedUsers.find((candidate) => candidate.email === account.email)!;
-        return {
-          email: account.email,
-          password: account.password,
-          userId: user.id,
-        };
+      credentials: demoAccounts.flatMap((account) => {
+        const user = seedUsers.find((candidate) => candidate.email === account.email);
+        return user ? [{ email: account.email, passwordHash: digestPassword(account.password), userId: user.id }] : [];
       }),
-      printers: seedPrinters,
+      printers: seedPrinters.map(normalizePrinter),
       products: seedProducts,
       offerings: seedOfferings,
-      designs: seedDesigns,
+      designs: seedDesigns.map(normalizeDesign),
       cartItems: [],
-      orders: seedOrders,
+      orders: seedOrders.map(normalizeOrder),
       reviews: seedReviews.map(normalizeReview),
       payouts: seedPayouts,
       printerPayouts: [],
@@ -1741,35 +1871,97 @@ export class PlatformStoreService {
       customizationDraft: null,
       platformSettings: { ...DEFAULT_PLATFORM_SETTINGS },
     };
-    fallback.designs = fallback.designs.map(normalizeDesign);
-    fallback.orders = fallback.orders.map(normalizeOrder);
+  }
 
+  private readState(): PlatformState {
+    const seeded = this.seededState();
+
+    let parsed: Partial<PlatformState> | null = null;
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return fallback;
-      const parsed = JSON.parse(raw) as Partial<PlatformState>;
-      return {
-        ...fallback,
-        ...parsed,
-        platformSettings: { ...DEFAULT_PLATFORM_SETTINGS, ...parsed.platformSettings },
-        offerings: parsed.offerings ?? fallback.offerings,
-        printerPayouts: parsed.printerPayouts ?? [],
-        notifications: parsed.notifications ?? [],
-        featured: parsed.featured ?? [],
-        moderationLog: parsed.moderationLog ?? [],
-        users: Array.isArray(parsed.users) ? parsed.users.map((user) => ensureRoleDefaults(user)) : fallback.users,
-        designs: Array.isArray(parsed.designs) ? parsed.designs.map(normalizeDesign) : fallback.designs,
-        orders: Array.isArray(parsed.orders) ? parsed.orders.map(normalizeOrder) : fallback.orders,
-        reviews: Array.isArray(parsed.reviews) ? parsed.reviews.map(normalizeReview) : fallback.reviews,
-      };
+      parsed = raw ? (JSON.parse(raw) as Partial<PlatformState>) : null;
     } catch {
-      return fallback;
+      parsed = null;
     }
+    if (!parsed) return seeded;
+
+    // Catalog entities added to the seed data after this browser last saved are
+    // merged in by id, so new products/printers/designs appear without wiping
+    // the user's own records. Persisted copies always win on conflict.
+    const restored: PlatformState = {
+      ...seeded,
+      ...parsed,
+      backendMode: seeded.backendMode,
+      platformSettings: { ...DEFAULT_PLATFORM_SETTINGS, ...parsed.platformSettings },
+      nextId: typeof parsed.nextId === 'number' ? parsed.nextId : seeded.nextId,
+      credentials: Array.isArray(parsed.credentials) ? parsed.credentials : seeded.credentials,
+      cartItems: parsed.cartItems ?? [],
+      printerPayouts: parsed.printerPayouts ?? [],
+      notifications: parsed.notifications ?? [],
+      featured: parsed.featured ?? [],
+      moderationLog: parsed.moderationLog ?? [],
+      payouts: parsed.payouts ?? seeded.payouts,
+      users: mergeById(seeded.users, parsed.users, (user) => ensureRoleDefaults(user)),
+      printers: mergeById(seeded.printers, parsed.printers, normalizePrinter),
+      products: mergeById(seeded.products, parsed.products),
+      offerings: mergeById(seeded.offerings, parsed.offerings),
+      designs: mergeById(seeded.designs, parsed.designs, normalizeDesign),
+      orders: Array.isArray(parsed.orders) ? parsed.orders.map(normalizeOrder) : seeded.orders,
+      reviews: Array.isArray(parsed.reviews) ? parsed.reviews.map(normalizeReview) : seeded.reviews,
+    };
+
+    // A stored nextId must never trail existing ids, or takeNextId() hands out
+    // values that are already in use.
+    restored.nextId = Math.max(restored.nextId, highestUsedId(restored) + 1);
+    return restored;
   }
 
   private persistState(state: PlatformState): void {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      this.persistError.set(null);
+    } catch {
+      // Most likely the 5 MB quota: uploaded artwork is inlined as data URLs.
+      // Keep the session working in memory and surface the failure to the UI.
+      this.persistError.set(
+        'Local storage is full — recent changes are kept for this session only. Remove some uploaded designs to save again.',
+      );
+    }
   }
+}
+
+/**
+ * Merge persisted records over seeded ones by id. Persisted entries win; seeded
+ * entries the browser has never seen are appended.
+ */
+function mergeById<T extends { id: number }>(
+  seeded: T[],
+  persisted: T[] | undefined,
+  normalize: (entry: T) => T = (entry) => entry,
+): T[] {
+  if (!Array.isArray(persisted)) return seeded.map(normalize);
+  const merged = persisted.map(normalize);
+  const known = new Set(merged.map((entry) => entry.id));
+  for (const entry of seeded) {
+    if (!known.has(entry.id)) merged.push(normalize(entry));
+  }
+  return merged;
+}
+
+/** Largest numeric id currently in use across all id-bearing collections. */
+function highestUsedId(state: PlatformState): number {
+  const ids: number[] = [
+    ...state.users.map((entry) => entry.id),
+    ...state.printers.map((entry) => entry.id),
+    ...state.products.map((entry) => entry.id),
+    ...state.offerings.map((entry) => entry.id),
+    ...state.designs.map((entry) => entry.id),
+    ...state.reviews.map((entry) => entry.id),
+    ...state.notifications.map((entry) => entry.id),
+    ...state.cartItems.map((entry) => entry.id),
+    ...state.orders.flatMap((order) => order.lines.map((line) => line.id)),
+  ];
+  return ids.reduce((max, id) => (Number.isFinite(id) && id > max ? id : max), 0);
 }
 
 function createUserForRole(input: {
@@ -1787,7 +1979,7 @@ function createUserForRole(input: {
     role: input.role,
     address: input.address,
     accountStatus: input.accountStatus ?? 'ACTIVE',
-    joinDate: new Date().toISOString().slice(0, 10),
+    joinDate: today(),
     avatar: seedUsers[0]?.avatar ?? '/placeholder-image.svg',
   });
 }
@@ -1883,6 +2075,7 @@ function createPrinterPartner(input: { id: number; user: User }): PrinterPartner
     location: input.user.printerProfile?.governorate ?? 'Tunis',
     images: [input.user.avatar ?? '/placeholder-image.svg'],
     availability: 'available',
+    retired: false,
   };
 }
 
@@ -1897,6 +2090,21 @@ function buildTrend(sales: number, views: number): AnalyticsPoint[] {
 
 function sortByDateDesc(a: Order, b: Order): number {
   return b.createdAt.localeCompare(a.createdAt);
+}
+
+/** `YYMMDD` stamp used inside order references. */
+function dateStamp(date = new Date()): string {
+  return date.toISOString().slice(2, 10).replace(/-/g, '');
+}
+
+/** Today as `YYYY-MM-DD` — the date format stored on every record. */
+function today(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+/** Backfill fields added to PrinterPartner after the seed data was written. */
+function normalizePrinter(printer: PrinterPartner): PrinterPartner {
+  return { ...printer, retired: printer.retired ?? false };
 }
 
 /** Backfill ER-aligned fields on legacy/seed designs. */

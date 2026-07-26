@@ -74,7 +74,7 @@
                   <td class="id">#{{ order.id }}</td>
                   <td>{{ order.lines.length }} item{{ order.lines.length !== 1 ? 's' : '' }}</td>
                   <td class="r amt">{{ order.total }} <small>TND</small></td>
-                  <td class="r"><span [class]="statusClass(workflow.getOrderStatus(order))">{{ workflow.getOrderStatus(order) }}</span></td>
+                  <td class="r"><span [class]="statusClass(store.getOrderStatus(order))">{{ store.getOrderStatus(order) }}</span></td>
                 </tr>
               }
             </tbody>
@@ -113,9 +113,9 @@
                     }
                   </td>
                   <td class="r amt">{{ order.total }} <small>TND</small></td>
-                  <td class="r"><span [class]="statusClass(workflow.getOrderStatus(order))">{{ workflow.getOrderStatus(order) }}</span></td>
+                  <td class="r"><span [class]="statusClass(store.getOrderStatus(order))">{{ store.getOrderStatus(order) }}</span></td>
                   <td class="r">
-                    @if (workflow.getOrderStatus(order) === 'Delivered' && !(hasReview(order.id, 'design') && hasReview(order.id, 'printer'))) {
+                    @if (store.getOrderStatus(order) === 'Delivered' && !(hasReview(order.id, 'design') && hasReview(order.id, 'printer'))) {
                       <button type="button" class="btn btn-ghost" style="font-size:12px; padding:4px 10px;" (click)="openReviewModal(order.id)">Review</button>
                     }
                   </td>

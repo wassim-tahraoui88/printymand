@@ -3,9 +3,15 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { DashboardSidebarComponent, DashboardNavSection } from '../components/dashboard-sidebar.component';
-import type { AccountStatus, User } from '../models/types';
+import { orderStatusClass } from '../models/order-status';
+import type { AccountStatus, ProductAvailability, User, UserRole } from '../models/types';
+
+/** Split a delimited free-text field into trimmed, non-empty values. */
+function splitList(value: string, separator: string | RegExp): string[] {
+  return value.split(separator).map((entry) => entry.trim()).filter(Boolean);
+}
 import { AuthService } from '../services/auth.service';
-import { WorkflowService } from '../services/workflow.service';
+import { PlatformStoreService } from '../services/platform-store.service';
 
 @Component({
   selector: 'app-admin-dashboard-page',
@@ -15,7 +21,7 @@ import { WorkflowService } from '../services/workflow.service';
 })
 export class AdminDashboardPageComponent {
   readonly auth = inject(AuthService);
-  readonly workflow = inject(WorkflowService);
+  readonly store = inject(PlatformStoreService);
 
   readonly activeTab = signal('overview');
   readonly sidebarOpen = signal(false);
@@ -36,33 +42,47 @@ export class AdminDashboardPageComponent {
 
   readonly search = signal('');
 
-  readonly overview = computed(() => this.workflow.adminOverview());
+  readonly overview = computed(() => this.store.adminOverview());
 
   readonly users = computed(() => {
     const query = this.search().trim().toLowerCase();
-    return this.auth.users().filter((u) => {
+    return this.store.users().filter((u) => {
       if (!query) return true;
       return [u.name, u.email, u.role].some((v) => v.toLowerCase().includes(query));
     });
   });
 
-  readonly designs = computed(() => this.workflow.allDesigns().filter((d) => !d.isUserUpload));
+  readonly assignableRoles: UserRole[] = ['customer', 'designer', 'printer'];
+
+  readonly designs = computed(() => this.store.designs().filter((d) => !d.isUserUpload));
   readonly pendingDesigns = computed(() => this.designs().filter((d) => (d.moderation ?? 'APPROVED') === 'PENDING'));
 
-  readonly allOrders = computed(() => this.workflow.orders());
+  readonly allOrders = computed(() => this.store.orders());
+
+  readonly statusClass = orderStatusClass;
 
   // ── Global product catalog (admin-owned) ──
-  readonly catalog = computed(() => this.workflow.products());
-  readonly productForm = signal({
-    id: 0,
-    name: '',
-    category: 'Apparel',
-    description: '',
-    basePrice: 25,
-    colors: 'white, black',
-    sizes: 'S, M, L, XL',
-    image: '',
-  });
+  readonly catalog = computed(() => this.store.products());
+  readonly productCategories = ['Apparel', 'Drinkware', 'Accessories', 'Home'];
+  readonly availabilities: ProductAvailability[] = ['ACTIVE', 'PAUSED', 'DRAFT'];
+
+  private blankProductForm() {
+    return {
+      id: 0,
+      name: '',
+      category: 'Apparel',
+      description: '',
+      basePrice: 25,
+      colors: 'white, black',
+      sizes: 'S, M, L, XL',
+      /** One mockup URL per line — a product can carry several. */
+      images: '',
+      availability: 'ACTIVE' as ProductAvailability,
+      leadTimeDays: 3,
+    };
+  }
+
+  readonly productForm = signal(this.blankProductForm());
   readonly catalogMsg = signal('');
 
   editProduct(productId: number): void {
@@ -76,8 +96,17 @@ export class AdminDashboardPageComponent {
       basePrice: p.basePrice,
       colors: p.colors.join(', '),
       sizes: p.sizes.join(', '),
-      image: p.images[0] ?? '',
+      // Every mockup is loaded back, so saving no longer discards the extras.
+      images: p.images.join('\n'),
+      availability: p.availability,
+      leadTimeDays: p.leadTimeDays,
     });
+    this.catalogMsg.set('');
+  }
+
+  cancelProductEdit(): void {
+    this.productForm.set(this.blankProductForm());
+    this.catalogMsg.set('');
   }
 
   saveProduct(): void {
@@ -86,30 +115,36 @@ export class AdminDashboardPageComponent {
       this.catalogMsg.set('Product name is required.');
       return;
     }
-    this.workflow.addOrUpdateGlobalProduct({
+    const images = splitList(f.images, /[\n,]/);
+    this.store.addOrUpdateGlobalProduct({
       id: f.id || undefined,
       name: f.name.trim(),
       category: f.category,
       description: f.description,
       basePrice: Number(f.basePrice) || 0,
-      colors: f.colors.split(',').map((c) => c.trim()).filter(Boolean),
-      sizes: f.sizes.split(',').map((s) => s.trim()).filter(Boolean),
-      images: f.image.trim() ? [f.image.trim()] : ['/placeholder-image.svg'],
+      colors: splitList(f.colors, ','),
+      sizes: splitList(f.sizes, ','),
+      images: images.length ? images : ['/placeholder-image.svg'],
+      availability: f.availability,
+      leadTimeDays: Number(f.leadTimeDays) || 1,
     });
-    this.productForm.set({ id: 0, name: '', category: 'Apparel', description: '', basePrice: 25, colors: 'white, black', sizes: 'S, M, L, XL', image: '' });
+    this.productForm.set(this.blankProductForm());
     this.catalogMsg.set('Catalog updated.');
   }
 
   removeProduct(productId: number): void {
-    this.workflow.removeGlobalProduct(productId);
+    this.store.removeGlobalProduct(productId);
   }
 
   readonly settingsForm = signal({ margin: 0, designerRoyalty: 0, payoutThreshold: 0 });
   readonly settingsMsg = signal('');
+  /** The marketplace category list, edited as one comma-separated field. */
+  readonly categoriesForm = signal('');
 
   constructor() {
-    const s = this.workflow.platformSettings();
+    const s = this.store.platformSettings();
     this.settingsForm.set({ margin: s.margin, designerRoyalty: s.designerRoyalty, payoutThreshold: s.payoutThreshold });
+    this.categoriesForm.set(s.categories.join(', '));
   }
 
   adminId(): number {
@@ -117,29 +152,44 @@ export class AdminDashboardPageComponent {
   }
 
   setDesignStatus(designId: number, status: 'ACTIVE' | 'ARCHIVED' | 'REMOVED'): void {
-    this.workflow.setDesignStatus(designId, status);
+    this.store.setDesignStatus(designId, status);
   }
 
   moderate(designId: number, decision: 'APPROVED' | 'REJECTED'): void {
-    this.workflow.moderateDesign(this.adminId(), designId, decision);
+    this.store.moderateDesign(this.adminId(), designId, decision);
   }
 
   toggleFeatured(targetType: 'design' | 'designer' | 'printer', targetId: number): void {
-    this.workflow.toggleFeatured(this.adminId(), targetType, targetId);
+    this.store.toggleFeatured(this.adminId(), targetType, targetId);
   }
 
   isFeatured(targetType: 'design' | 'designer' | 'printer', targetId: number): boolean {
-    return this.workflow.isFeatured(targetType, targetId);
+    return this.store.isFeatured(targetType, targetId);
   }
 
   saveSettings(): void {
     const f = this.settingsForm();
-    this.workflow.updatePlatformSettings({
+    this.store.updatePlatformSettings({
       margin: Number(f.margin) || 0,
       designerRoyalty: Number(f.designerRoyalty) || 0,
       payoutThreshold: Number(f.payoutThreshold) || 0,
     });
     this.settingsMsg.set('Platform settings updated.');
+  }
+
+  /**
+   * Categories are platform-owned: this one list drives the marketplace filter,
+   * the designer upload wizard and the homepage mood tiles.
+   */
+  saveCategories(): void {
+    const categories = splitList(this.categoriesForm(), ',');
+    if (!categories.length) {
+      this.settingsMsg.set('Keep at least one category.');
+      return;
+    }
+    this.store.updatePlatformSettings({ categories });
+    this.categoriesForm.set(categories.join(', '));
+    this.settingsMsg.set('Categories updated.');
   }
 
   accountStatus(user: User): AccountStatus {
@@ -148,6 +198,16 @@ export class AdminDashboardPageComponent {
 
   /** Spec admin powers: verify identity, suspend, ban, reactivate accounts. */
   setAccountStatus(userId: number, status: AccountStatus): void {
-    this.auth.setAccountStatus(userId, status);
+    this.store.setAccountStatus(userId, status);
+  }
+
+  /**
+   * Move an account between roles. Demoting a printer retires their pressroom
+   * record rather than deleting it, so existing orders keep resolving.
+   */
+  setUserRole(userId: number, role: string): void {
+    if (role === 'customer' || role === 'designer' || role === 'printer') {
+      this.store.updateUserRole(userId, role);
+    }
   }
 }

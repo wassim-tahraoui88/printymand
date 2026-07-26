@@ -5,7 +5,7 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { PrinterCardComponent } from '../components/printer-card.component';
 import { AuthService } from '../services/auth.service';
-import { WorkflowService } from '../services/workflow.service';
+import { PlatformStoreService } from '../services/platform-store.service';
 
 @Component({
   selector: 'app-printer-selection-page',
@@ -14,21 +14,22 @@ import { WorkflowService } from '../services/workflow.service';
   templateUrl: './printer-selection.html',
 })
 export class PrinterSelectionPageComponent {
-  readonly workflow = inject(WorkflowService);
+  readonly store = inject(PlatformStoreService);
   private readonly auth = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
 
-  readonly designId = signal<number>(701);
-  readonly draft = this.workflow.draft;
-  readonly design = computed(() => this.workflow.getDesignById(this.designId()) ?? this.workflow.designs()[0]);
+  readonly designId = signal<number>(0);
+  readonly draft = this.store.customizationDraft;
+  /** Undefined for an unknown id — the template renders a "not found" branch. */
+  readonly design = computed(() => this.store.getDesignById(this.designId()));
 
   /** Items the buyer configured (one per product, with quantity). */
   readonly items = computed(() => this.draft()?.items ?? []);
   readonly orderProducts = computed(() =>
     this.items()
-      .map((it) => ({ product: this.workflow.getProductById(it.productId), qty: it.quantity }))
+      .map((it) => ({ product: this.store.getProductById(it.productId), qty: it.quantity }))
       .filter((x): x is { product: NonNullable<typeof x.product>; qty: number } => !!x.product),
   );
 
@@ -39,14 +40,14 @@ export class PrinterSelectionPageComponent {
   readonly sortBy = signal<'rank' | 'rating' | 'delivery' | 'price'>('rating');
 
   readonly locations = computed(() =>
-    Array.from(new Set(this.workflow.printers().map((p) => p.location))).sort(),
+    Array.from(new Set(this.store.printers().map((p) => p.location))).sort(),
   );
 
   /** Total the buyer pays at this printer for the WHOLE multi-product order. */
   priceFor(printerId: number): number {
-    const margin = this.workflow.platformSettings().margin;
+    const margin = this.store.platformSettings().margin;
     return this.items().reduce(
-      (sum, it) => sum + (this.workflow.offeringPrice(printerId, it.productId) + margin) * it.quantity,
+      (sum, it) => sum + (this.store.offeringPrice(printerId, it.productId) + margin) * it.quantity,
       0,
     );
   }
@@ -55,8 +56,8 @@ export class PrinterSelectionPageComponent {
   noteFor(printerId: number): string {
     const parts: string[] = [];
     for (const it of this.items()) {
-      const off = this.workflow.getOffering(printerId, it.productId);
-      const prod = this.workflow.getProductById(it.productId);
+      const off = this.store.getOffering(printerId, it.productId);
+      const prod = this.store.getProductById(it.productId);
       if (off?.description && prod) parts.push(`${prod.name}: ${off.description}`);
     }
     return parts.join(' · ');
@@ -68,9 +69,9 @@ export class PrinterSelectionPageComponent {
     const loc = this.locationFilter();
     const maxDays = this.maxDelivery();
     // Printers must be available AND offer every product in the order.
-    const base = this.workflow.printers().filter((printer) => {
+    const base = this.store.printers().filter((printer) => {
       if (printer.availability !== 'available') return false;
-      return ids.every((pid) => this.workflow.printersForProduct(pid).some((pr) => pr.id === printer.id));
+      return ids.every((pid) => this.store.printersForProduct(pid).some((pr) => pr.id === printer.id));
     });
     const filtered = base
       .filter((p) => rank === 'all' || p.rank === rank)
@@ -92,8 +93,8 @@ export class PrinterSelectionPageComponent {
 
   constructor() {
     this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
-      this.designId.set(Number(params.get('id') ?? 701));
-      if (!this.workflow.draft()) {
+      this.designId.set(Number(params.get('id')) || 0);
+      if (!this.store.customizationDraft()) {
         this.router.navigate(['/customize', this.designId()]);
       }
     });
@@ -101,9 +102,9 @@ export class PrinterSelectionPageComponent {
 
   selectPrinter(printerId: number): void {
     this.selectedPrinterId.set(printerId);
-    const draft = this.workflow.draft();
+    const draft = this.store.customizationDraft();
     if (!draft) return;
-    this.workflow.setDraft({
+    this.store.setCustomizationDraft({
       ...draft,
       selectedPrinterId: printerId,
     });
@@ -115,7 +116,7 @@ export class PrinterSelectionPageComponent {
    */
   sendRequest(): void {
     const user = this.auth.user();
-    const draft = this.workflow.draft();
+    const draft = this.store.customizationDraft();
     if (!user) {
       this.router.navigateByUrl('/login');
       return;
@@ -124,8 +125,8 @@ export class PrinterSelectionPageComponent {
       this.error.set('Select a printer before sending your request.');
       return;
     }
-    this.workflow.setDraft({ ...draft, selectedPrinterId: this.selectedPrinterId() });
-    const order = this.workflow.submitDraftOrderRequest(user.id);
+    this.store.setCustomizationDraft({ ...draft, selectedPrinterId: this.selectedPrinterId() });
+    const order = this.store.submitDraftOrderRequest(user.id);
     if (!order) {
       this.error.set('Could not send the request. Please try again.');
       return;

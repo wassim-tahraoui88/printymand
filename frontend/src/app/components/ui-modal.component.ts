@@ -9,7 +9,7 @@ import { Component, input, output } from '@angular/core';
         <section class="pm-modal" (click)="$event.stopPropagation()">
           <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; border-bottom:1px solid var(--pm-border); padding-bottom:1rem; margin-bottom:1.25rem;">
             <div>
-              <h2 class="pm-heading font-bold text-lg" style="color:var(--pm-text);">{{ title() }}</h2>
+              <h2 class="display" style="font-size:22px;">{{ title() }}</h2>
               @if (description()) {
                 <p style="margin-top:0.25rem; font-size:0.85rem; color:var(--pm-text-muted);">{{ description() }}</p>
               }

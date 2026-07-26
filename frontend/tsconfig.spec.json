@@ -3,7 +3,9 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "rootDir": "./src/app",
+    // Must match tsconfig.app.json: specs reach code outside src/app
+    // (e.g. src/environments), which a narrower rootDir cannot resolve.
+    "rootDir": "./src",
     "outDir": "./out-tsc/spec",
     "types": [
       "vitest/globals"

@@ -9,11 +9,6 @@ import type {
   User,
 } from '../models/types';
 
-export const designCategories = ['All', 'Culture', 'Typography', 'Minimal', 'Nature', 'Streetwear', 'Retro'] as const;
-export const productCategories = ['Apparel', 'Drinkware', 'Accessories', 'Home'] as const;
-export const tunisiaGovernorates = ['Tunis', 'Sfax', 'Sousse', 'Nabeul', 'Monastir', 'Ariana'] as const;
-export const productColorPalette = ['white', 'black', 'navy', 'sand', 'forest', 'burgundy'] as const;
-export const productSizeOptions = ['XS', 'S', 'M', 'L', 'XL', 'XXL'] as const;
 
 const seedImage = (name: string, width = 1200, height = 1200) =>
   `https://picsum.photos/seed/${name}/${width}/${height}`;
@@ -237,7 +232,6 @@ export const seedProducts: Product[] = [
     leadTimeDays: 2,
     rating: 4.9,
     totalOrders: 480,
-    assignedDesignIds: [701, 702, 703, 705],
   },
   {
     id: 602,
@@ -253,7 +247,6 @@ export const seedProducts: Product[] = [
     leadTimeDays: 3,
     rating: 4.8,
     totalOrders: 214,
-    assignedDesignIds: [702, 704, 706],
   },
   {
     id: 603,
@@ -269,7 +262,6 @@ export const seedProducts: Product[] = [
     leadTimeDays: 2,
     rating: 4.6,
     totalOrders: 167,
-    assignedDesignIds: [701, 703, 706],
   },
   {
     id: 604,
@@ -285,7 +277,6 @@ export const seedProducts: Product[] = [
     leadTimeDays: 3,
     rating: 4.7,
     totalOrders: 138,
-    assignedDesignIds: [701, 704, 705],
   },
   {
     id: 605,
@@ -301,7 +292,6 @@ export const seedProducts: Product[] = [
     leadTimeDays: 4,
     rating: 4.4,
     totalOrders: 102,
-    assignedDesignIds: [702, 705],
   },
   {
     id: 606,
@@ -317,7 +307,6 @@ export const seedProducts: Product[] = [
     leadTimeDays: 2,
     rating: 4.8,
     totalOrders: 320,
-    assignedDesignIds: [703, 706],
   },
 ];
 
@@ -354,6 +343,7 @@ export const seedDesigns: Design[] = [
     designerRank: 'Elite',
     designerAvatar: seedImage('designer-avatar-1', 300, 300),
     category: 'Culture',
+    categories: ['Culture', 'Retro'],
     description: 'Graphic tribute to Tunisian heritage reworked into a bold modern poster composition.',
     tags: ['heritage', 'blue', 'architectural'],
     rating: 4.9,
@@ -381,6 +371,7 @@ export const seedDesigns: Design[] = [
     designerRank: 'Rising',
     designerAvatar: seedImage('designer-avatar-2', 300, 300),
     category: 'Typography',
+    categories: ['Typography', 'Streetwear'],
     description: 'Clean bilingual lettering set built for streetwear collections and statement pieces.',
     tags: ['type', 'streetwear', 'arabic-latin'],
     rating: 4.7,
@@ -408,6 +399,7 @@ export const seedDesigns: Design[] = [
     designerRank: 'Elite',
     designerAvatar: seedImage('designer-avatar-1', 300, 300),
     category: 'Minimal',
+    categories: ['Minimal', 'Culture'],
     description: 'Minimal linework inspired by old city facades and tiled courtyards.',
     tags: ['minimal', 'linework', 'city'],
     rating: 4.8,
@@ -417,10 +409,11 @@ export const seedDesigns: Design[] = [
     conversionRate: 0.09,
     price: 16,
     status: 'ACTIVE',
-    assignedProductIds: [601, 603],
+    assignedProductIds: [601, 603, 606],
     productConfigurations: [
       { productId: 601, defaultPlacement: { x: 49, y: 48, scale: 0.31 }, availableColors: ['white', 'forest', 'black'] },
       { productId: 603, defaultPlacement: { x: 50, y: 50, scale: 0.74 }, availableColors: ['white'] },
+      { productId: 606, defaultPlacement: { x: 50, y: 50, scale: 0.9 }, availableColors: ['white'] },
     ],
     createdAt: '2026-01-25',
     updatedAt: '2026-04-10',
@@ -434,6 +427,7 @@ export const seedDesigns: Design[] = [
     designerRank: 'Elite',
     designerAvatar: seedImage('designer-avatar-1', 300, 300),
     category: 'Nature',
+    categories: ['Nature'],
     description: 'Illustrated branch pattern optimized for tote bags, hoodies, and gifting.',
     tags: ['nature', 'olive', 'soft'],
     rating: 4.6,
@@ -460,6 +454,7 @@ export const seedDesigns: Design[] = [
     designerRank: 'Rising',
     designerAvatar: seedImage('designer-avatar-2', 300, 300),
     category: 'Streetwear',
+    categories: ['Streetwear', 'Typography'],
     description: 'Poster-style composition for dark garments and high-contrast accessories.',
     tags: ['night', 'poster', 'bold'],
     rating: 4.5,
@@ -487,6 +482,7 @@ export const seedDesigns: Design[] = [
     designerRank: 'Elite',
     designerAvatar: seedImage('designer-avatar-1', 300, 300),
     category: 'Retro',
+    categories: ['Retro', 'Nature'],
     description: 'Warm retro palette suited to seasonal drops and souvenir collections.',
     tags: ['retro', 'summer', 'travel'],
     rating: 4.7,
@@ -496,10 +492,11 @@ export const seedDesigns: Design[] = [
     conversionRate: 0.08,
     price: 18,
     status: 'ACTIVE',
-    assignedProductIds: [602, 603],
+    assignedProductIds: [602, 603, 606],
     productConfigurations: [
       { productId: 602, defaultPlacement: { x: 50, y: 40, scale: 0.28 }, availableColors: ['sand', 'black'] },
       { productId: 603, defaultPlacement: { x: 50, y: 50, scale: 0.76 }, availableColors: ['white'] },
+      { productId: 606, defaultPlacement: { x: 50, y: 50, scale: 0.9 }, availableColors: ['white'] },
     ],
     createdAt: '2026-02-21',
     updatedAt: '2026-04-15',
@@ -514,16 +511,41 @@ export const seedReviews: Review[] = [
     rating: 5,
     comment: 'Excellent print quality and the hoodie matched the preview exactly.',
     createdAt: '2026-04-02',
+    target: 'design',
+    designId: 702,
+  },
+  {
+    id: 902,
+    orderId: 801,
+    customerId: 101,
+    rating: 5,
+    comment: 'Fast turnaround from PrintPro and careful packaging.',
+    createdAt: '2026-04-02',
+    target: 'printer',
+    printerId: 501,
   },
 ];
 
+/**
+ * Seed orders.
+ *
+ * Every line mirrors what the live order flow produces, so demo data and newly
+ * placed orders are directly comparable:
+ *   productName    — the GLOBAL catalog name (seedProducts), not a variant of it
+ *   price          — (printer's offering price + platform margin) x quantity
+ *   printerAmount  — the printer's offering price for that product
+ *   platformFee    — DEFAULT_PLATFORM_SETTINGS.margin (10 TND)
+ *   designerRoyalty— DEFAULT_PLATFORM_SETTINGS.designerRoyalty (5 TND)
+ *   trackingCode   — PMD-YYMMDD-<order id>, matching PlatformStoreService.newOrderId()
+ */
 export const seedOrders: Order[] = [
   {
     id: 801,
     userId: 101,
     createdAt: '2026-03-30',
-    trackingCode: 'PMD-240330-801',
-    total: 73,
+    trackingCode: 'PMD-260330-801',
+    // Hoodie at PrintPro (offering 6602 = 52) + 10 margin
+    total: 62,
     paymentMethod: 'card',
     paymentStatus: 'paid',
     requestStatus: 'ACCEPTED',
@@ -535,16 +557,20 @@ export const seedOrders: Order[] = [
         designTitle: 'Sahara Type',
         designImage: seedImage('design-sahara-type'),
         productId: 602,
-        productName: 'Oversized Hoodie',
+        productName: 'Hoodie',
         productImage: seedImage('product-hoodie-1', 1000, 1000),
         printerId: 501,
         printerName: 'PrintPro Tunisia',
         color: 'black',
         size: 'L',
+        quantity: 1,
         x: 50,
         y: 40,
         scale: 0.29,
-        price: 73,
+        price: 62,
+        printerAmount: 52,
+        platformFee: 10,
+        designerRoyalty: 5,
         status: 'Delivered',
       },
     ],
@@ -553,8 +579,9 @@ export const seedOrders: Order[] = [
     id: 802,
     userId: 101,
     createdAt: '2026-04-08',
-    trackingCode: 'PMD-240408-802',
-    total: 49,
+    trackingCode: 'PMD-260408-802',
+    // Mug at Atelier Couleurs (offering 6607 = 21) + 10 margin
+    total: 31,
     paymentMethod: 'd17',
     paymentStatus: 'paid',
     requestStatus: 'ACCEPTED',
@@ -566,16 +593,20 @@ export const seedOrders: Order[] = [
         designTitle: 'Medina Minimal',
         designImage: seedImage('design-medina-minimal'),
         productId: 603,
-        productName: 'Ceramic Mug',
+        productName: 'Mug',
         productImage: seedImage('product-mug-1', 1000, 1000),
         printerId: 502,
         printerName: 'Atelier Couleurs',
         color: 'white',
         size: '11oz',
+        quantity: 1,
         x: 50,
         y: 50,
         scale: 0.74,
-        price: 49,
+        price: 31,
+        printerAmount: 21,
+        platformFee: 10,
+        designerRoyalty: 5,
         status: 'Shipped',
       },
     ],
@@ -584,8 +615,9 @@ export const seedOrders: Order[] = [
     id: 803,
     userId: 101,
     createdAt: '2026-04-20',
-    trackingCode: 'PMD-240420-803',
-    total: 84,
+    trackingCode: 'PMD-260420-803',
+    // T-Shirt at PrintPro (28 + 10) + Tote Bag at Atelier Couleurs (24 + 10)
+    total: 72,
     paymentMethod: 'cash',
     paymentStatus: 'paid',
     requestStatus: 'ACCEPTED',
@@ -597,16 +629,20 @@ export const seedOrders: Order[] = [
         designTitle: 'Carthage Pulse',
         designImage: seedImage('design-carthage'),
         productId: 601,
-        productName: 'Premium T-Shirt',
+        productName: 'T-Shirt',
         productImage: seedImage('product-shirt-1', 1000, 1000),
         printerId: 501,
         printerName: 'PrintPro Tunisia',
         color: 'white',
         size: 'M',
+        quantity: 1,
         x: 50,
         y: 46,
         scale: 0.42,
-        price: 47,
+        price: 38,
+        printerAmount: 28,
+        platformFee: 10,
+        designerRoyalty: 5,
         status: 'Confirmed',
       },
       {
@@ -615,16 +651,20 @@ export const seedOrders: Order[] = [
         designTitle: 'Bab Bhar Nights',
         designImage: seedImage('design-bab-bhar'),
         productId: 604,
-        productName: 'Canvas Tote Bag',
+        productName: 'Tote Bag',
         productImage: seedImage('product-tote-1', 1000, 1000),
         printerId: 502,
         printerName: 'Atelier Couleurs',
         color: 'black',
         size: 'One Size',
+        quantity: 1,
         x: 50,
         y: 46,
         scale: 0.44,
-        price: 37,
+        price: 34,
+        printerAmount: 24,
+        platformFee: 10,
+        designerRoyalty: 5,
         status: 'Printing',
       },
     ],

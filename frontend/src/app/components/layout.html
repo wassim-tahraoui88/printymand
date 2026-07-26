@@ -7,7 +7,7 @@
     class="masthead"
     [class.pm-nav-scrolled]="isScrolled()"
     [class.nav-hidden]="navHidden()">
-    <div class="pm-container">
+    <div class="page">
 
       <div class="masthead-row">
         <!-- Meta -->
@@ -91,23 +91,23 @@
                   <div class="px-3 py-2.5 mb-1.5" style="border-bottom:1px solid var(--pm-border);">
                     <p style="font-family:var(--pm-font-display); font-weight:700; color:var(--pm-text);">{{ auth.user()?.name }}</p>
                     <p style="font-size:var(--pm-text-xs); margin-top:0.15rem; color:var(--pm-text-muted);">{{ auth.user()?.email }}</p>
-                    <span class="pm-chip mt-1.5" style="text-transform:capitalize;">{{ auth.user()?.role }}</span>
+                    <span class="chip" style="margin-top:6px;" style="text-transform:capitalize;">{{ auth.user()?.role }}</span>
                   </div>
                   <div class="grid gap-0.5 py-1">
-                    <a class="pm-btn pm-btn-ghost justify-start" style="font-size:var(--pm-text-sm);" [routerLink]="auth.dashboardPath(auth.user()!.role)" role="menuitem">Workspace</a>
+                    <a class="btn btn-ghost" style="width:100%; justify-content:flex-start; font-size:11px; padding:10px 14px; border-color:transparent;" [routerLink]="auth.dashboardPath(auth.user()!.role)" role="menuitem">Workspace</a>
                     @if (auth.user()?.role === 'designer') {
-                      <a class="pm-btn pm-btn-ghost justify-start" style="font-size:var(--pm-text-sm);" [routerLink]="['/storefront', auth.user()!.id]" role="menuitem">Storefront</a>
+                      <a class="btn btn-ghost" style="width:100%; justify-content:flex-start; font-size:11px; padding:10px 14px; border-color:transparent;" [routerLink]="['/storefront', auth.user()!.id]" role="menuitem">Storefront</a>
                     }
                   </div>
                   <div style="border-top:1px solid var(--pm-border);" class="pt-1.5 mt-1">
-                    <button type="button" class="pm-btn pm-btn-danger w-full" style="font-size:var(--pm-text-sm);" (click)="logout()" role="menuitem">Sign out</button>
+                    <button type="button" class="btn btn-ghost" style="width:100%; justify-content:center; font-size:11px; color:var(--pm-danger); border-color:var(--pm-danger);" (click)="logout()" role="menuitem">Sign out</button>
                   </div>
                 </div>
               }
             </div>
 
           } @else {
-            <a class="pm-btn pm-btn-ghost hidden sm:inline-flex" routerLink="/register">Register</a>
+            <a class="btn btn-ghost hidden sm:inline-flex" routerLink="/register">Register</a>
             <a class="btn btn-clay" routerLink="/login">Sign in <span class="ar">→</span></a>
           }
 
@@ -169,34 +169,34 @@
         </div>
 
         <div class="px-4 py-2 grid gap-0.5">
-          <a routerLink="/" class="pm-btn pm-btn-ghost justify-start" style="font-size:var(--pm-text-sm);" (click)="siteMenu.set(false)">Cover</a>
+          <a routerLink="/" class="btn btn-ghost" style="width:100%; justify-content:flex-start; font-size:11px; padding:10px 14px; border-color:transparent;" (click)="siteMenu.set(false)">Cover</a>
           @for (link of navLinks; track link.to) {
-            <a [routerLink]="link.to" class="pm-btn pm-btn-ghost justify-start" style="font-size:var(--pm-text-sm);" (click)="siteMenu.set(false)">{{ link.label }}</a>
+            <a [routerLink]="link.to" class="btn btn-ghost" style="width:100%; justify-content:flex-start; font-size:11px; padding:10px 14px; border-color:transparent;" (click)="siteMenu.set(false)">{{ link.label }}</a>
           }
         </div>
 
         @if (auth.isAuthenticated()) {
           <div class="px-4 py-2 grid gap-0.5" style="border-top:1px solid var(--pm-border);">
-            <a [routerLink]="auth.dashboardPath(auth.user()!.role)" class="pm-btn pm-btn-ghost justify-start" style="font-size:var(--pm-text-sm);" (click)="siteMenu.set(false)">Workspace</a>
+            <a [routerLink]="auth.dashboardPath(auth.user()!.role)" class="btn btn-ghost" style="width:100%; justify-content:flex-start; font-size:11px; padding:10px 14px; border-color:transparent;" (click)="siteMenu.set(false)">Workspace</a>
             @if (auth.user()?.role === 'designer') {
-              <a [routerLink]="['/storefront', auth.user()!.id]" class="pm-btn pm-btn-ghost justify-start" style="font-size:var(--pm-text-sm);" (click)="siteMenu.set(false)">Storefront</a>
+              <a [routerLink]="['/storefront', auth.user()!.id]" class="btn btn-ghost" style="width:100%; justify-content:flex-start; font-size:11px; padding:10px 14px; border-color:transparent;" (click)="siteMenu.set(false)">Storefront</a>
             }
-            <a routerLink="/notifications" class="pm-btn pm-btn-ghost justify-start" style="font-size:var(--pm-text-sm);" (click)="siteMenu.set(false)">
+            <a routerLink="/notifications" class="btn btn-ghost" style="width:100%; justify-content:flex-start; font-size:11px; padding:10px 14px; border-color:transparent;" (click)="siteMenu.set(false)">
               Notifications
-              @if (unreadNotifications()) { <span class="pm-chip ml-1">{{ unreadNotifications() }}</span> }
+              @if (unreadNotifications()) { <span class="chip" style="margin-left:6px;">{{ unreadNotifications() }}</span> }
             </a>
-            <a routerLink="/cart" class="pm-btn pm-btn-ghost justify-start" style="font-size:var(--pm-text-sm);" (click)="siteMenu.set(false)">
+            <a routerLink="/cart" class="btn btn-ghost" style="width:100%; justify-content:flex-start; font-size:11px; padding:10px 14px; border-color:transparent;" (click)="siteMenu.set(false)">
               Cart
-              @if (cartCount()) { <span class="pm-chip ml-1">{{ cartCount() }}</span> }
+              @if (cartCount()) { <span class="chip" style="margin-left:6px;">{{ cartCount() }}</span> }
             </a>
           </div>
           <div class="px-4 py-2" style="border-top:1px solid var(--pm-border);">
-            <button type="button" class="pm-btn pm-btn-danger w-full" style="font-size:var(--pm-text-sm);" (click)="logout()">Sign out</button>
+            <button type="button" class="btn btn-ghost" style="width:100%; justify-content:center; font-size:11px; color:var(--pm-danger); border-color:var(--pm-danger);" (click)="logout()">Sign out</button>
           </div>
         } @else {
           <div class="px-4 py-3 flex gap-2" style="border-top:1px solid var(--pm-border);">
             <a routerLink="/login" class="btn btn-clay flex-1" style="justify-content:center;" (click)="siteMenu.set(false)">Sign in</a>
-            <a routerLink="/register" class="pm-btn pm-btn-secondary flex-1" style="justify-content:center;" (click)="siteMenu.set(false)">Register</a>
+            <a routerLink="/register" class="btn btn-ghost flex-1" style="justify-content:center;" (click)="siteMenu.set(false)">Register</a>
           </div>
         }
 
@@ -204,7 +204,7 @@
         <div class="px-4 py-3" style="border-top:1px solid var(--pm-border);">
           <button
             type="button"
-            class="pm-btn pm-btn-ghost w-full justify-start"
+            class="btn btn-ghost" style="width:100%; justify-content:flex-start; font-size:11px; padding:10px 14px; border-color:transparent;"
             style="font-size:var(--pm-text-sm); gap:10px;"
             (click)="toggleTheme()"
           >
@@ -226,6 +226,13 @@
        PAGE CONTENT
   ═══════════════════════════════════════════════════════ -->
   <main style="flex:1;">
+    @if (store.storageWarning(); as warning) {
+      <div class="page" style="padding-top:14px;">
+        <p class="serif-italic" role="status" style="border:1px solid var(--pm-danger); color:var(--pm-danger); padding:12px 16px; margin:0; font-size:14px;">
+          {{ warning }}
+        </p>
+      </div>
+    }
     <router-outlet />
   </main>
 
@@ -266,9 +273,11 @@
           <ul>
             <li><a routerLink="/marketplace">Marketplace</a></li>
             <li><a routerLink="/products">Products</a></li>
-            <li><a [routerLink]="['/marketplace']" [queryParams]="{category:'Minimal'}">Minimal</a></li>
-            <li><a [routerLink]="['/marketplace']" [queryParams]="{category:'Street'}">Streetwear</a></li>
-            <li><a [routerLink]="['/marketplace']" [queryParams]="{category:'Typography'}">Calligraphy</a></li>
+            <!-- Driven by the live category list so a link can never point at
+                 a category that does not exist. -->
+            @for (category of store.categories().slice(0, 3); track category) {
+              <li><a [routerLink]="['/marketplace']" [queryParams]="{ category }">{{ category }}</a></li>
+            }
           </ul>
         </div>
 
@@ -278,7 +287,12 @@
             <li><a routerLink="/login">Sign in</a></li>
             <li><a routerLink="/register">Become a designer</a></li>
             <li><a routerLink="/register">Open a pressroom</a></li>
-            <li><a routerLink="/tracking">Track order</a></li>
+            <!-- Tracking needs an order id; send people to their order list. -->
+            @if (auth.isAuthenticated()) {
+              <li><a [routerLink]="auth.dashboardPath(auth.user()!.role)">Track an order</a></li>
+            } @else {
+              <li><a routerLink="/login">Track an order</a></li>
+            }
           </ul>
         </div>
 

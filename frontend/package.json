@@ -6,9 +6,7 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test",
-    "extract": "node extract_slice.js",
-    "slice": "node do_slice.py || python do_slice.py || python3 do_slice.py"
+    "test": "ng test"
   },
   "private": true,
   "packageManager": "npm@10.2.4",

@@ -1,5 +1,5 @@
 <!-- ============================================================
-     HOME — Printymand · Issue Nº 07 (editorial cover)
+     HOME — Printymand · Issue Nº 07 (editorial cover)cd fro
      ============================================================ -->
 
 <!-- ── COVER ─────────────────────────────────────────────── -->
@@ -7,14 +7,14 @@
   <div class="cover-grid">
     <div>
       <div class="kicker" style="margin-bottom:18px;">
-        <span style="color:var(--pm-clay);">✦</span>&nbsp;&nbsp;The cover — designed, printed &amp; worn in Tunisia
+        <span style="color:var(--pm-clay);">✦</span>&nbsp;&nbsp;The cover — designed, printed &amp; Made in Tunisia
       </div>
 
       <h2 class="cover-headline" style="margin-top:6px;">
         Design<br />
         <em>it.</em><br />
         Print <span class="outline">it.</span><br />
-        <span class="amber">Worn</span><br />
+        <span class="amber">Made</span><br />
         in Tunisia.
       </h2>
 
@@ -26,11 +26,11 @@
       <div class="cover-meta" style="margin-top:28px;">
         <div>
           <strong>In this issue</strong><br />
-          <span>{{ platformOverview().users }} designers · verified pressrooms · 1 manifesto</span>
+          <span>{{ platformOverview().designers }} designers · {{ platformOverview().pressrooms }} verified pressrooms · 1 manifesto</span>
         </div>
         <div style="text-align:right;">
           <strong>Platform GMV</strong><br />
-          <span>{{ platformOverview().revenue }} TND · {{ platformOverview().orders }} orders</span>
+          <span>{{ platformOverview().designs }} plates in the archive · {{ platformOverview().deliveredOrders }} delivered</span>
         </div>
       </div>
 
@@ -113,9 +113,9 @@
     <aside class="side">
       <span class="kicker">By the numbers</span>
       <ul>
-        <li><span>Designers</span><span class="num">{{ platformOverview().users }}</span></li>
-        <li><span>Orders</span><span class="num">{{ platformOverview().orders }}</span></li>
-        <li><span>GMV</span><span class="num">{{ platformOverview().revenue }}</span></li>
+        <li><span>Designers</span><span class="num">{{ platformOverview().designers }}</span></li>
+        <li><span>Delivered</span><span class="num">{{ platformOverview().deliveredOrders }}</span></li>
+        <li><span>Pressrooms</span><span class="num">{{ platformOverview().pressrooms }}</span></li>
       </ul>
     </aside>
   </div>
@@ -193,7 +193,7 @@
   <!-- Browse by mood -->
   <div class="filter-row" style="border-top:1px solid var(--pm-rule-strong);">
     <span class="label">filed under:</span>
-    @for (mood of moodCategories; track mood.label) {
+    @for (mood of moodCategories(); track mood.category) {
       <a class="chip" [routerLink]="['/marketplace']" [queryParams]="{ category: mood.category }">{{ mood.label }}</a>
     }
   </div>
@@ -203,8 +203,8 @@
 <section class="page">
   <div class="stat-strip">
     <div class="stat"><span class="n">2<em>·</em>4d</span><span class="l">Delivery, anywhere in Tunisia</span></div>
-    <div class="stat"><span class="n">{{ platformOverview().users }}</span><span class="l">Verified Tunisian designers</span></div>
-    <div class="stat"><span class="n">{{ platformOverview().orders }}</span><span class="l">Orders fulfilled end-to-end</span></div>
+    <div class="stat"><span class="n">{{ platformOverview().designers }}</span><span class="l">Verified Tunisian designers</span></div>
+    <div class="stat"><span class="n">{{ platformOverview().deliveredOrders }}</span><span class="l">Orders fulfilled end-to-end</span></div>
     <div class="stat"><span class="n">0<em>%</em></span><span class="l">Card fees on cash-on-delivery</span></div>
   </div>
 </section>

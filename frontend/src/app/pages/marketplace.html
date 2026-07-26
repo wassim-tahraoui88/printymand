@@ -47,7 +47,7 @@
         aria-label="Filter by product"
       >
         <option [ngValue]="null">on — any product</option>
-        @for (product of workflow.products(); track product.id) {
+        @for (product of store.products(); track product.id) {
           <option [ngValue]="product.id">on — {{ product.name }}</option>
         }
       </select>
@@ -57,6 +57,7 @@
   <!-- Category chips -->
   <div class="filter-row" style="border-top:1px solid var(--pm-rule); margin-top:20px;">
     <span class="label">Filed under:</span>
+    <!-- "All" is a UI affordance only; categories() holds real categories. -->
     <button type="button" class="chip" [class.active]="category() === 'All'" (click)="category.set('All'); applyFilters()">All works</button>
     @for (cat of categories(); track cat) {
       <button type="button" class="chip" [class.active]="category() === cat" (click)="category.set(cat); applyFilters()">{{ cat }}</button>

@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { filter } from 'rxjs';
 import { AuthService } from '../services/auth.service';
-import { WorkflowService } from '../services/workflow.service';
+import { PlatformStoreService } from '../services/platform-store.service';
 
 @Component({
   selector: 'app-layout',
@@ -47,7 +47,7 @@ export class LayoutComponent {
   ] as const;
 
   // Cart now holds printer-accepted orders awaiting payment (new order flow).
-  readonly cartCount = computed(() => this.workflow.currentAwaitingPaymentOrders().length);
+  readonly cartCount = computed(() => this.store.currentAwaitingPaymentOrders().length);
 
   readonly theme = signal<'light' | 'dark'>(
     (typeof localStorage !== 'undefined'
@@ -62,12 +62,12 @@ export class LayoutComponent {
 
   /** Unread in-app notifications for the signed-in user. */
   readonly unreadNotifications = computed(
-    () => this.workflow.currentUserNotifications().filter((n) => !n.read).length,
+    () => this.store.currentUserNotifications().filter((n) => !n.read).length,
   );
 
   constructor(
     public readonly auth: AuthService,
-    public readonly workflow: WorkflowService,
+    public readonly store: PlatformStoreService,
     private readonly router: Router,
   ) {
     // Sync initial theme to DOM

@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ProductCardComponent } from '../components/product-card.component';
-import { WorkflowService } from '../services/workflow.service';
+import { PlatformStoreService } from '../services/platform-store.service';
 
 export type ProductSort = 'popular' | 'top_rated' | 'price_asc' | 'price_desc';
 
@@ -13,7 +13,7 @@ export type ProductSort = 'popular' | 'top_rated' | 'price_asc' | 'price_desc';
   templateUrl: './products.html',
 })
 export class ProductsPageComponent {
-  private readonly workflow = inject(WorkflowService);
+  private readonly store = inject(PlatformStoreService);
 
   readonly search = signal('');
   readonly category = signal('All');
@@ -21,11 +21,11 @@ export class ProductsPageComponent {
   readonly sort = signal<ProductSort>('popular');
 
   /** Pressrooms that have at least one product offering (for the filter). */
-  readonly pressrooms = computed(() => this.workflow.printers());
+  readonly pressrooms = computed(() => this.store.printers());
 
   readonly categories = computed(() => [
     'All',
-    ...Array.from(new Set(this.workflow.products().map((p) => p.category))),
+    ...Array.from(new Set(this.store.products().map((p) => p.category))),
   ]);
 
   readonly sortOptions: { value: ProductSort; label: string }[] = [
@@ -42,14 +42,14 @@ export class ProductsPageComponent {
 
     const pressroom = this.pressroom();
 
-    const filtered = this.workflow
+    const filtered = this.store
       .products()
       .filter((p) => p.availability !== 'DRAFT')
       .filter((p) => cat === 'All' || p.category === cat)
       .filter(
         (p) =>
           pressroom === 'all' ||
-          this.workflow.printersForProduct(p.id).some((pr) => pr.id === pressroom),
+          this.store.printersForProduct(p.id).some((pr) => pr.id === pressroom),
       )
       .filter((p) => {
         if (!query) return true;

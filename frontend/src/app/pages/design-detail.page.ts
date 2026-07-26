@@ -5,8 +5,9 @@ import { ActivatedRoute, RouterModule } from '@angular/router';
 import { DesignCardComponent } from '../components/design-card.component';
 import { DesignerBadgeComponent } from '../components/rank-badge.component';
 import { ImageWithFallbackComponent } from '../components/image-with-fallback.component';
+import type { Design } from '../models/types';
 import { AuthService } from '../services/auth.service';
-import { WorkflowService } from '../services/workflow.service';
+import { PlatformStoreService } from '../services/platform-store.service';
 
 /**
  * Product Detail / preview page. NO variations here — the buyer only previews
@@ -20,21 +21,44 @@ import { WorkflowService } from '../services/workflow.service';
   templateUrl: './design-detail.html',
 })
 export class DesignDetailPageComponent {
-  readonly workflow = inject(WorkflowService);
+  readonly store = inject(PlatformStoreService);
   private readonly auth = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
 
-  readonly designId = signal<number>(701);
-  readonly design = computed(() => this.workflow.getDesignById(this.designId()) ?? this.workflow.designs()[0]);
-  readonly supportedProducts = computed(() =>
-    this.design() ? this.workflow.availableProductsForDesign(this.design()!.id) : [],
-  );
+  readonly designId = signal<number>(0);
+
+  /**
+   * The requested design, or undefined when it does not exist or the viewer is
+   * not allowed to see it. Never falls back to another design — a bad id must
+   * render the "not found" branch rather than silently showing something else.
+   */
+  readonly design = computed(() => {
+    const found = this.store.getDesignById(this.designId());
+    return found && this.canView(found) ? found : undefined;
+  });
+
+  readonly supportedProducts = computed(() => {
+    const design = this.design();
+    return design ? this.store.availableProductsForDesign(design.id) : [];
+  });
+
+  /**
+   * Public detail pages show only live marketplace designs. Owners (and admins)
+   * can still open their own drafts, private uploads and archived work.
+   */
+  private canView(design: Design): boolean {
+    const user = this.auth.user();
+    if (user?.role === 'admin') return true;
+    if (design.isUserUpload) return design.uploadedByUserId === user?.id;
+    if (design.designerId === user?.id) return true;
+    return design.status === 'ACTIVE' && (design.moderation ?? 'APPROVED') === 'APPROVED';
+  }
 
   /** Multi-select: the buyer can order this design on several products at once. */
   readonly selectedProductIds = signal<number[]>([]);
 
-  readonly platformMargin = computed(() => this.workflow.platformSettings().margin);
+  readonly platformMargin = computed(() => this.store.platformSettings().margin);
 
   /**
    * Minimum total: sum of (floor price + platform margin) over the SELECTED
@@ -59,15 +83,15 @@ export class DesignDetailPageComponent {
   readonly moreByDesigner = computed(() => {
     const d = this.design();
     if (!d) return [];
-    return this.workflow
-      .designs()
-      .filter((x) => x.designerId === d.designerId && x.id !== d.id && x.status === 'ACTIVE' && (x.moderation ?? 'APPROVED') === 'APPROVED')
+    return this.store
+      .storefrontDesigns(d.designerId)
+      .filter((x) => x.id !== d.id)
       .slice(0, 3);
   });
 
   constructor() {
     this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
-      this.designId.set(Number(params.get('id') ?? 701));
+      this.designId.set(Number(params.get('id')) || 0);
       this.selectedProductIds.set([]);
     });
   }

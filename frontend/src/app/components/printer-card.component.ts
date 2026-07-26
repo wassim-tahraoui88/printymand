@@ -9,60 +9,56 @@ import { PrinterBadgeComponent } from './rank-badge.component';
   standalone: true,
   imports: [CommonModule, ImageWithFallbackComponent, PrinterBadgeComponent],
   template: `
-    <article class="pm-card group">
-      <div style="overflow:hidden;">
+    <article class="plate" [style.outline]="isSelected() ? '2px solid var(--pm-clay)' : null" [style.outline-offset]="'3px'">
+      <div class="plate-image" style="aspect-ratio:16/10;">
         <app-image-with-fallback
           [src]="currentImage()"
           [alt]="printer().businessName"
-          [imgClass]="'h-52 w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]'"
+          [imgClass]="'w-full h-full object-cover'"
         />
+        <span class="plate-no">{{ printer().location }}</span>
       </div>
 
-      <div style="padding:1.25rem; display:grid; gap:0.875rem;">
-        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:0.75rem;">
-          <div>
-            <h3 class="pm-heading" style="font-size:1.05rem; font-weight:700; color:var(--pm-text);">{{ printer().businessName }}</h3>
-            <p style="font-size:0.82rem; color:var(--pm-text-muted); margin-top:0.2rem;">{{ printer().location }}</p>
-          </div>
+      <div style="display:grid; gap:14px; padding-top:14px;">
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px;">
+          <h3 style="font-family:var(--pm-font-display); font-weight:700; font-size:18px; letter-spacing:-0.02em; color:var(--pm-ink); margin:0;">
+            {{ printer().businessName }}
+          </h3>
           <app-printer-badge [rank]="printer().rank" />
         </div>
 
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(72px, 1fr)); gap:0.5rem; text-align:center;">
-          @for (stat of [
-            { val: printer().rating, label: 'rating' },
-            { val: printer().fulfillmentRate + '%', label: 'fulfilled' },
-            { val: printer().deliveryDays + 'd', label: 'lead time' }
-          ]; track stat.label) {
-            <div style="background:var(--pm-surface-alt); border:1px solid var(--pm-border); border-radius:10px; padding:0.625rem 0.5rem;">
-              <div style="font-weight:700; font-size:0.95rem; color:var(--pm-text);">{{ stat.val }}</div>
-              <div style="font-size:0.68rem; color:var(--pm-text-muted); margin-top:0.15rem;">{{ stat.label }}</div>
+        <div style="display:grid; grid-template-columns:repeat(3, 1fr); border-top:1px solid var(--pm-rule); border-bottom:1px solid var(--pm-rule);">
+          @for (stat of stats(); track stat.label) {
+            <div style="padding:10px 6px; text-align:center; border-right:1px solid var(--pm-rule);">
+              <div style="font-family:var(--pm-font-display); font-weight:800; font-size:16px; color:var(--pm-ink);">{{ stat.val }}</div>
+              <div class="serif-italic" style="font-size:11px; color:var(--pm-text-muted);">{{ stat.label }}</div>
             </div>
           }
         </div>
 
         @if (note()) {
-          <p style="font-size:0.8rem; color:var(--pm-text-muted); line-height:1.55; background:var(--pm-surface-alt); border:1px solid var(--pm-border); border-radius:10px; padding:0.625rem 0.75rem;">
+          <p class="serif-italic" style="font-size:13px; color:var(--pm-text-muted); line-height:1.55; margin:0;">
             {{ note() }}
           </p>
         }
 
-        <div style="border-top:1px solid var(--pm-border); padding-top:0.875rem; display:flex; align-items:center; justify-content:space-between; gap:0.75rem;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
           @if (price() !== null) {
             <div>
-              <p style="font-size:0.68rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--pm-text-muted);">Total here</p>
-              <p class="pm-heading" style="font-size:1.05rem; font-weight:800; color:var(--pm-text);">{{ price() }} TND</p>
+              <div class="kicker" style="font-size:10px; color:var(--pm-text-muted);">Total here</div>
+              <div style="font-family:var(--pm-font-display); font-weight:800; font-size:20px; color:var(--pm-ink);">{{ price() }} TND</div>
             </div>
           } @else {
-            <p style="font-size:0.82rem; color:var(--pm-text-muted);">{{ printer().reviews }} reviews</p>
+            <p class="serif-italic" style="font-size:13px; color:var(--pm-text-muted); margin:0;">{{ printer().reviews }} reviews</p>
           }
           <button
             type="button"
-            class="pm-btn"
-            [class.pm-btn-primary]="!isSelected()"
-            [class.pm-btn-secondary]="isSelected()"
-            style="font-size:0.85rem;"
+            class="btn"
+            [class.btn-clay]="!isSelected()"
+            [class.btn-ghost]="isSelected()"
+            style="font-size:11px; padding:10px 16px;"
             (click)="selected.emit(printer().id)"
-          >{{ isSelected() ? '✓ Selected' : 'Select →' }}</button>
+          >{{ isSelected() ? '✓ Selected' : 'Select' }} <span class="ar">→</span></button>
         </div>
       </div>
     </article>
@@ -77,5 +73,13 @@ export class PrinterCardComponent {
   readonly isSelected = input<boolean>(false);
   readonly selected = output<number>();
   readonly activeIndex = signal(0);
-  readonly currentImage = computed(() => this.printer().images[this.activeIndex()] ?? this.printer().images[0] ?? '/placeholder-image.svg');
+  readonly currentImage = computed(
+    () => this.printer().images.at(this.activeIndex()) ?? this.printer().images.at(0) ?? '/placeholder-image.svg',
+  );
+
+  readonly stats = computed(() => [
+    { val: String(this.printer().rating), label: 'rating' },
+    { val: `${this.printer().fulfillmentRate}%`, label: 'fulfilled' },
+    { val: `${this.printer().deliveryDays}d`, label: 'lead time' },
+  ]);
 }
