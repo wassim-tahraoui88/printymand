@@ -41,6 +41,28 @@
 
             <div class="totals-row total"><span>Total</span><span>{{ order.total }} TND</span></div>
 
+            <!-- Chosen per order: paying one must not preset the next. -->
+            <div style="margin-top:18px; border-top:1px solid var(--pm-rule); padding-top:14px;">
+              <p class="pm-label" style="margin-bottom:10px;">Pay this order with</p>
+              @for (option of paymentOptions; track option.value) {
+                <button
+                  type="button"
+                  class="pay-tile-row"
+                  [class.selected]="paymentMethod(order) === option.value"
+                  (click)="setPaymentMethod(order, option.value)"
+                >
+                  <span class="pay-mark">{{ option.mark }}</span>
+                  <div>
+                    <div class="pay-name">{{ option.name }}</div>
+                    <div class="pay-desc">{{ preferenceLabel(option.value) || option.desc }}</div>
+                  </div>
+                  @if (preferenceLabel(option.value)) {
+                    <span class="pay-tag">Saved</span>
+                  }
+                </button>
+              }
+            </div>
+
             <div style="display:flex; gap:12px; margin-top:16px;">
               <button type="button" class="btn btn-ghost" (click)="remove(order)">Remove</button>
               <button
@@ -92,43 +114,34 @@
         </div>
       </div>
 
-      <!-- RIGHT — payment -->
+      <!-- RIGHT — saved methods + reassurance -->
       <aside>
         <div class="invoice-block">
-          <h3>Pay with</h3>
+          <h3>Your saved methods</h3>
 
-          <button type="button" class="pay-tile-row" [class.selected]="paymentMethod() === 'd17'" (click)="paymentMethod.set('d17')">
-            <span class="pay-mark">D17</span>
-            <div>
-              <div class="pay-name">D17 mobile wallet</div>
-              <div class="pay-desc">Pay instantly from the D17 app.</div>
-            </div>
-            <span class="pay-tag">Most used</span>
-          </button>
-
-          <button type="button" class="pay-tile-row" [class.selected]="paymentMethod() === 'card'" (click)="paymentMethod.set('card')">
-            <span class="pay-mark">CARD</span>
-            <div>
-              <div class="pay-name">Visa or MasterCard</div>
-              <div class="pay-desc">Card processed via Paymee, in TND.</div>
-            </div>
-          </button>
-
-          <button type="button" class="pay-tile-row" [class.selected]="paymentMethod() === 'paymee'" (click)="paymentMethod.set('paymee')">
-            <span class="pay-mark">PM</span>
-            <div>
-              <div class="pay-name">Paymee</div>
-              <div class="pay-desc">Tunisian gateway, secure tokenized payment.</div>
-            </div>
-          </button>
-
-          <button type="button" class="pay-tile-row" [class.selected]="paymentMethod() === 'cash'" (click)="paymentMethod.set('cash')">
-            <span class="pay-mark">COD</span>
-            <div>
-              <div class="pay-name">Cash on delivery</div>
-              <div class="pay-desc">Pay when the courier hands it over.</div>
-            </div>
-          </button>
+          @if (preferences().length) {
+            <ul style="list-style:none; padding:0; margin:0; display:grid; gap:10px;">
+              @for (preference of preferences(); track preference.id) {
+                <li style="display:flex; align-items:baseline; justify-content:space-between; gap:12px; border-bottom:1px solid var(--pm-rule); padding-bottom:8px;">
+                  <span>
+                    <strong style="font-size:14px;">{{ preference.label }}</strong>
+                    <span class="serif-italic" style="display:block; font-size:12px; color:var(--pm-text-muted);">{{ preference.details }}</span>
+                  </span>
+                  @if (preference.isDefault) {
+                    <span class="pay-tag">Default</span>
+                  }
+                </li>
+              }
+            </ul>
+            <p class="serif-italic" style="font-size:13px; color:var(--pm-text-muted); margin-top:14px;">
+              Each order starts on your default method. Change it per order on the left.
+            </p>
+          } @else {
+            <p class="serif-italic" style="font-size:13px; color:var(--pm-text-muted);">
+              You have no saved payment methods yet. Add one in your dashboard settings and
+              new orders will start on it automatically.
+            </p>
+          }
 
           @if (error()) {
             <div class="serif-italic" style="border:1px solid var(--pm-danger); color:var(--pm-danger); padding:10px 14px; margin-top:14px;">{{ error() }}</div>

@@ -32,7 +32,6 @@ export const seedUsers: User[] = [
     customerProfile: {
       phone: '+216 25 100 200',
       notes: 'Prefers delivery in business hours and card-first checkout.',
-      favoritePrinterIds: [501, 502],
       savedAddresses: [
         {
           id: 1001,
@@ -322,14 +321,15 @@ export const seedOfferings: PrinterProductOffering[] = [
   { id: 6603, printerId: 501, productId: 603, basePrice: 22, available: true, createdAt: '2026-01-10' },
   { id: 6604, printerId: 501, productId: 605, basePrice: 30, available: true, createdAt: '2026-01-10' },
   { id: 6605, printerId: 501, productId: 606, basePrice: 8, available: true, createdAt: '2026-01-10' },
-  // Atelier Couleurs (printer 502)
-  { id: 6606, printerId: 502, productId: 601, basePrice: 26, available: true, createdAt: '2026-01-12' },
+  // Atelier Couleurs (printer 502) — priced at the floor on the tee and sticker,
+  // above it nowhere: a printer may never undercut the admin minimum.
+  { id: 6606, printerId: 502, productId: 601, basePrice: 28, available: true, createdAt: '2026-01-12' },
   { id: 6607, printerId: 502, productId: 603, basePrice: 21, available: true, createdAt: '2026-01-12' },
   { id: 6608, printerId: 502, productId: 604, basePrice: 24, available: true, createdAt: '2026-01-12' },
-  { id: 6609, printerId: 502, productId: 606, basePrice: 7, available: true, createdAt: '2026-01-12' },
+  { id: 6609, printerId: 502, productId: 606, basePrice: 8, available: true, createdAt: '2026-01-12' },
   // Studio Press Nabeul (printer 503)
-  { id: 6610, printerId: 503, productId: 601, basePrice: 27, available: true, createdAt: '2026-01-15' },
-  { id: 6611, printerId: 503, productId: 602, basePrice: 50, available: true, createdAt: '2026-01-15' },
+  { id: 6610, printerId: 503, productId: 601, basePrice: 29, available: true, createdAt: '2026-01-15' },
+  { id: 6611, printerId: 503, productId: 602, basePrice: 54, available: true, createdAt: '2026-01-15' },
   { id: 6612, printerId: 503, productId: 605, basePrice: 29, available: true, createdAt: '2026-01-15' },
 ];
 

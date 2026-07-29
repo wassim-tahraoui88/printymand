@@ -7,8 +7,6 @@ import type {
   ApiOrder,
   ApiProduct,
   AuthResponse,
-  Cart,
-  CartItemPayload,
   CursorPaginationParams,
   LoginPayload,
   OffsetPaginationParams,
@@ -71,16 +69,6 @@ export class ApiService {
 
   getProduct(id: number | string): Promise<ApiProduct> {
     return firstValueFrom(this.http.get<ApiProduct>(`${this.baseUrl}/products/${id}`));
-  }
-
-  // ── Cart ──
-
-  addToCart(payload: CartItemPayload): Promise<Cart> {
-    return firstValueFrom(this.http.patch<Cart>(`${this.baseUrl}/cart`, payload));
-  }
-
-  getCart(): Promise<Cart> {
-    return firstValueFrom(this.http.get<Cart>(`${this.baseUrl}/cart`));
   }
 
   // ── Orders ──

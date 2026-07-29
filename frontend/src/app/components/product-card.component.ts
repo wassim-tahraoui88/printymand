@@ -73,9 +73,13 @@ export class ProductCardComponent {
   );
 
   /**
-   * What the buyer actually pays at minimum: the product floor price plus the
-   * platform margin. Showing the bare basePrice understated every product,
-   * and disagreed with the design detail page.
+   * What the buyer actually pays at minimum: the cheapest price an available
+   * pressroom quotes, plus the platform margin. Quoting the admin floor instead
+   * understated the product whenever no printer priced down to it.
    */
-  readonly fromPrice = computed(() => this.product().basePrice + this.store.platformSettings().margin);
+  readonly fromPrice = computed(
+    () =>
+      (this.store.lowestOfferingPrice(this.product().id) ?? this.product().basePrice) +
+      this.store.platformSettings().margin,
+  );
 }

@@ -126,6 +126,16 @@ export class PrinterSelectionPageComponent {
       return;
     }
     this.store.setCustomizationDraft({ ...draft, selectedPrinterId: this.selectedPrinterId() });
+
+    // The draft is persisted, so the pressroom may have gone busy or dropped a
+    // product since it was built. Report exactly what changed rather than a
+    // generic failure the buyer cannot act on.
+    const issue = this.store.draftIssue();
+    if (issue) {
+      this.error.set(issue);
+      return;
+    }
+
     const order = this.store.submitDraftOrderRequest(user.id);
     if (!order) {
       this.error.set('Could not send the request. Please try again.');

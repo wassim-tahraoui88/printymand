@@ -48,6 +48,10 @@
           <span class="v">{{ overview().orders }}</span>
         </div>
         <div class="kpi">
+          <span class="l">Paid volume</span>
+          <span class="v">{{ overview().grossVolume }}<small>TND</small></span>
+        </div>
+        <div class="kpi">
           <span class="l">Platform revenue</span>
           <span class="v">{{ overview().revenue }}<small>TND</small></span>
         </div>
@@ -383,6 +387,66 @@
           </div>
         } @else {
           <p class="serif-italic" style="color:var(--pm-text-muted); font-size:15px; padding:24px 0;">No orders on the platform yet.</p>
+        }
+      </div>
+    }
+
+    <!-- ── DESIGNER PAYOUTS ───────────────────────────────────── -->
+    @if (activeTab() === 'payouts') {
+      <div class="desk-section">
+        <h3>Payout requests</h3>
+        <p class="serif-italic" style="color:var(--pm-text-muted); font-size:14px; margin:-6px 0 18px;">
+          A designer's balance leaves their account the moment they request it. Move each
+          request along until it is paid — {{ openPayouts().length }} still open.
+        </p>
+
+        @if (payoutMsg()) {
+          <p class="serif-italic" style="font-size:13px; color:var(--pm-text-muted); margin-bottom:12px;">{{ payoutMsg() }}</p>
+        }
+
+        @if (payouts().length) {
+          <div style="overflow-x:auto;">
+            <table class="desk-table">
+              <thead>
+                <tr>
+                  <th>Designer</th>
+                  <th>Reference</th>
+                  <th class="r">Amount</th>
+                  <th>Due</th>
+                  <th>Status</th>
+                  <th class="r">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (payout of payouts(); track payout.id) {
+                  <tr>
+                    <td>{{ designerName(payout.designerId) }}</td>
+                    <td>{{ payout.reference }}</td>
+                    <td class="r amt">{{ payout.amount }} <small>TND</small></td>
+                    <td>{{ payout.dueDate }}</td>
+                    <td><span class="status-pill">{{ payout.status }}</span></td>
+                    <td class="r">
+                      @if (payout.status === 'requested' || payout.status === 'scheduled') {
+                        <button type="button" class="btn btn-ghost" style="font-size:12px; padding:4px 10px;" (click)="setPayoutStatus(payout.id, 'processing')">
+                          Mark processing
+                        </button>
+                      }
+                      @if (payout.status === 'processing') {
+                        <button type="button" class="btn btn-clay" style="font-size:12px; padding:4px 10px;" (click)="setPayoutStatus(payout.id, 'paid')">
+                          Mark paid
+                        </button>
+                      }
+                      @if (payout.status === 'paid') {
+                        <span class="serif-italic" style="font-size:13px; color:var(--pm-text-muted);">Settled</span>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <p class="serif-italic" style="color:var(--pm-text-muted); font-size:15px; padding:24px 0;">No payout requests yet.</p>
         }
       </div>
     }

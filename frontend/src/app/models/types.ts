@@ -101,7 +101,6 @@ export interface CustomerProfile {
   phone: string;
   savedAddresses: Address[];
   paymentPreferences: PaymentPreference[];
-  favoritePrinterIds: number[];
   notes: string;
 }
 
@@ -189,6 +188,11 @@ export interface Design {
   /** Searchable tags, capped at 10 by the upload UI. */
   tags: string[];
   rating: number;
+  /**
+   * Number of ratings behind `rating`, so a new review is weighted as one
+   * observation instead of half the score. (Defaulted at load.)
+   */
+  ratingCount?: number;
   sales: number;
   views: number;
   engagementRate: number;
@@ -320,53 +324,6 @@ export interface CustomizationDraft {
   /** Buyer can order the SAME design on several products at once. */
   items: DraftOrderItem[];
   selectedPrinterId: number | null;
-}
-
-export interface CartItemPayload {
-  design: {
-    id: number;
-    x: number;
-    y: number;
-    scale: number;
-  };
-  product: {
-    id: number;
-    color: string;
-  };
-}
-
-export interface CartItem {
-  id: number;
-  userId: number;
-  designId: number;
-  productId: number;
-  printerId: number | null;
-  color: string;
-  size: string;
-  x: number;
-  y: number;
-  scale: number;
-  createdAt: string;
-}
-
-export interface CartLineView {
-  id: number;
-  design: Design;
-  product: Product;
-  printer: PrinterPartner | null;
-  color: string;
-  size: string;
-  placement: {
-    x: number;
-    y: number;
-    scale: number;
-  };
-  lineTotal: number;
-}
-
-export interface Cart {
-  items: CartLineView[];
-  total: number;
 }
 
 export interface OrderLine {

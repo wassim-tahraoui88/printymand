@@ -3,10 +3,6 @@ import { demoAccounts, seedDesigns, seedOfferings, seedOrders, seedPayouts, seed
 import type {
   Address,
   AnalyticsPoint,
-  Cart,
-  CartItem,
-  CartItemPayload,
-  CartLineView,
   CustomerProfile,
   CustomizationDraft,
   Design,
@@ -18,15 +14,16 @@ import type {
   AppNotification,
   FeaturedContent,
   ModerationLogEntry,
+  ModerationStatus,
   NotificationType,
   Order,
   OrderLine,
   OrderLineStatus,
   PayoutRecord,
+  PayoutStatus,
   PaymentMethod,
   PaymentPreference,
   PaymentStatus,
-  PlaceOrderPayload,
   PlatformSettings,
   PrinterAvailability,
   PrinterPartner,
@@ -44,7 +41,7 @@ import type {
 import { environment } from '../../environments/environment';
 import { ApiService } from './api.service';
 
-export const STORAGE_KEY = 'printymand_platform_state_v7';
+export const STORAGE_KEY = 'printymand_platform_state_v8';
 
 const DEFAULT_PLATFORM_SETTINGS: PlatformSettings = {
   // Spec example: printer 30 TND + platform 10 TND = 40 TND final price.
@@ -92,6 +89,35 @@ interface StoredCredential {
   userId: number;
 }
 
+/**
+ * Fold one more rating into a running mean.
+ *
+ * `count` is how many ratings the current average already represents, so a
+ * single new review moves an established score proportionally rather than
+ * halving it. Seed records with a rating but no history count as one prior
+ * observation (see normalizeDesign).
+ */
+function blendRating(rating: number, count: number, next: number): { rating: number; count: number } {
+  const nextCount = Math.max(0, count) + 1;
+  return { rating: Math.round(((rating * Math.max(0, count) + next) / nextCount) * 10) / 10, count: nextCount };
+}
+
+/**
+ * Moderation verdict to carry into an edit.
+ *
+ * A brand-new design is PENDING. An edit re-enters the queue when the artwork
+ * itself changes — otherwise an approved design could have its image swapped
+ * while staying live — or when the design was previously rejected, so reworked
+ * artwork can be resubmitted instead of being stuck on REJECTED forever.
+ * Metadata-only edits (title, copy, tags) keep the existing verdict.
+ */
+function moderationAfterEdit(existing: Design | null | undefined, nextImage: string): ModerationStatus {
+  if (!existing) return 'PENDING';
+  if (existing.moderation === 'REJECTED') return 'PENDING';
+  if (existing.image !== nextImage) return 'PENDING';
+  return existing.moderation ?? 'PENDING';
+}
+
 /** Non-cryptographic digest (FNV-1a) — see the StoredCredential note above. */
 function digestPassword(password: string): string {
   let hash = 0x811c9dc5;
@@ -121,7 +147,6 @@ export interface PlatformState {
   products: Product[];
   offerings: PrinterProductOffering[];
   designs: Design[];
-  cartItems: CartItem[];
   orders: Order[];
   reviews: Review[];
   payouts: PayoutRecord[];
@@ -174,10 +199,6 @@ export class PlatformStoreService {
    * must not live in the data.
    */
   readonly categories = computed(() => this.state().platformSettings.categories);
-  readonly currentCart = computed(() => {
-    const currentUser = this.currentUser();
-    return currentUser ? this.cartForUser(currentUser.id) : { items: [], total: 0 };
-  });
   readonly currentUserOrders = computed(() => {
     const currentUser = this.currentUser();
     return currentUser ? this.ordersForCustomer(currentUser.id) : [];
@@ -593,39 +614,47 @@ export class PlatformStoreService {
     this.patchState({ customizationDraft: null });
   }
 
-  removeCartItem(userId: number, cartItemId: number): void {
-    this.state.update((current) => ({
-      ...current,
-      cartItems: current.cartItems.filter((item) => !(item.userId === userId && item.id === cartItemId)),
-    }));
+  /**
+   * The buyer's default payment method: their default enabled preference, else
+   * any enabled one, else D17. Used to seed a request and to preselect a tile at
+   * checkout, so a saved preference is actually honoured somewhere.
+   */
+  defaultPaymentMethod(userId: number): PaymentMethod {
+    const preferences = this.getUserById(userId)?.customerProfile?.paymentPreferences ?? [];
+    const preferred = preferences.find((entry) => entry.isDefault && entry.enabled) ?? preferences.find((entry) => entry.enabled);
+    return preferred?.provider ?? 'd17';
   }
 
   /**
-   * Spec "Order Flow (Revised)" step 1-2: the customer submits an ORDER REQUEST.
-   * No payment is taken yet — the order is created in REQUESTED state and the
-   * printer must accept it before the customer can pay.
+   * Why the current draft cannot become a request, or null when it can.
+   *
+   * The draft is persisted, so between building it and sending it the pressroom
+   * may have gone on holiday, dropped a product, or been retired — and the admin
+   * may have paused a product. Checked here so the buyer gets a reason, and
+   * re-checked inside submitDraftOrderRequest() so the store stays authoritative.
    */
-  async submitOrderRequest(userId: number, payload: PlaceOrderPayload): Promise<Order | null> {
-    const cart = this.cartForUser(userId);
-    if (!cart.items.length) return null;
+  draftIssue(): string | null {
+    const draft = this.state().customizationDraft;
+    if (!draft || !draft.items.length) return 'Choose a product before sending a request.';
+    if (!this.getDesignById(draft.designId)) return 'This design is no longer available.';
+    if (!draft.selectedPrinterId) return 'Select a printer before sending your request.';
 
-    const localOrderId = this.newOrderId();
-    const response = await this.tryApi(() =>
-      this.api.submitOrderRequest({ paymentMethod: payload.paymentMethod, shippingAddress: payload.shippingAddress }),
-    );
-    const order = this.finalizeLocalOrder(userId, payload, response?.orderId ?? localOrderId);
+    const printer = this.getPrinterById(draft.selectedPrinterId);
+    if (!printer || printer.retired) return 'That pressroom is no longer taking orders.';
+    if (printer.availability !== 'available') {
+      return `${printer.businessName} is not accepting orders right now. Pick another pressroom.`;
+    }
 
-    // Notify the printer(s) of the incoming request and confirm to the customer.
-    const printerUserIds = new Set<number>();
-    order.lines.forEach((line) => {
-      const printer = line.printerId ? this.getPrinterById(line.printerId) : null;
-      if (printer) printerUserIds.add(printer.userId);
-    });
-    printerUserIds.forEach((pid) =>
-      this.notify(pid, 'order_requested', `New order request ${order.id} is awaiting your decision.`, '/printer-dashboard'),
-    );
-    this.notify(userId, 'order_requested', `Request ${order.id} sent. Waiting for printer acceptance.`, `/tracking/${order.id}`);
-    return order;
+    for (const item of draft.items) {
+      const product = this.getProductById(item.productId);
+      if (!product || product.availability !== 'ACTIVE') {
+        return 'One of the products in your order is no longer available.';
+      }
+      if (!this.printersForProduct(product.id).some((entry) => entry.id === printer.id)) {
+        return `${printer.businessName} no longer prints the ${product.name}. Pick another pressroom.`;
+      }
+    }
+    return null;
   }
 
   /**
@@ -634,8 +663,12 @@ export class PlatformStoreService {
    * REQUESTED. Payment only happens later, from the cart, after acceptance.
    */
   submitDraftOrderRequest(userId: number, shippingAddress?: string): Order | null {
+    // Re-validated here, not just in the UI: a persisted draft can name a
+    // pressroom or product that has since become unavailable.
+    if (this.draftIssue()) return null;
+
     const draft = this.state().customizationDraft;
-    if (!draft || !draft.selectedPrinterId || !draft.items.length) return null;
+    if (!draft || !draft.selectedPrinterId) return null;
     const design = this.getDesignById(draft.designId);
     const printer = this.getPrinterById(draft.selectedPrinterId);
     if (!design || !printer) return null;
@@ -644,6 +677,7 @@ export class PlatformStoreService {
     const margin = this.state().platformSettings.margin;
     const royalty = design.isUserUpload ? 0 : this.state().platformSettings.designerRoyalty;
     const orderId = this.newOrderId();
+    const paymentMethod = this.defaultPaymentMethod(userId);
 
     // One line per chosen product (the buyer can order the design on several products).
     const lines: OrderLine[] = draft.items
@@ -685,7 +719,8 @@ export class PlatformStoreService {
       createdAt: today(),
       trackingCode: String(orderId),
       total: lines.reduce((s, l) => s + l.price, 0),
-      paymentMethod: 'd17',
+      // Seeded from the buyer's saved preference; still changeable at checkout.
+      paymentMethod,
       paymentStatus: 'unpaid',
       requestStatus: 'REQUESTED',
       shippingAddress:
@@ -696,7 +731,7 @@ export class PlatformStoreService {
       lines,
     };
 
-    this.syncApi(() => this.api.submitOrderRequest({ paymentMethod: 'd17', shippingAddress: order.shippingAddress }));
+    this.syncApi(() => this.api.submitOrderRequest({ paymentMethod, shippingAddress: order.shippingAddress }));
 
     this.state.update((current) => ({
       ...current,
@@ -716,10 +751,35 @@ export class PlatformStoreService {
       .sort(sortByDateDesc);
   }
 
+  /**
+   * Who may see an order: the customer who placed it, a printer holding a line
+   * on it, or an admin. Order references are guessable (`PMD-YYMMDD-<seq>`), so
+   * every read path must go through this rather than trusting the URL.
+   */
+  canViewOrder(orderId: number | string, userId: number): boolean {
+    const order = this.getOrderById(orderId);
+    const user = this.getUserById(userId);
+    if (!order || !user) return false;
+    if (user.role === 'admin' || order.userId === userId) return true;
+    return this.printerLinesOn(order, userId).length > 0;
+  }
+
+  /** Lines of `order` fulfilled by the pressroom belonging to `printerUserId`. */
+  private printerLinesOn(order: Order, printerUserId: number): OrderLine[] {
+    const printer = this.getPrinterByUserId(printerUserId);
+    if (!printer) return [];
+    return order.lines.filter((line) => line.printerId === printer.id);
+  }
+
   /** Spec step 3: printer accepts the request → order becomes binding, customer may pay. */
-  acceptOrderRequest(orderId: number | string): { success: boolean; error?: string } {
+  acceptOrderRequest(orderId: number | string, printerUserId: number): { success: boolean; error?: string } {
     const order = this.getOrderById(orderId);
     if (!order) return { success: false, error: 'Order not found.' };
+    // A decision may only be taken by a pressroom that actually holds a line on
+    // the order — the dashboard filters the list, but the store is the authority.
+    if (!this.printerLinesOn(order, printerUserId).length) {
+      return { success: false, error: 'This request belongs to another pressroom.' };
+    }
     if (order.requestStatus !== 'REQUESTED') {
       return { success: false, error: 'This request has already been processed.' };
     }
@@ -735,9 +795,12 @@ export class PlatformStoreService {
   }
 
   /** Spec step 3: printer rejects the request → order is cancelled, no payment. */
-  rejectOrderRequest(orderId: number | string, reason?: string): { success: boolean; error?: string } {
+  rejectOrderRequest(orderId: number | string, printerUserId: number, reason?: string): { success: boolean; error?: string } {
     const order = this.getOrderById(orderId);
     if (!order) return { success: false, error: 'Order not found.' };
+    if (!this.printerLinesOn(order, printerUserId).length) {
+      return { success: false, error: 'This request belongs to another pressroom.' };
+    }
     if (order.requestStatus !== 'REQUESTED') {
       return { success: false, error: 'This request has already been processed.' };
     }
@@ -803,9 +866,11 @@ export class PlatformStoreService {
    * Spec step 4-5: the customer pays an ACCEPTED order. Payment is only possible
    * after printer acceptance; on success the order is Confirmed and fulfillment begins.
    */
-  async payForOrder(orderId: number | string): Promise<{ success: boolean; error?: string }> {
+  async payForOrder(orderId: number | string, userId: number): Promise<{ success: boolean; error?: string }> {
     const order = this.getOrderById(orderId);
-    if (!order) return { success: false, error: 'Order not found.' };
+    // Only the buyer settles their own order — mirrors cancelOrderRequest, which
+    // has always taken the caller's id.
+    if (!order || order.userId !== userId) return { success: false, error: 'Order not found.' };
     if (order.requestStatus !== 'ACCEPTED') {
       return { success: false, error: 'You can only pay once the printer has accepted your request.' };
     }
@@ -877,12 +942,17 @@ export class PlatformStoreService {
     if (this.getOrderStatus(order) !== 'Delivered') {
       return { success: false, error: 'You can only review an order after it is delivered.' };
     }
-    if (
-      this.state().reviews.some(
-        (entry) => entry.orderId === orderId && entry.customerId === customerId && entry.target === review.target,
-      )
-    ) {
-      return { success: false, error: `You already reviewed the ${review.target} for this order.` };
+    // Keyed on the thing being reviewed, not just its kind: an order carrying
+    // two different designs must be reviewable for BOTH of them.
+    const alreadyReviewed = this.state().reviews.some(
+      (entry) =>
+        entry.orderId === orderId &&
+        entry.customerId === customerId &&
+        entry.target === review.target &&
+        (review.target === 'design' ? entry.designId === review.designId : entry.printerId === review.printerId),
+    );
+    if (alreadyReviewed) {
+      return { success: false, error: `You already reviewed this ${review.target} for this order.` };
     }
 
     await this.tryApi(() => this.api.submitReview(orderId, review));
@@ -902,20 +972,26 @@ export class PlatformStoreService {
     this.state.update((current) => ({
       ...current,
       reviews: [nextReview, ...current.reviews],
-      // Reflect the rating on the rated design / printer aggregate.
+      // Reflect the rating on the rated design / printer aggregate, as a running
+      // MEAN over the number of ratings received. The previous `(old + new) / 2`
+      // gave the newest review half the weight of all history combined — a new
+      // design's first 5-star review landed as 2.5.
       designs:
         review.target === 'design' && review.designId
-          ? current.designs.map((d) =>
-              d.id === review.designId ? { ...d, rating: Math.round(((d.rating + review.rating) / 2) * 10) / 10 } : d,
-            )
+          ? current.designs.map((d) => {
+              if (d.id !== review.designId) return d;
+              const blended = blendRating(d.rating, d.ratingCount ?? 0, review.rating);
+              return { ...d, rating: blended.rating, ratingCount: blended.count };
+            })
           : current.designs,
       printers:
         review.target === 'printer' && review.printerId
-          ? current.printers.map((p) =>
-              p.id === review.printerId
-                ? { ...p, rating: Math.round(((p.rating + review.rating) / 2) * 10) / 10, reviews: p.reviews + 1 }
-                : p,
-            )
+          ? current.printers.map((p) => {
+              if (p.id !== review.printerId) return p;
+              // PrinterPartner already tracks its rating count as `reviews`.
+              const blended = blendRating(p.rating, p.reviews, review.rating);
+              return { ...p, rating: blended.rating, reviews: blended.count };
+            })
           : current.printers,
     }));
 
@@ -946,7 +1022,10 @@ export class PlatformStoreService {
       price: input.price ?? existing?.price ?? 0,
       status: input.status ?? existing?.status ?? 'ACTIVE',
       // New designer uploads await admin moderation before reaching the marketplace.
-      moderation: existing?.moderation ?? 'PENDING',
+      // An edit re-enters the queue when the ARTWORK changes — otherwise an
+      // approved design could have its image swapped and stay live — and when the
+      // design was previously rejected, so a reworked piece can be resubmitted.
+      moderation: moderationAfterEdit(existing, input.image),
       nsfw: input.nsfw ?? existing?.nsfw ?? false,
       // Designer marketplace designs are always preserved as intended; only the
       // customer's own uploads are customizable. Designer has no say here.
@@ -1036,7 +1115,16 @@ export class PlatformStoreService {
       ...current,
       designs: current.designs.map((d) =>
         d.id === designId
-          ? { ...d, moderation: decision, status: decision === 'REJECTED' ? 'REMOVED' : d.status, updatedAt: today() }
+          ? {
+              ...d,
+              moderation: decision,
+              // Approving must undo the REMOVED that a previous rejection set,
+              // or the design stays invisible while reading as approved. An
+              // ARCHIVED design is left alone — that is the designer's own call.
+              status:
+                decision === 'REJECTED' ? 'REMOVED' : d.status === 'REMOVED' ? 'ACTIVE' : d.status,
+              updatedAt: today(),
+            }
           : d,
       ),
       moderationLog: [
@@ -1091,6 +1179,82 @@ export class PlatformStoreService {
 
   isFeatured(targetType: FeaturedContent['targetType'], targetId: number): boolean {
     return this.state().featured.some((f) => f.targetType === targetType && f.targetId === targetId);
+  }
+
+  /**
+   * Everything a delivered order can be reviewed on: each DISTINCT design in it,
+   * and each pressroom that produced it. An order with two designs yields two
+   * design reviews — reading only the first line silently dropped the rest.
+   */
+  reviewTargetsForOrder(orderId: number | string): { designs: Design[]; printers: PrinterPartner[] } {
+    const order = this.getOrderById(orderId);
+    if (!order) return { designs: [], printers: [] };
+    const designs = new Map<number, Design>();
+    const printers = new Map<number, PrinterPartner>();
+    for (const line of order.lines) {
+      const design = this.getDesignById(line.designId);
+      // A buyer's own uploaded artwork is theirs — there is nothing to rate.
+      if (design && !design.isUserUpload && !designs.has(design.id)) designs.set(design.id, design);
+      const printer = line.printerId ? this.getPrinterById(line.printerId) : undefined;
+      if (printer && !printers.has(printer.id)) printers.set(printer.id, printer);
+    }
+    return { designs: [...designs.values()], printers: [...printers.values()] };
+  }
+
+  /** Has this customer already reviewed a specific design/pressroom on an order? */
+  hasReviewed(orderId: number | string, customerId: number, target: ReviewTarget, targetId: number): boolean {
+    return this.state().reviews.some(
+      (entry) =>
+        entry.orderId === orderId &&
+        entry.customerId === customerId &&
+        entry.target === target &&
+        (target === 'design' ? entry.designId === targetId : entry.printerId === targetId),
+    );
+  }
+
+  /**
+   * ADMIN: move a designer payout request along (requested → processing → paid).
+   *
+   * Without this the balance left `payoutBalance` and landed in a record nothing
+   * could ever resolve, so a requested payout was a dead end.
+   */
+  setPayoutStatus(adminId: number, payoutId: string, status: PayoutStatus): { success: boolean; error?: string } {
+    const payout = this.state().payouts.find((entry) => entry.id === payoutId);
+    if (!payout) return { success: false, error: 'Payout not found.' };
+    if (payout.status === status) return { success: true };
+
+    const logId = `mod-${this.takeNextId()}`;
+    this.state.update((current) => ({
+      ...current,
+      payouts: current.payouts.map((entry) => (entry.id === payoutId ? { ...entry, status } : entry)),
+      moderationLog: [
+        {
+          id: logId,
+          adminId,
+          targetType: 'payout',
+          targetId: payout.designerId,
+          action: `PAYOUT_${status.toUpperCase()}`,
+          reason: `${payout.amount} TND · ${payout.reference}`,
+          createdAt: new Date().toISOString(),
+        },
+        ...current.moderationLog,
+      ],
+    }));
+
+    const messages: Partial<Record<PayoutStatus, string>> = {
+      processing: `Your payout of ${payout.amount} TND is being processed.`,
+      paid: `Your payout of ${payout.amount} TND has been paid out.`,
+    };
+    const message = messages[status];
+    if (message) this.notify(payout.designerId, 'payout', message, '/designer-dashboard');
+    return { success: true };
+  }
+
+  /** Payout requests awaiting an admin decision, newest first. */
+  pendingPayouts(): PayoutRecord[] {
+    return this.state()
+      .payouts.filter((entry) => entry.status === 'requested' || entry.status === 'processing')
+      .sort((a, b) => b.dueDate.localeCompare(a.dueDate));
   }
 
   /** Spec "Earnings & Performance": designer requests a payout once threshold is met. */
@@ -1188,15 +1352,23 @@ export class PlatformStoreService {
 
   /** ADMIN-ONLY: remove a global product type and any printer offerings for it. */
   removeGlobalProduct(productId: number): void {
-    this.state.update((current) => ({
-      ...current,
-      products: current.products.filter((p) => p.id !== productId),
-      offerings: current.offerings.filter((o) => o.productId !== productId),
-      designs: current.designs.map((d) => ({
-        ...d,
-        assignedProductIds: d.assignedProductIds.filter((id) => id !== productId),
-      })),
-    }));
+    this.state.update((current) => {
+      // An in-flight draft may reference the product; drop those items, and the
+      // whole draft if nothing orderable is left, rather than leaving the buyer
+      // on a customize page for something that no longer exists.
+      const draft = current.customizationDraft;
+      const remainingItems = draft?.items.filter((item) => item.productId !== productId) ?? [];
+      return {
+        ...current,
+        products: current.products.filter((p) => p.id !== productId),
+        offerings: current.offerings.filter((o) => o.productId !== productId),
+        designs: current.designs.map((d) => ({
+          ...d,
+          assignedProductIds: d.assignedProductIds.filter((id) => id !== productId),
+        })),
+        customizationDraft: !draft ? null : remainingItems.length ? { ...draft, items: remainingItems } : null,
+      };
+    });
   }
 
   // ── Printer offerings (opt-in + pricing for global products) ──
@@ -1211,11 +1383,17 @@ export class PlatformStoreService {
     return this.state().offerings.find((o) => o.printerId === printerId && o.productId === productId);
   }
 
-  /** Printer's production price for a global product (falls back to reference price). */
+  /**
+   * Printer's production price for a global product (falls back to the floor).
+   *
+   * The floor is re-applied on every read, not just when the offering is saved:
+   * an admin raising `product.basePrice` would otherwise leave every existing
+   * offering priced below the new minimum indefinitely.
+   */
   offeringPrice(printerId: number, productId: number): number {
+    const floor = this.getProductById(productId)?.basePrice ?? 0;
     const offering = this.getOffering(printerId, productId);
-    if (offering) return offering.basePrice;
-    return this.getProductById(productId)?.basePrice ?? 0;
+    return Math.max(offering?.basePrice ?? floor, floor);
   }
 
   /** Printers that currently offer a given global product (available offering). */
@@ -1296,52 +1474,52 @@ export class PlatformStoreService {
     return this.state().printerPayouts.filter((p) => p.printerId === printer.id);
   }
 
-  setOrderLineStatus(orderId: number | string, lineId: number, status: OrderLineStatus): void {
-    this.state.update((current) => ({
-      ...current,
-      orders: current.orders.map((order) =>
-        order.id === orderId
-          ? {
-              ...order,
-              lines: order.lines.map((line) => (line.id === lineId ? { ...line, status } : line)),
-            }
-          : order,
-      ),
-    }));
-    const order = this.getOrderById(orderId);
-    if (order) {
-      this.notify(order.userId, 'order_status', `Order ${order.id}: an item is now "${status}".`, `/tracking/${order.id}`);
-      this.settleOrderIfDelivered(orderId);
-    }
-  }
-
-  advanceOrderLineStatus(orderId: number | string, lineId: number): void {
-    // Post-payment fulfillment progression only (spec: Confirmed → Printing → Shipped → Delivered).
+  /**
+   * Move one line one step along the post-payment progression
+   * (Confirmed → Printing → Shipped → Delivered).
+   *
+   * Only the pressroom that holds the line may advance it, and only once the
+   * order is accepted AND paid — reaching `Delivered` releases real money via
+   * settleOrderIfDelivered(), so this is a value-bearing transition, not a
+   * cosmetic one. There is deliberately no setter that jumps to an arbitrary
+   * status: a caller that could skip straight to Delivered could mint payouts.
+   */
+  advanceOrderLineStatus(orderId: number | string, lineId: number, printerUserId: number): { success: boolean; error?: string } {
     const steps: OrderLineStatus[] = ['Confirmed', 'Printing', 'Shipped', 'Delivered'];
+    const order = this.getOrderById(orderId);
+    if (!order) return { success: false, error: 'Order not found.' };
+
+    const line = this.printerLinesOn(order, printerUserId).find((entry) => entry.id === lineId);
+    if (!line) return { success: false, error: 'This item belongs to another pressroom.' };
+
+    if (order.requestStatus !== 'ACCEPTED' || order.paymentStatus !== 'paid') {
+      return { success: false, error: 'Fulfillment starts once the customer has paid.' };
+    }
+    if (line.status === 'Rejected') {
+      return { success: false, error: 'A rejected item cannot be fulfilled.' };
+    }
+    const index = steps.indexOf(line.status);
+    if (index === -1 || index === steps.length - 1) {
+      return { success: false, error: 'This item is already at its final status.' };
+    }
+    const nextStatus = steps[index + 1];
+
+    this.syncApi(() => this.api.updateOrderLineStatus(order.id, lineId, nextStatus));
     this.state.update((current) => ({
       ...current,
-      orders: current.orders.map((order) =>
-        order.id === orderId
+      orders: current.orders.map((entry) =>
+        entry.id === order.id
           ? {
-              ...order,
-              lines: order.lines.map((line) => {
-                if (line.id !== lineId || line.status === 'Rejected') return line;
-                const index = steps.indexOf(line.status);
-                return {
-                  ...line,
-                  status: index === -1 || index === steps.length - 1 ? line.status : steps[index + 1],
-                };
-              }),
+              ...entry,
+              lines: entry.lines.map((l) => (l.id === lineId ? { ...l, status: nextStatus } : l)),
             }
-          : order,
+          : entry,
       ),
     }));
-    const order = this.getOrderById(orderId);
-    if (order) {
-      const line = order.lines.find((l) => l.id === lineId);
-      if (line) this.notify(order.userId, 'order_status', `Order ${order.id}: "${line.designTitle}" is now ${line.status}.`, `/tracking/${order.id}`);
-      this.settleOrderIfDelivered(orderId);
-    }
+
+    this.notify(order.userId, 'order_status', `Order ${order.id}: "${line.designTitle}" is now ${nextStatus}.`, `/tracking/${order.id}`);
+    this.settleOrderIfDelivered(order.id);
+    return { success: true };
   }
 
   getUserById(userId: number): User | undefined {
@@ -1443,45 +1621,15 @@ export class PlatformStoreService {
       );
   }
 
-  linesForDesigner(designerId: number): Array<OrderLine & { orderId: number | string }> {
+  /** Order lines carrying one of this designer's designs, with the order's money state. */
+  linesForDesigner(designerId: number): Array<OrderLine & { orderId: number | string; paid: boolean }> {
     const designIds = new Set(this.designsForDesigner(designerId).map((design) => design.id));
-    return this.state().orders.flatMap((order) =>
-      order.lines.filter((line) => designIds.has(line.designId)).map((line) => ({ ...line, orderId: order.id })),
-    );
-  }
-
-  cartForUser(userId: number): Cart {
-    const items: CartLineView[] = this.state()
-      .cartItems.filter((item) => item.userId === userId)
-      .map((item) => {
-        const design = this.getDesignById(item.designId);
-        const product = this.getProductById(item.productId);
-        if (!design || !product) return null;
-        const printer = item.printerId ? this.getPrinterById(item.printerId) ?? null : null;
-        // Spec pricing: customer pays printer base price + fixed platform margin.
-        // The designer does NOT influence price.
-        const lineTotal = product.basePrice + this.state().platformSettings.margin;
-        return {
-          id: item.id,
-          design,
-          product,
-          printer,
-          color: item.color,
-          size: item.size,
-          placement: {
-            x: item.x,
-            y: item.y,
-            scale: item.scale,
-          },
-          lineTotal,
-        };
-      })
-      .filter((item): item is CartLineView => item !== null);
-
-    return {
-      items,
-      total: items.reduce((sum, item) => sum + item.lineTotal, 0),
-    };
+    return this.state().orders.flatMap((order) => {
+      const paid = order.requestStatus === 'ACCEPTED' && order.paymentStatus === 'paid';
+      return order.lines
+        .filter((line) => designIds.has(line.designId))
+        .map((line) => ({ ...line, orderId: order.id, paid }));
+    });
   }
 
   /**
@@ -1495,7 +1643,11 @@ export class PlatformStoreService {
     if (order.requestStatus === 'REQUESTED') return 'Requested';
     if (order.paymentStatus !== 'paid') return 'Awaiting payment';
     const statuses = order.lines.map((line) => line.status);
-    if (statuses.length && statuses.every((status) => status === 'Delivered')) return 'Delivered';
+    // Order creation refuses an empty basket, so a line-less order is not a
+    // reachable state — guarded explicitly so the checks below cannot read
+    // "every line delivered" as true for nothing at all.
+    if (!statuses.length) return 'Confirmed';
+    if (statuses.every((status) => status === 'Delivered')) return 'Delivered';
     if (statuses.some((status) => status === 'Shipped')) return 'Shipped';
     if (statuses.some((status) => status === 'Printing')) return 'Printing';
     return 'Confirmed';
@@ -1523,12 +1675,18 @@ export class PlatformStoreService {
   designerAnalytics(designerId: number): DesignAnalytics[] {
     const lines = this.linesForDesigner(designerId);
     return this.designsForDesigner(designerId).map((design) => {
-      const designLines = lines.filter((line) => line.designId === design.id && line.status !== 'Rejected');
-      // Spec: designer earns a platform-fixed royalty per sale (not a cut of price).
-      const revenue = designLines.length * this.state().platformSettings.designerRoyalty;
+      // Sold = units on orders the customer actually paid for.
+      const soldLines = lines.filter((line) => line.designId === design.id && line.paid && line.status !== 'Rejected');
+      const sales = soldLines.reduce((sum, line) => sum + (line.quantity ?? 1), 0);
+      // Earned = the royalty frozen on each DELIVERED line. This deliberately
+      // mirrors what settleOrderIfDelivered() credits to payoutBalance, so the
+      // dashboard cannot promise earnings the payout balance will not honour.
+      const revenue = soldLines
+        .filter((line) => line.status === 'Delivered')
+        .reduce((sum, line) => sum + (line.designerRoyalty ?? 0), 0);
       return {
         designId: design.id,
-        sales: designLines.length,
+        sales,
         views: design.views,
         engagement: design.engagementRate,
         conversion: design.conversionRate,
@@ -1551,10 +1709,16 @@ export class PlatformStoreService {
   printerTotals(printerUserId: number): { products: number; revenue: number; fulfillmentRate: number; rating: number } {
     const printer = this.getPrinterByUserId(printerUserId);
     const products = this.productsForPrinterUser(printerUserId);
-    const lines = this.linesForPrinterUser(printerUserId).filter((line) => line.status !== 'Rejected');
+    // `printerAmount`, not `price`: the customer price includes the platform
+    // margin, which the printer never receives. Restricted to delivered lines of
+    // paid orders, so this equals the sum of their payout records — requested or
+    // unpaid work is not revenue.
+    const revenue = this.fulfillmentLinesForPrinter(printerUserId)
+      .filter((line) => line.status === 'Delivered')
+      .reduce((sum, line) => sum + (line.printerAmount ?? 0), 0);
     return {
       products: products.length,
-      revenue: lines.reduce((sum, line) => sum + line.price, 0),
+      revenue,
       fulfillmentRate: printer?.fulfillmentRate ?? 0,
       rating: printer?.rating ?? 0,
     };
@@ -1574,14 +1738,35 @@ export class PlatformStoreService {
     };
   }
 
-  /** ADMIN-ONLY aggregate — never render this on a public page. */
-  adminOverview(): { users: number; orders: number; revenue: number; activeDesigns: number; activePrinters: number } {
+  /**
+   * ADMIN-ONLY aggregate — never render this on a public page.
+   *
+   * `grossVolume` is what customers paid; `revenue` is what the PLATFORM keeps,
+   * i.e. the margin net of the designer royalty it funds. Both count paid orders
+   * only — a requested, rejected or cancelled order moved no money.
+   */
+  adminOverview(): {
+    users: number;
+    orders: number;
+    revenue: number;
+    grossVolume: number;
+    activeDesigns: number;
+    activePrinters: number;
+  } {
+    const paidOrders = this.state().orders.filter(
+      (order) => order.requestStatus === 'ACCEPTED' && order.paymentStatus === 'paid',
+    );
     return {
       users: this.state().users.length,
       orders: this.state().orders.length,
-      revenue: this.state().orders.reduce((sum, order) => sum + order.total, 0),
+      revenue: paidOrders.reduce(
+        (sum, order) =>
+          sum + order.lines.reduce((lines, line) => lines + (line.platformFee ?? 0) - (line.designerRoyalty ?? 0), 0),
+        0,
+      ),
+      grossVolume: paidOrders.reduce((sum, order) => sum + order.total, 0),
       activeDesigns: this.state().designs.filter((design) => design.status === 'ACTIVE').length,
-      activePrinters: this.state().printers.length,
+      activePrinters: this.state().printers.filter((printer) => !printer.retired).length,
     };
   }
 
@@ -1594,15 +1779,41 @@ export class PlatformStoreService {
    * design fee that no longer forms part of what the customer pays.
    */
   designFromPrice(design: Design): number | null {
-    const products = this.availableProductsForDesign(design.id).filter((p) => p.availability !== 'DRAFT');
-    if (!products.length) return null;
-    return Math.min(...products.map((p) => p.basePrice)) + this.state().platformSettings.margin;
+    const quotes = this.availableProductsForDesign(design.id)
+      .map((product) => this.lowestOfferingPrice(product.id))
+      .filter((price): price is number => price !== null);
+    if (!quotes.length) return null;
+    return Math.min(...quotes) + this.state().platformSettings.margin;
   }
 
+  /**
+   * Cheapest production price any pressroom will actually quote for a product
+   * right now, or null when nobody available offers it.
+   *
+   * Quoted from live offerings rather than the admin floor: no printer is
+   * obliged to price AT the floor, so advertising the floor could promise a
+   * total that printer selection can never match.
+   */
+  lowestOfferingPrice(productId: number): number | null {
+    const printers = this.printersForProduct(productId).filter((printer) => printer.availability === 'available');
+    if (!printers.length) return null;
+    return Math.min(...printers.map((printer) => this.offeringPrice(printer.id, productId)));
+  }
+
+  /**
+   * Products a design can currently be ordered on.
+   *
+   * PAUSED and DRAFT products are excluded everywhere, so a product the admin
+   * pulls stops being orderable rather than only disappearing from the catalog
+   * listing. A personal upload is printable on whatever the catalog holds today
+   * — it carries no curated list, so nothing goes stale when products change.
+   */
   availableProductsForDesign(designId: number): Product[] {
     const design = this.getDesignById(designId);
     if (!design) return [];
-    return this.state().products.filter((product) => design.assignedProductIds.includes(product.id));
+    const orderable = this.state().products.filter((product) => product.availability === 'ACTIVE');
+    if (design.isUserUpload) return orderable;
+    return orderable.filter((product) => design.assignedProductIds.includes(product.id));
   }
 
   availableDesignsForProduct(productId: number): Design[] {
@@ -1628,66 +1839,6 @@ export class PlatformStoreService {
       (design) =>
         design.status === 'ACTIVE' && (design.moderation ?? 'APPROVED') === 'APPROVED' && !design.isUserUpload,
     );
-  }
-
-  private finalizeLocalOrder(userId: number, payload: PlaceOrderPayload, orderId: number | string): Order {
-    const cartItems = this.state().cartItems.filter((item) => item.userId === userId);
-    const user = this.getUserById(userId);
-    const shippingAddress = payload.shippingAddress || user?.customerProfile?.savedAddresses.find((address) => address.isDefault)?.line1 || user?.address || '';
-    const lines: OrderLine[] = cartItems
-      .map((item) => {
-        const design = this.getDesignById(item.designId);
-        const product = this.getProductById(item.productId);
-        const printer = item.printerId ? this.getPrinterById(item.printerId) : null;
-        if (!design || !product) return null;
-        const line: OrderLine = {
-          id: this.takeNextId(),
-          designId: design.id,
-          designTitle: design.title,
-          designImage: design.image,
-          productId: product.id,
-          productName: product.name,
-          productImage: product.images[0] ?? '/placeholder-image.svg',
-          printerId: printer?.id ?? null,
-          printerName: printer?.businessName ?? 'Pending printer',
-          color: item.color,
-          size: item.size,
-          x: item.x,
-          y: item.y,
-          scale: item.scale,
-          price: (printer ? this.offeringPrice(printer.id, product.id) : product.basePrice) + this.state().platformSettings.margin,
-          // Money split (spec §2): printer production + platform fee + designer royalty
-          // (royalty funded from the platform margin; 0 for customer-uploaded designs).
-          printerAmount: printer ? this.offeringPrice(printer.id, product.id) : product.basePrice,
-          platformFee: this.state().platformSettings.margin,
-          designerRoyalty: design.isUserUpload ? 0 : this.state().platformSettings.designerRoyalty,
-          status: 'Pending',
-        };
-        return line;
-      })
-      .filter((line): line is OrderLine => line !== null);
-
-    const createdOrder: Order = {
-      id: orderId,
-      userId,
-      createdAt: today(),
-      trackingCode: String(orderId),
-      total: lines.reduce((sum, line) => sum + line.price, 0),
-      paymentMethod: payload.paymentMethod,
-      // Approval-gated: no payment until the printer accepts the request.
-      paymentStatus: 'unpaid',
-      requestStatus: 'REQUESTED',
-      shippingAddress,
-      lines,
-    };
-
-    this.state.update((current) => ({
-      ...current,
-      orders: [createdOrder, ...current.orders],
-      cartItems: current.cartItems.filter((item) => item.userId !== userId),
-    }));
-
-    return createdOrder;
   }
 
   /** Create an in-app notification for a user (spec: notify on each status change). */
@@ -1731,35 +1882,43 @@ export class PlatformStoreService {
     const now = new Date().toISOString();
     const printerPayouts: PrinterPayoutRecord[] = [];
     const designerCredits = new Map<number, number>();
-    let printerScoreUserId: number | null = null;
+    /** Units sold per designer — the sales score tracks volume, not head count. */
+    const designerUnits = new Map<number, number>();
+    /** Production earnings per PRINTER USER. An order may span several pressrooms. */
+    const printerCredits = new Map<number, number>();
 
     for (const line of order.lines) {
       const royalty = line.designerRoyalty ?? 0;
       const design = this.getDesignById(line.designId);
       if (design && !design.isUserUpload && royalty > 0) {
         designerCredits.set(design.designerId, (designerCredits.get(design.designerId) ?? 0) + royalty);
+        designerUnits.set(design.designerId, (designerUnits.get(design.designerId) ?? 0) + (line.quantity ?? 1));
       }
       const printer = line.printerId ? this.getPrinterById(line.printerId) : null;
       if (printer) {
-        printerScoreUserId = printer.userId;
+        const amount = line.printerAmount ?? 0;
+        printerCredits.set(printer.userId, (printerCredits.get(printer.userId) ?? 0) + amount);
         printerPayouts.push({
           id: `pp-${this.takeNextId()}`,
           printerId: printer.id,
           orderId: order.id,
-          amount: line.printerAmount ?? 0,
+          amount,
           status: 'paid',
           releasedAt: now,
         });
       }
     }
 
-    // Derive the printer's new score/rank ONCE, before the updater, so the users
-    // map and the printers map below cannot disagree (they previously recomputed
-    // it independently, one of them reading pre-update state).
-    const scoredPrinterUser = printerScoreUserId !== null ? this.getUserById(printerScoreUserId) : undefined;
-    const nextFulfillmentScore = (scoredPrinterUser?.printerProfile?.fulfillmentScore ?? 0) + FULFILLMENT_SCORE_PER_ORDER;
-    const nextPrinterRank = printerLevelForScore(nextFulfillmentScore);
-    const printerRevenueDelta = order.lines.reduce((sum, line) => sum + (line.printerAmount ?? 0), 0);
+    // Derive every printer's new score/rank ONCE, before the updater, so the
+    // users map and the printers map below cannot disagree (they previously
+    // recomputed it independently, one of them reading pre-update state).
+    // Each pressroom on the order earns the fulfillment score once.
+    const printerProgress = new Map<number, { score: number; rank: PrinterRank }>();
+    for (const printerUserId of printerCredits.keys()) {
+      const score =
+        (this.getUserById(printerUserId)?.printerProfile?.fulfillmentScore ?? 0) + FULFILLMENT_SCORE_PER_ORDER;
+      printerProgress.set(printerUserId, { score, rank: printerLevelForScore(score) });
+    }
 
     this.state.update((current) => ({
       ...current,
@@ -1768,7 +1927,7 @@ export class PlatformStoreService {
         // Designer: accrue royalty balance + sales score, recompute level.
         if (designerCredits.has(user.id)) {
           const profile = { ...createDefaultDesignerProfile(user), ...user.designerProfile };
-          const salesScore = (profile.salesScore ?? 0) + designerCredits.size + 1;
+          const salesScore = (profile.salesScore ?? 0) + (designerUnits.get(user.id) ?? 0);
           return {
             ...user,
             designerRank: designerLevelForScore(salesScore),
@@ -1780,21 +1939,24 @@ export class PlatformStoreService {
           };
         }
         // Printer: bump fulfillment score, recompute level.
-        if (printerScoreUserId === user.id) {
+        const progress = printerProgress.get(user.id);
+        if (progress) {
           const profile = { ...createDefaultPrinterProfile(user), ...user.printerProfile };
           return {
             ...user,
-            printerRank: nextPrinterRank,
-            printerProfile: { ...profile, fulfillmentScore: nextFulfillmentScore },
+            printerRank: progress.rank,
+            printerProfile: { ...profile, fulfillmentScore: progress.score },
           };
         }
         return user;
       }),
-      printers: current.printers.map((p) =>
-        p.userId === printerScoreUserId
-          ? { ...p, revenue: p.revenue + printerRevenueDelta, rank: nextPrinterRank }
-          : p,
-      ),
+      // Each pressroom banks only the lines IT produced.
+      printers: current.printers.map((p) => {
+        const progress = printerProgress.get(p.userId);
+        return progress
+          ? { ...p, revenue: p.revenue + (printerCredits.get(p.userId) ?? 0), rank: progress.rank }
+          : p;
+      }),
     }));
 
     // Notify designers about accrued royalties.
@@ -1860,8 +2022,7 @@ export class PlatformStoreService {
       products: seedProducts,
       offerings: seedOfferings,
       designs: seedDesigns.map(normalizeDesign),
-      cartItems: [],
-      orders: seedOrders.map(normalizeOrder),
+      orders: seedOrders.map((order) => normalizeOrder(order, DEFAULT_PLATFORM_SETTINGS)),
       reviews: seedReviews.map(normalizeReview),
       payouts: seedPayouts,
       printerPayouts: [],
@@ -1885,6 +2046,10 @@ export class PlatformStoreService {
     }
     if (!parsed) return seeded;
 
+    // Resolved before the merge below: normalizeOrder reconstructs legacy money
+    // splits from these numbers, so it must see the settings actually in force.
+    const platformSettings: PlatformSettings = { ...DEFAULT_PLATFORM_SETTINGS, ...parsed.platformSettings };
+
     // Catalog entities added to the seed data after this browser last saved are
     // merged in by id, so new products/printers/designs appear without wiping
     // the user's own records. Persisted copies always win on conflict.
@@ -1892,10 +2057,9 @@ export class PlatformStoreService {
       ...seeded,
       ...parsed,
       backendMode: seeded.backendMode,
-      platformSettings: { ...DEFAULT_PLATFORM_SETTINGS, ...parsed.platformSettings },
+      platformSettings,
       nextId: typeof parsed.nextId === 'number' ? parsed.nextId : seeded.nextId,
       credentials: Array.isArray(parsed.credentials) ? parsed.credentials : seeded.credentials,
-      cartItems: parsed.cartItems ?? [],
       printerPayouts: parsed.printerPayouts ?? [],
       notifications: parsed.notifications ?? [],
       featured: parsed.featured ?? [],
@@ -1906,7 +2070,9 @@ export class PlatformStoreService {
       products: mergeById(seeded.products, parsed.products),
       offerings: mergeById(seeded.offerings, parsed.offerings),
       designs: mergeById(seeded.designs, parsed.designs, normalizeDesign),
-      orders: Array.isArray(parsed.orders) ? parsed.orders.map(normalizeOrder) : seeded.orders,
+      orders: Array.isArray(parsed.orders)
+        ? parsed.orders.map((order) => normalizeOrder(order, platformSettings))
+        : seeded.orders,
       reviews: Array.isArray(parsed.reviews) ? parsed.reviews.map(normalizeReview) : seeded.reviews,
     };
 
@@ -1958,7 +2124,6 @@ function highestUsedId(state: PlatformState): number {
     ...state.designs.map((entry) => entry.id),
     ...state.reviews.map((entry) => entry.id),
     ...state.notifications.map((entry) => entry.id),
-    ...state.cartItems.map((entry) => entry.id),
     ...state.orders.flatMap((order) => order.lines.map((line) => line.id)),
   ];
   return ids.reduce((max, id) => (Number.isFinite(id) && id > max ? id : max), 0);
@@ -2023,7 +2188,6 @@ function createDefaultCustomerProfile(user: User) {
         ]
       : [],
     paymentPreferences: [],
-    favoritePrinterIds: [],
     notes: '',
   };
 }
@@ -2115,11 +2279,20 @@ function normalizeDesign(design: Design): Design {
     nsfw: design.nsfw ?? false,
     customizationAllowed: design.customizationAllowed ?? false,
     isUserUpload: design.isUserUpload ?? false,
+    // A seeded rating has no review history behind it; treat it as one prior
+    // observation so the next real review adjusts it instead of replacing it.
+    ratingCount: design.ratingCount ?? (design.rating > 0 ? 1 : 0),
   };
 }
 
-/** Backfill the money split + request lifecycle on legacy/seed orders. */
-function normalizeOrder(order: Order): Order {
+/**
+ * Backfill the money split + request lifecycle on legacy/seed orders.
+ *
+ * The split is derived from the platform settings in force, not from hardcoded
+ * 10/5 figures — an admin who changed the margin or the royalty would otherwise
+ * see legacy orders reconstructed against numbers the platform never used.
+ */
+function normalizeOrder(order: Order, settings: PlatformSettings): Order {
   return {
     ...order,
     requestStatus: order.requestStatus ?? 'ACCEPTED',
@@ -2128,13 +2301,17 @@ function normalizeOrder(order: Order): Order {
       if (line.printerAmount !== undefined && line.platformFee !== undefined && line.designerRoyalty !== undefined) {
         return line;
       }
-      const platformFee = line.platformFee ?? Math.min(10, line.price);
-      const designerRoyalty = line.designerRoyalty ?? Math.min(5, Math.max(0, line.price - platformFee));
+      const units = Math.max(1, line.quantity ?? 1);
+      const platformFee = line.platformFee ?? Math.min(settings.margin * units, line.price);
+      const designerRoyalty =
+        line.designerRoyalty ?? Math.min(settings.designerRoyalty * units, Math.max(0, platformFee));
       return {
         ...line,
         platformFee,
         designerRoyalty,
-        printerAmount: line.printerAmount ?? Math.max(0, line.price - platformFee - designerRoyalty),
+        // The royalty is funded FROM the margin, so it is not subtracted again
+        // when recovering what the printer was owed.
+        printerAmount: line.printerAmount ?? Math.max(0, line.price - platformFee),
       };
     }),
   };

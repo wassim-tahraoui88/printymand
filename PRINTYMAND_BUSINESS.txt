@@ -1,0 +1,1144 @@
+================================================================================
+PRINTYMAND — COMPLETE BUSINESS SPECIFICATION
+Print-on-demand marketplace for Tunisia
+================================================================================
+
+SOURCE: the frontend folder ONLY (frontend/src/**). Every rule, number, state
+and message below was read out of the running Angular application — the signal
+store (services/platform-store.service.ts), the domain types (models/types.ts),
+the route guards, the page components and the seed data.
+
+Nothing here comes from the academic report or from the backend folder.
+
+This is therefore the ACTUAL, CURRENT behaviour of the product, and it is the
+specification a backend has to satisfy.
+
+
+================================================================================
+1. THE CORE IDEA
+================================================================================
+
+Printymand is a Tunisian print-on-demand MARKETPLACE. Nothing is manufactured
+in advance; an item is printed only after it is ordered. No inventory exists
+anywhere in the system — there is no stock field, no warehouse, no quantity on
+hand.
+
+It is a THREE-SIDED MARKETPLACE plus a supervisor:
+
+    DESIGNERS  publish artwork and earn a fixed royalty on every unit sold.
+    PRINTERS   ("pressrooms") produce and ship the physical item locally.
+    CUSTOMERS  buy a design, printed on a product they pick, by a printer
+               they pick.
+    ADMIN      owns the product catalog and the pricing policy, verifies
+               accounts, moderates artwork, and governs the platform.
+
+The platform never prints anything and never owns stock. It owns exactly three
+things:
+
+    1. THE CATALOG      what can be printed on (global, admin-owned)
+    2. THE PRICING      the margin and the royalty (two numbers, global)
+    3. TRUST            verification, moderation, ranks, reviews
+
+Revenue is a fixed margin added to every unit of every order.
+
+WHY IT IS BUILT THIS WAY (visible in the structure of the code):
+Because the catalog is global and the printers merely opt into it, printers
+are interchangeable and directly comparable on price, speed and rank. A
+designer publishes once and instantly becomes sellable through every printer
+that offers that product. Capacity scales by recruiting another print shop —
+not by buying another machine. That is the whole business model in one
+sentence.
+
+
+================================================================================
+2. THE MONEY
+================================================================================
+
+--------------------------------------------------------------------------------
+2.1 THE PRICE FORMULA — THERE IS ONLY ONE
+--------------------------------------------------------------------------------
+
+    UNIT PRICE = PRINTER'S OFFERING PRICE + PLATFORM MARGIN
+    LINE TOTAL = (printer's offering price + platform margin) x quantity
+
+Nothing else enters the price. No percentage commission exists anywhere in
+the system.
+
+Platform settings (admin-editable at runtime, DEFAULT_PLATFORM_SETTINGS):
+
+    margin           = 10 TND    fixed, added per unit
+    designerRoyalty  =  5 TND    fixed, earned per unit sold
+    payoutThreshold  = 50 TND    minimum designer balance to cash out
+    categories       = Culture, Typography, Minimal, Nature, Streetwear, Retro
+
+Worked example (the one written in the code comments):
+        printer prices a t-shirt at   30 TND
+      + platform margin                10 TND
+      = customer pays                  40 TND
+
+--------------------------------------------------------------------------------
+2.2 THE SPLIT
+--------------------------------------------------------------------------------
+
+Every order line freezes three numbers at the moment it is created:
+
+    printerAmount   = printer's offering price x quantity   -> printer
+    platformFee     = margin x quantity                     -> platform
+    designerRoyalty = royalty x quantity                    -> designer
+
+THE ROYALTY IS FUNDED OUT OF THE MARGIN. It is not added on top of the price.
+With the defaults:
+
+    Customer pays      printer price + 10
+    Printer receives   printer price
+    Designer receives  5
+    Platform NET       10 - 5 = 5
+
+For CUSTOMER-UPLOADED artwork, designerRoyalty = 0 and the platform keeps the
+whole 10.
+
+--------------------------------------------------------------------------------
+2.3 THE THREE PRICING LAWS
+--------------------------------------------------------------------------------
+
+LAW 1 — THE DESIGNER HAS ZERO PRICING POWER.
+    There is no price field anywhere in the designer's upload wizard. Every
+    designer earns the same flat royalty per unit, on every design. The legacy
+    `Design.price` field still exists in the model but is explicitly NOT part
+    of what a customer pays — it is retained only for historical display.
+
+LAW 2 — THE ADMIN SETS A FLOOR, THE PRINTER PRICES ABOVE IT.
+    Each global product carries `basePrice`, which is the MINIMUM any printer
+    may charge for it. Saving an offering below the floor silently raises it
+    and returns a message to the printer:
+        "Price raised to the <floor> TND minimum set by the platform."
+    Above the floor, printers compete freely.
+
+LAW 3 — THE MARGIN IS FIXED AND GLOBAL.
+    One number, applied to every unit of every line of every order. Changing
+    it in admin settings reprices the entire marketplace instantly.
+
+--------------------------------------------------------------------------------
+2.4 DESIGNER PAYOUTS
+--------------------------------------------------------------------------------
+
+  - Royalties ACCRUE to `designerProfile.payoutBalance` only when an order is
+    fully settled (section 5.4) — not when it is placed, and not when it is
+    paid.
+  - A payout can only be requested when balance >= payoutThreshold:
+        "You need at least 50 TND to request a payout."
+  - Requesting takes the ENTIRE balance, zeroes it, and creates a PayoutRecord
+    with status 'requested' and a due date 7 days out (PAYOUT_TERM_DAYS = 7).
+    Reference format: PO-<last 6 digits of the timestamp>.
+  - UI confirms: "Payout requested. It will be processed within 7 days."
+  - Payout statuses: scheduled | requested | processing | paid
+
+--------------------------------------------------------------------------------
+2.5 PRINTER PAYOUTS — DELIBERATELY ASYMMETRIC
+--------------------------------------------------------------------------------
+
+  - A PrinterPayoutRecord is created automatically per order line the moment
+    the order becomes fully Delivered, for that line's `printerAmount`.
+  - It is created with status 'paid' immediately. There is NO threshold, NO
+    request step and NO waiting period for printers.
+  - The pressroom's `revenue` counter increases by the same amount.
+
+So: printers are settled automatically per delivered order; designers must
+accumulate to a threshold and then request. This asymmetry is intentional in
+the code.
+
+--------------------------------------------------------------------------------
+2.6 CURRENCY AND PAYMENT METHODS
+--------------------------------------------------------------------------------
+
+Currency is TND everywhere. There is no multi-currency support anywhere.
+
+Payment methods in the model:
+    'd17'     D17 mobile wallet     <- default selected at checkout
+    'paymee'  Paymee gateway
+    'card'    bank card
+    'cash'    cash on delivery
+
+No payment integration exists in the frontend. Paying flips paymentStatus to
+'paid' and advances the lines. A real gateway is a backend concern.
+
+
+================================================================================
+3. THE FOUR ROLES
+================================================================================
+
+There are exactly four roles in the system:
+
+    UserRole = 'customer' | 'designer' | 'printer' | 'admin'
+
+VISITOR is not a role — it is simply an unauthenticated session, which can
+reach the public routes listed in 3.2.
+
+--------------------------------------------------------------------------------
+3.1 WHAT EACH ROLE IS
+--------------------------------------------------------------------------------
+
+CUSTOMER
+    Browses, customizes, picks a printer, requests, pays, tracks, reviews.
+    Can also upload their OWN artwork for private personal printing.
+    ACTIVE immediately on registration — no verification required.
+
+DESIGNER
+    Publishes artwork, assigns it to products, configures how it sits on each
+    one, runs a public storefront, watches analytics, requests payouts.
+    Must be VERIFIED BY AN ADMIN before gaining full access.
+    A designer is ALSO a buyer — they are included in BUYER_ROLES.
+
+PRINTER (pressroom)
+    Opts into global products, prices them, sets availability, accepts or
+    rejects incoming requests, then drives production forward.
+    Must be VERIFIED BY AN ADMIN before gaining full access.
+    A PRINTER CANNOT BUY. Stated in the router as: "Printers fulfil orders;
+    they do not buy."
+
+ADMIN
+    Owns the catalog, the pricing policy and the category list. Verifies,
+    suspends, bans and re-roles accounts. Moderates designs. Features content.
+    Sees platform-wide revenue. Can also buy, and can view any design in any
+    state.
+
+--------------------------------------------------------------------------------
+3.2 ROUTE ACCESS MAP (app.routes.ts — all routes nest under LayoutComponent)
+--------------------------------------------------------------------------------
+
+PUBLIC — no session required:
+    /                        home
+    /marketplace             design marketplace
+    /products                product catalog
+    /design/:id              design detail
+    /storefront/:id          public designer storefront
+    /login   /register
+
+BUYERS ONLY (customer, designer, admin — NOT printer):
+    /customize/:id           variations + quantity
+    /printers/:id            printer selection, sends the request
+    /checkout  /cart         payment (both paths render the same page)
+
+CUSTOMER + ADMIN ONLY:
+    /upload-design           personal artwork upload
+    /dashboard               customer dashboard
+    /profile                 customer profile
+
+ANY SIGNED-IN ROLE (deliberately shared):
+    /tracking/:orderId       a printer opens tracking for their own jobs
+    /notifications
+
+ROLE-EXCLUSIVE:
+    /designer-dashboard  /designer-profile      designer
+    /printer-dashboard   /printer-profile       printer
+    /admin               /admin-profile         admin
+
+GATED:
+    /verification-pending    only reachable while actually pending; a verified
+                             user hitting it is bounced to their dashboard
+
+    /**                      not-found page
+
+WRONG-ROLE BEHAVIOUR: not an error. The user is redirected to THEIR OWN
+dashboard, via AuthService.dashboardMap:
+    customer -> /dashboard              designer -> /designer-dashboard
+    printer  -> /printer-dashboard      admin    -> /admin
+
+
+================================================================================
+4. THE CATALOG MODEL — THE STRUCTURAL HEART
+================================================================================
+
+Three separate things, owned by three different parties. Getting this right is
+what makes Printymand a marketplace rather than a print shop.
+
+--------------------------------------------------------------------------------
+4.1 PRODUCT — global, owned by the ADMIN
+--------------------------------------------------------------------------------
+
+There is exactly ONE "T-Shirt", ONE "Mug", ONE "Phone Case" on the entire
+platform. Products are the PLATFORM's catalog, never a printer's catalog.
+
+Fields: name, category, description, basePrice (THE FLOOR), colors[], sizes[],
+mockup images[], availability (ACTIVE | PAUSED | DRAFT), leadTimeDays, rating,
+totalOrders.
+
+ONLY THE ADMIN creates, edits or deletes products. Printers cannot create
+products or upload mockups. Designers cannot either.
+
+Seeded catalog (all owned by "Printymand", printerId 0):
+
+    ID   NAME         CATEGORY     FLOOR   COLOURS                  SIZES
+    601  T-Shirt      Apparel      28 TND  white/black/navy/forest  S..XXL
+    602  Hoodie       Apparel      52 TND  black/sand/burgundy      M..XXL
+    603  Mug          Drinkware    21 TND  white/black              11oz
+    604  Tote Bag     Accessories  24 TND  sand/black               One Size
+    605  Phone Case   Accessories  29 TND  black/white              iPhone/Samsung
+    606  Sticker      Accessories   8 TND  white                    S/M/L
+
+Admin product categories: Apparel, Drinkware, Accessories, Home.
+(Note: these PRODUCT categories are a hardcoded list in the admin dashboard
+and are a different list from the DESIGN categories in platform settings.)
+
+--------------------------------------------------------------------------------
+4.2 PRINTER PRODUCT OFFERING — owned by the PRINTER
+--------------------------------------------------------------------------------
+
+A printer OPTS IN to a global product and attaches:
+    - their own production price (clamped to >= the product floor)
+    - their own description for that product
+    - an available on/off toggle
+
+Several printers offer the SAME global product. That is the competition. There
+is still only one "Phone Case" — printers just compete on it.
+
+Seeded offerings, showing the competition on the T-Shirt (floor 28):
+    PrintPro Tunisia      28 TND
+    Atelier Couleurs      26 TND    <- seeded below the current floor
+    Studio Press Nabeul   27 TND
+
+--------------------------------------------------------------------------------
+4.3 DESIGN — owned by a DESIGNER, or by a CUSTOMER for private uploads
+--------------------------------------------------------------------------------
+
+Fields: title, image, categories[], tags[] (max 10), description, rating,
+sales, views, engagementRate, conversionRate, status, moderation, nsfw flag,
+customizationAllowed, isUserUpload, uploadedByUserId, assignedProductIds[],
+productConfigurations[].
+
+    DesignStatus     = ACTIVE | ARCHIVED | REMOVED
+    ModerationStatus = PENDING | APPROVED | REJECTED
+
+THE DESIGN<->PRODUCT LINK IS STORED ON ONE SIDE ONLY.
+`design.assignedProductIds` is the only stored direction. The reverse view
+("which designs fit this mug?") is DERIVED at read time by
+availableDesignsForProduct(). The two directions therefore cannot contradict
+each other. Preserve this if you build a backend — do not add a reverse
+column.
+
+Per assigned product, the designer stores a DesignProductConfiguration:
+    defaultPlacement { x, y, scale }   where the art sits on the mockup
+                                       (DEFAULT_PLACEMENT = x 50, y 48,
+                                        scale 0.42 — centred, slightly high,
+                                        42% of width)
+    availableColors[]                  a SUBSET of the product's colours
+    availableSizes[]                   a SUBSET of the product's sizes
+    title, description                 optional per-product copy (a mug blurb
+                                       differs from a t-shirt blurb)
+
+
+================================================================================
+5. THE ORDER LIFECYCLE — THE MOST IMPORTANT MECHANIC
+================================================================================
+
+Printymand uses an APPROVAL-GATED order flow:
+
+        NO MONEY IS TAKEN UNTIL A PRINTER HAS ACCEPTED THE JOB.
+
+A customer does not "buy". They send a REQUEST. A printer accepts or rejects.
+Only after acceptance can the customer pay. This protects the buyer from
+paying for work nobody can do, and the printer from being committed to a job
+they cannot deliver.
+
+--------------------------------------------------------------------------------
+5.1 THE STATE MACHINE
+--------------------------------------------------------------------------------
+
+Order-level (OrderRequestStatus):
+    REQUESTED -> ACCEPTED -> (payment) -> fulfilment
+    REQUESTED -> REJECTED           printer refused
+    REQUESTED -> CANCELLED          customer withdrew
+    ACCEPTED  -> CANCELLED          customer withdrew before paying
+
+Payment (PaymentStatus):   unpaid | pending | processing | paid
+
+Line-level (OrderLineStatus):
+    Pending -> Confirmed -> Printing -> Shipped -> Delivered
+    Pending -> Rejected
+
+Customer-facing stage, DERIVED by getOrderStatus() — never stored:
+    Rejected            requestStatus REJECTED
+    Cancelled           requestStatus CANCELLED
+    Requested           requestStatus REQUESTED
+    Awaiting payment    accepted but not paid
+    Delivered           ALL lines Delivered
+    Shipped             ANY line Shipped
+    Printing            ANY line Printing
+    Confirmed           paid, nothing started
+
+    In flight  = Requested, Awaiting payment, Confirmed, Printing, Shipped
+    Terminal   = Delivered, Rejected, Cancelled
+
+Tracking timeline shown to the customer — six steps:
+    Requested -> Accepted -> Paid -> Printing -> Shipped -> Delivered
+For a rejected or cancelled order, only "Requested" is marked done.
+
+--------------------------------------------------------------------------------
+5.2 STEP BY STEP
+--------------------------------------------------------------------------------
+
+STEP 1 — REQUEST (customer, from printer selection)
+    One order is created containing ONE LINE PER PRODUCT — a buyer can order
+    the same design on a t-shirt AND a mug in a single request. All lines go
+    to ONE chosen printer. Created REQUESTED / unpaid, with all three money
+    figures frozen onto each line.
+    Order id and tracking code are the same value: PMD-YYMMDD-<sequence>
+    e.g. PMD-260330-801. (One canonical reference, so the two cannot drift.)
+    -> printer notified:  "New order request <id> is awaiting your decision."
+    -> customer notified: "Request <id> sent to <printer>. Waiting for
+                           acceptance."
+
+STEP 2 — DECISION (printer)
+    ACCEPT -> requestStatus ACCEPTED
+              "Your request <id> was accepted. Go to your cart to pay."
+    REJECT -> requestStatus REJECTED, EVERY line set to Rejected, reason
+              recorded (default: "The printer is unable to fulfill this
+              request.")
+    Answered once only. A second attempt returns:
+              "This request has already been processed."
+
+STEP 3 — CANCEL (customer, optional)
+    Allowed while REQUESTED, and still allowed once ACCEPTED as long as the
+    order is unpaid. A paid order cannot be cancelled here:
+        "A paid order can no longer be cancelled here."
+    All lines are set to Rejected and the reason becomes "Cancelled by the
+    customer."
+    -> printer notified: "Order <id> was canceled by the customer."
+
+STEP 4 — PAYMENT (customer, from /cart or from the tracking page)
+    Possible ONLY when requestStatus is ACCEPTED:
+        "You can only pay once the printer has accepted your request."
+    On success: paymentStatus = 'paid' and every Pending line -> Confirmed.
+    Shipping address and payment method can still be edited at this moment.
+    -> printer notified:  "Order <id> is paid — start fulfillment."
+    -> customer notified: "Payment received for order <id>. It is now
+                           confirmed."
+
+STEP 5 — FULFILMENT (printer)
+    Each line advances ONE STEP AT A TIME:
+        Confirmed -> Printing -> Shipped -> Delivered
+    A Rejected line can never be advanced. The customer is notified on every
+    single transition.
+
+STEP 6 — SETTLEMENT (automatic) — see 5.4
+
+STEP 7 — REVIEW (customer) — see section 8
+
+--------------------------------------------------------------------------------
+5.3 THE "CART" IS NOT A SHOPPING CART
+--------------------------------------------------------------------------------
+
+Unusual and deliberate. /cart and /checkout render the SAME page, and it does
+NOT list things you are about to buy. It lists ORDERS A PRINTER HAS ALREADY
+ACCEPTED AND THAT YOU HAVE NOT PAID FOR (awaitingPaymentOrdersForUser).
+
+"Removing" an entry from this cart CANCELS the underlying order request and
+notifies the printer.
+
+LEGACY PATH: a classic cart still exists in the store (cartItems,
+submitOrderRequest, finalizeLocalOrder) but no live screen adds to it. Be
+aware that its pricing helper `cartForUser()` computes
+`product.basePrice + margin` — it uses the PRODUCT FLOOR, ignores the chosen
+printer's offering price, and ignores quantity entirely. It disagrees with
+the real order-creation path. Treat the printer-selection path as canonical
+and this one as dead code.
+
+--------------------------------------------------------------------------------
+5.4 SETTLEMENT — WHEN VALUE ACTUALLY MOVES
+--------------------------------------------------------------------------------
+
+An order settles ONCE, automatically, the moment EVERY line reaches Delivered
+(and the order is ACCEPTED and paid). It is idempotent: an order that already
+produced printer payouts is never settled again.
+
+On settlement:
+    1. Each line's designerRoyalty is credited to that design's designer
+       `payoutBalance`. Skipped entirely for customer-uploaded artwork.
+    2. A PrinterPayoutRecord (status 'paid') is created per line for the
+       printer's `printerAmount`; the pressroom's revenue counter grows.
+    3. The printer's fulfillmentScore += 5, and their rank is recomputed.
+    4. The designer's salesScore increases, and their rank is recomputed.
+    5. Each credited designer is notified:
+       "You earned <amount> TND in royalties from order <id>."
+
+TWO THINGS TO FIX WHEN YOU REBUILD THIS SERVER-SIDE:
+
+    (a) The designer salesScore increment is (number of distinct designers
+        credited on the order + 1) — NOT the number of units sold. For a
+        normal single-designer order that is always +2, whatever the
+        quantity. This looks like an oversight rather than a rule.
+
+    (b) Rating aggregation blends as (old + new) / 2, rounded to 1 decimal.
+        That is a running blend, not a mean — the newest review always
+        carries 50% of the weight. A real average needs a stored count.
+
+
+================================================================================
+6. WORKFLOW — VISITOR (unauthenticated)
+================================================================================
+
+HOME (/)
+    Editorial "issue" layout. Shows:
+      - 4 featured designs, sourced from the marketplace listing so private
+        uploads and unmoderated work can NEVER surface on the public cover
+      - 3 ACTIVE products
+      - "mood tiles" — the platform category list, each with a presentation
+        label and icon (Culture 🏛️, Typography -> "Calligraphy" ✒️,
+        Minimal ◻️, Nature 🍃, Streetwear 👕, Retro 📷)
+      - a maker spotlight and a directory of non-retired pressrooms
+      - PUBLIC STATS ONLY: designer count, active design count, pressroom
+        count, delivered order count.
+        Gross revenue and total user count are DELIBERATELY EXCLUDED — those
+        live in the admin-only overview.
+      - the main CTA switches: "Create your account" when signed out,
+        "Open workspace" when signed in.
+
+MARKETPLACE (/marketplace)
+    Lists ONLY admin-APPROVED, ACTIVE designs. Private customer uploads never
+    appear.
+    Filters: free-text search, category pill, and optionally a product.
+             Search matches title, designer name, description, every category
+             and every tag.
+    Sorts:   Trending (default) = views + sales x 8
+             Newest       by createdAt
+             Top rated    by rating
+             Price low->high / high->low, computed on WHAT THE BUYER ACTUALLY
+             PAYS (cheapest assigned product floor + margin), not the legacy
+             design fee. Designs with no printable product sort last.
+    Filters are mirrored into the URL query string, so a filtered marketplace
+    is shareable and survives a reload. An active-filter count badge drives a
+    clear-all action.
+
+PRODUCTS (/products)
+    The global catalog. DRAFT products are hidden. Filter by category, by
+    pressroom (i.e. "show me only what this printer can make"), and search.
+    Sort by popularity (totalOrders), rating, or price.
+
+DESIGN DETAIL (/design/:id)
+    Visibility rules (canView):
+        - admin sees everything
+        - a private upload is visible only to the customer who uploaded it
+        - a designer always sees their own work, in any state
+        - everyone else needs status ACTIVE and moderation APPROVED
+    A bad or forbidden id renders "not found" — it NEVER silently falls back
+    to another design.
+
+STOREFRONT (/storefront/:id)
+    Public designer shop: banner, avatar, name, rank badge, bio, design count,
+    total sales, level, portfolio links, design grid. Public visitors see only
+    ACTIVE + APPROVED designs.
+
+Any attempt to order redirects to /login. Registering lands the user directly
+on the dashboard for their chosen role.
+
+
+================================================================================
+7. WORKFLOW — CUSTOMER
+================================================================================
+
+--------------------------------------------------------------------------------
+7.1 THE PURCHASE JOURNEY — FIVE SCREENS
+--------------------------------------------------------------------------------
+
+SCREEN 1 — /design/:id
+    PREVIEW ONLY. There are deliberately NO colour/size pickers here.
+    The buyer TICKS WHICH PRODUCTS they want the design on. It is a
+    MULTI-SELECT. The "from" price updates live to the sum of
+    (floor + margin) over everything ticked; with nothing ticked it shows the
+    cheapest single product + margin.
+    -> passes the selection onward as ?products=601,603
+
+SCREEN 2 — /customize/:id   "Customize your order"
+    Per selected product the buyer chooses:
+        colour     restricted to what the DESIGNER enabled for that product
+        size       same restriction
+        quantity   clamped to 1..99
+    The design is previewed on the product mockup at the DESIGNER's placement.
+    Unknown/unsupported product ids in the query string are filtered out; if
+    none survive, the first supported product is selected automatically.
+
+    *** THE CUSTOMIZATION RULE ***
+    A marketplace design CANNOT be moved, scaled or repositioned by the
+    customer. The artwork is preserved exactly as the designer intended.
+    `customizationAllowed` is hardcoded to false for every designer design at
+    creation time. Only a customer's OWN uploaded artwork is freely placeable.
+    The designer has no say in this — it is a platform-level rule.
+
+    -> saves a CustomizationDraft (designId + items[] + selectedPrinterId null)
+
+SCREEN 3 — /printers/:id   Printer selection
+    Shows only printers that:
+        (a) have availability === 'available', AND
+        (b) offer EVERY product in the basket, AND
+        (c) are not retired.
+    Filters: rank, location, max delivery days (default 14).
+    Sorts:   rating (default), rank, delivery time, or total price.
+    Each card shows THAT printer's total for the WHOLE multi-product order,
+    plus their own per-product notes.
+    Landing here without a draft bounces back to /customize.
+
+    -> "Send request" creates the order REQUESTED and goes straight to
+       tracking. NO PAYMENT HAPPENS HERE.
+
+SCREEN 4 — /tracking/:orderId
+    Six-step timeline. While REQUESTED, a cancel action is available. Once
+    ACCEPTED, a pay action appears.
+
+SCREEN 5 — /cart or /checkout
+    Lists every ACCEPTED + UNPAID order. Per order: choose payment method
+    (D17 default / Paymee / card / cash), confirm or edit the shipping address
+    (recipient, line, city, one of the 24 Tunisian governorates, phone), pay.
+    The form pre-fills from the customer's default saved address, falling back
+    to their profile address. Removing an order here cancels it.
+
+--------------------------------------------------------------------------------
+7.2 PERSONAL PRINTING — THE CUSTOMER'S OWN ARTWORK
+--------------------------------------------------------------------------------
+
+A parallel journey at /upload-design (customer and admin only — a designer
+publishing work uses the dashboard wizard instead, and a printer cannot order
+at all).
+
+Upload PNG / JPEG / SVG / WebP, maximum 1 MB. The result is a Design that is:
+
+    PRIVATE          never in the marketplace, never in a storefront, visible
+                     only to its owner (and admins)
+    AUTO-APPROVED    bypasses the moderation queue entirely
+    ASSIGNED TO ALL  every product in the catalog is available to it
+    FULLY CUSTOMIZABLE   the only artwork a buyer may reposition and rescale
+    ROYALTY-FREE     designerRoyalty = 0; the platform keeps the full margin
+    CATEGORY         "Custom"
+
+From there it joins the normal flow at /customize.
+
+--------------------------------------------------------------------------------
+7.3 CUSTOMER DASHBOARD (/dashboard) — tabs: Overview | My Orders | Settings
+--------------------------------------------------------------------------------
+
+Overview    total orders, delivered count, in-flight count, total spend.
+My Orders   every order with its live stage badge; the review action appears
+            once delivered.
+Settings    profile fields (name, email, address)
+            SAVED ADDRESSES — label, recipient, line1, city, governorate,
+              postal code, phone, default flag. The FIRST address added
+              automatically becomes the default; setting a new default clears
+              the old one; removing the default promotes the next address.
+            PAYMENT PREFERENCES — label, provider (card / D17 / cash),
+              details, enabled flag, default flag; same default-promotion
+              logic.
+            favourite printers, free-text delivery notes.
+
+/profile is a lighter view of the same: avatar URL, full name, email, primary
+address, delivery notes.
+
+
+================================================================================
+8. REVIEWS AND RATINGS
+================================================================================
+
+  - A review is possible ONLY after the order reaches Delivered:
+        "You can only review an order after it is delivered."
+  - The customer rates TWO SEPARATE TARGETS for the same order:
+        1. the DESIGN
+        2. the PRINTER
+    Each has its own star rating and comment. The dashboard modal collects
+    both at once and submits them as two independent reviews (using the
+    order's first line to resolve which design and which printer).
+  - One review per (order, target):
+        "You already reviewed the <design|printer> for this order."
+  - A printer review also increments that pressroom's review counter.
+  - Aggregation: new rating blended as (old + new) / 2, rounded to one
+    decimal. See the note in 5.4(b).
+
+
+================================================================================
+9. WORKFLOW — DESIGNER
+================================================================================
+
+--------------------------------------------------------------------------------
+9.1 ONBOARDING
+--------------------------------------------------------------------------------
+
+Register as designer -> PENDING_VERIFICATION -> can still browse publicly, but
+every guarded route redirects to /verification-pending -> an admin verifies ->
+ACTIVE.
+
+--------------------------------------------------------------------------------
+9.2 PUBLISHING — THE TWO-STEP WIZARD (designer dashboard, Designs tab)
+--------------------------------------------------------------------------------
+
+STEP 1 — the artwork
+    - upload the file: PNG / JPEG / SVG / WebP, MAX 1 MB
+      (rejections: "Unsupported file type. Use PNG, JPEG, SVG or WebP." /
+       "Image is too large (X MB). Maximum is 1 MB.")
+    - title, description
+    - CATEGORIES: multi-select from the ADMIN-CONTROLLED list
+    - TAGS: free text, lowercased, de-duplicated, MAXIMUM 10
+    - NO PRICE FIELD EXISTS.
+    Validation: artwork required ("Please upload your artwork before
+    continuing."), at least one category ("Pick at least one category.").
+
+STEP 2 — product compatibility and per-product setup
+    Tick every global product this design may be printed on. For each one:
+        - placement: x, y, scale of the artwork on the mockup
+        - which of the product's colours are allowed (defaults to ALL)
+        - which of the product's sizes are allowed (defaults to ALL)
+        - optional product-specific title and description
+    Validation: at least one product ("Select at least one product this design
+    can be printed on.").
+
+PUBLISH -> the design is created with moderation = PENDING.
+IT IS NOT LIVE. An admin must approve it before it appears anywhere public.
+
+Editing an existing design reloads it into the same wizard, including every
+per-product configuration. The storefront cards deep-link into this
+(?edit=<designId>).
+
+--------------------------------------------------------------------------------
+9.3 DASHBOARD TABS
+--------------------------------------------------------------------------------
+
+Overview    earnings, design count, order count, average conversion.
+Designs     the wizard, plus the design list with archive / unarchive
+            (ACTIVE <-> ARCHIVED).
+Analytics   per design: sales, views, engagement rate, conversion rate,
+            revenue. Two donut charts split sales and views across designs.
+            Revenue = (non-rejected sold lines) x royalty.
+Payouts     balance, threshold, history, request button.
+Storefront  bio, banner URL, profile picture URL, portfolio links (one URL
+Settings    per line), payout account.
+
+--------------------------------------------------------------------------------
+9.4 THE PUBLIC STOREFRONT (/storefront/:id)
+--------------------------------------------------------------------------------
+
+Banner, avatar, name, rank badge, bio, design count, total sales, level,
+portfolio links, design grid.
+    Public visitors    -> ACTIVE + APPROVED designs only
+    The owning designer -> ALL their designs, and every card becomes an edit
+                           shortcut, with a hint: "This is your storefront.
+                           Click any design to edit..."
+
+--------------------------------------------------------------------------------
+9.5 DESIGNER RANKS — automatic, derived from salesScore
+--------------------------------------------------------------------------------
+
+    Novice     score <  20     (starting level)
+    Rising     score >= 20
+    Artisan    score >= 60
+    Elite      score >= 120
+
+Recomputed at settlement and stamped onto BOTH the user record AND every one
+of that designer's designs, so marketplace cards never show a stale rank.
+An admin can also override a rank directly.
+
+--------------------------------------------------------------------------------
+9.6 WHAT A DESIGNER CANNOT DO
+--------------------------------------------------------------------------------
+
+  - set or influence the customer price
+  - choose which printer prints their work
+  - create products or upload product mockups
+  - create categories (admin owns that list)
+  - let customers reposition their artwork
+  - publish without admin approval
+
+
+================================================================================
+10. WORKFLOW — PRINTER (PRESSROOM)
+================================================================================
+
+--------------------------------------------------------------------------------
+10.1 ONBOARDING
+--------------------------------------------------------------------------------
+
+Register as printer -> a PrinterPartner (pressroom) record is created
+alongside the user -> PENDING_VERIFICATION -> admin verifies -> ACTIVE and
+selectable by buyers.
+
+--------------------------------------------------------------------------------
+10.2 FULFILMENT SETUP (Account tab + /printer-profile)
+--------------------------------------------------------------------------------
+
+    business name, contact email, contact phone, location, governorate,
+    about text, coverage zones
+    PRINTING METHODS (multi-select):
+        DTF | sublimation | screen-printing | embroidery | vinyl
+    processing days (typical time before shipping, default 3)
+
+--------------------------------------------------------------------------------
+10.3 THE AVAILABILITY SYSTEM
+--------------------------------------------------------------------------------
+
+One toggle, three states:     available | busy | holiday
+
+ONLY 'available' printers appear in printer selection.
+
+This is the pressure valve of the entire marketplace: an overloaded or closed
+shop removes itself from the pool instantly, which is what stops the
+accept/reject step from becoming a bottleneck. A retired (demoted) pressroom
+is forced to 'holiday'.
+
+--------------------------------------------------------------------------------
+10.4 PRODUCT OPT-IN AND PRICING (Products tab)
+--------------------------------------------------------------------------------
+
+The printer sees the ENTIRE global catalog and, per product:
+    - tick to support it (creates an offering)
+    - set their production price — the floor is displayed, and anything lower
+      is silently raised to it with an explanatory message
+    - write their own description for that product
+    - toggle available / unavailable WITHOUT deleting the offering
+    - untick to stop offering it entirely (deletes the offering)
+
+Price and description are held as local drafts so typing does not commit on
+every keystroke.
+
+--------------------------------------------------------------------------------
+10.5 DASHBOARD TABS
+--------------------------------------------------------------------------------
+
+Overview        products supported, revenue, fulfilment rate, rating.
+Order requests  every REQUESTED order containing one of their lines, awaiting
+                accept/reject. A separate list shows requests the CUSTOMER
+                cancelled.
+Print queue     ONLY accepted + PAID lines — a printer never starts work on an
+                unpaid order. Each line advances one step at a time.
+Products        the opt-in / pricing grid above.
+Analytics       confirmed count, delivered count, distinct customer count,
+                orders-by-status donut, product-mix donut (weighted by
+                quantity).
+Earnings        payout records, one per delivered order line.
+Account         fulfilment setup and availability.
+
+--------------------------------------------------------------------------------
+10.6 PRINTER RANKS — automatic, from fulfillmentScore (+5 per delivered order)
+--------------------------------------------------------------------------------
+
+    Verified   score <  50     (starting level for every verified shop)
+    Gold       score >= 50
+    Premium    score >= 120
+
+Rank is both a filter and a sort key in printer selection, so it directly
+drives how much work a printer wins. Admins can also set a rank manually.
+
+Seeded pressrooms:
+    501  PrintPro Tunisia     Premium   4.9  98% fulfilment  2 days  Tunis
+    502  Atelier Couleurs     Gold      4.7  94% fulfilment  3 days  Sfax
+    503  Studio Press Nabeul  Verified  4.5  90% fulfilment  4 days  Nabeul
+
+--------------------------------------------------------------------------------
+10.7 WHAT A PRINTER CANNOT DO
+--------------------------------------------------------------------------------
+
+  - BUY ANYTHING (hard rule, enforced in the router and again in the UI:
+    "Printer accounts cannot place orders.")
+  - create products or upload mockups
+  - price below the admin floor
+  - see or touch an order before the customer sends the request
+  - start production before payment
+  - un-reject or re-accept a decided request
+
+
+================================================================================
+11. WORKFLOW — ADMIN
+================================================================================
+
+Tabs: Overview | Users | Moderation | Catalog | Designs | Orders | Settings
+
+OVERVIEW
+    Total users, total orders, TOTAL REVENUE, active designs, active printers.
+    Admin-only — never render this on a public page. The public homepage uses
+    a separate, deliberately non-sensitive stat set.
+
+USERS
+    Search across name, email and role. Per user:
+      - VERIFY (PENDING_VERIFICATION -> ACTIVE)
+      - SUSPEND / BAN / REACTIVATE (both suspension and ban force an immediate
+        logout of that user's session)
+      - reassign role — assignable roles are customer, designer, printer.
+        NOBODY CAN BE PROMOTED TO ADMIN through the UI.
+      - override designer rank or printer rank
+
+MODERATION — THE CONTENT GATE
+    Every new designer design lands in a PENDING queue.
+      APPROVED -> becomes visible in the marketplace
+      REJECTED -> design status forced to REMOVED, permanently off-platform
+    The designer is notified either way:
+      "Your design "<title>" was approved and is now live." / "...rejected."
+    Every decision is appended to an immutable moderation log (admin id,
+    target type, target id, action, reason, timestamp).
+    Designs also carry an `nsfw` flag in the model.
+    Customer personal uploads bypass this queue entirely.
+
+CATALOG — THE ADMIN OWNS THE PRODUCTS
+    Create / edit / delete global products: name, category, description,
+    basePrice (THE FLOOR EVERY PRINTER MUST RESPECT), colours (comma list),
+    sizes (comma list), mockup images (one URL per line — several supported),
+    availability (ACTIVE / PAUSED / DRAFT), lead time days.
+    Deleting a product CASCADES: every printer offering for it is removed, and
+    it is stripped from every design's assigned-product list.
+
+DESIGNS AND FEATURED CONTENT
+    Force any design to ACTIVE / ARCHIVED / REMOVED.
+    Feature or unfeature a DESIGN, a DESIGNER or a PRINTER — the curation
+    lever. Featuring is a toggle and is also written to the moderation log.
+
+ORDERS
+    Read-only oversight of every order on the platform with its live stage.
+
+SETTINGS — THE ECONOMIC CONTROLS
+    Three numbers that reprice the whole marketplace instantly:
+        margin | designerRoyalty | payoutThreshold
+    Plus THE ONE marketplace category list, edited as a comma-separated field.
+    This single list drives the marketplace filter, the designer upload
+    wizard AND the homepage mood tiles. At least one must remain:
+        "Keep at least one category."
+
+
+================================================================================
+12. ACCOUNTS AND VERIFICATION
+================================================================================
+
+REGISTRATION
+    Fields: name, email, address, password, role.
+    Self-selectable roles: customer, designer, printer. Never admin.
+    Duplicate email is rejected: "An account with this email already exists."
+
+    Status on creation:
+        customer  -> ACTIVE                (shops immediately)
+        designer  -> PENDING_VERIFICATION
+        printer   -> PENDING_VERIFICATION  (+ a pressroom record is created)
+
+ACCOUNT LIFECYCLE
+    AccountStatus = ACTIVE | PENDING_VERIFICATION | SUSPENDED | BANNED
+
+    Pending designers/printers are redirected to /verification-pending on
+    every guarded route. Verified users cannot reach that page.
+
+    The login gate is applied on BOTH the API path and the local path, so a
+    blocked account can never obtain a session:
+        SUSPENDED -> "This account is suspended. Contact Printymand support."
+        BANNED    -> "This account has been banned for policy violations."
+        bad creds -> "Invalid email or password."
+
+    Status-change notifications:
+        ACTIVE               "Your account has been verified and is now
+                              active."
+        PENDING_VERIFICATION "Your account is pending verification."
+        SUSPENDED            "Your account has been suspended."
+        BANNED               "Your account has been banned for policy
+                              violations."
+
+ROLE CHANGES
+    An admin can move a user between customer / designer / printer.
+    Demoting a printer RETIRES the pressroom (retired = true, availability
+    forced to 'holiday') rather than deleting it — historical order lines and
+    offerings keep resolving, and it is excluded from printer selection and
+    from public pressroom counts. Re-promoting un-retires the same record.
+
+PROFILE EDITS PROPAGATE
+    Changing a user's name/avatar cascades to: their credential record (on
+    email change), their pressroom's business name, and the denormalised
+    designer name and avatar stored on every one of their designs.
+
+
+================================================================================
+13. NOTIFICATIONS
+================================================================================
+
+Generated at every meaningful transition. Types:
+
+    order_requested    request sent / received
+    order_accepted     accepted -> "go to your cart to pay"
+    order_rejected     rejected by printer, or cancelled by customer
+    order_paid         payment received -> "start fulfillment"
+    order_status       EVERY fulfilment step change
+    design_moderated   approved and live, or rejected
+    account_status     verified / pending / suspended / banned
+    payout             payout requested, royalties earned
+
+Each carries a deep link (/tracking/<id>, /cart, /printer-dashboard,
+/designer-dashboard). /notifications is open to any signed-in role, shows
+newest first, marks a notification read on click, and offers mark-all-as-read.
+Unread items are visually flagged with a "New" pill.
+
+
+================================================================================
+14. THE BUSINESS INVARIANTS
+================================================================================
+
+The rules the system will not let you break. A backend must enforce every one
+of these server-side — the frontend currently enforces them alone.
+
+     1. No payment before printer acceptance.
+     2. No production before payment.
+     3. Printers never buy.
+     4. Designers never price.
+     5. Printers never price below the admin floor.
+     6. Only the admin creates products.
+     7. Only the admin creates design categories.
+     8. No designer artwork reaches the public without admin approval.
+     9. Marketplace artwork is never repositioned by the buyer; only the
+        buyer's own uploads are placeable.
+    10. A customer's personal upload never enters the marketplace and never
+        earns a royalty.
+    11. Only 'available', non-retired printers offering EVERY product in the
+        basket can be selected.
+    12. Reviews only after delivery, once per order per target.
+    13. Royalties and printer payouts release only when an order is FULLY
+        delivered, and only once.
+    14. Ranks are earned automatically from scores (admin override aside).
+    15. Suspended and banned accounts cannot hold a session.
+    16. Removing the printer role retires the pressroom rather than deleting
+        it, so order history never breaks.
+    17. The design<->product link is stored on ONE side only.
+    18. Public pages never expose revenue or total user count.
+
+
+================================================================================
+15. THE DOMAIN MODEL (frontend/src/app/models/types.ts)
+================================================================================
+
+    User               + CustomerProfile | DesignerProfile | PrinterProfile
+    PrinterPartner     the pressroom: rank, rating, reviews, fulfillmentRate,
+                       revenue, deliveryDays, location, images, availability,
+                       retired
+    Product            GLOBAL catalog item, admin-owned, basePrice = floor
+    PrinterProductOffering    printer opt-in: price, description, available
+    Design             + DesignProductConfiguration (placement, colours,
+                       sizes, per-product copy)
+    CustomizationDraft transient: designId + items[] + selectedPrinterId
+    CartItem / CartLineView / Cart          (legacy path — see 5.3)
+    Order              + OrderLine (with the frozen 3-way money split)
+    Review             target = design | printer
+    PayoutRecord       designer payout
+    PrinterPayoutRecord
+    AppNotification
+    FeaturedContent    admin curation
+    ModerationLogEntry admin audit trail
+    PlatformSettings   margin, designerRoyalty, payoutThreshold, categories
+    Address, PaymentPreference, PortfolioLink
+    DesignAnalytics, AnalyticsPoint
+
+ENUMS
+    UserRole            customer | designer | printer | admin
+    DesignerRank        Novice | Rising | Artisan | Elite
+    PrinterRank         Verified | Gold | Premium
+    DesignStatus        ACTIVE | ARCHIVED | REMOVED
+    ModerationStatus    PENDING | APPROVED | REJECTED
+    ProductAvailability ACTIVE | PAUSED | DRAFT
+    PrinterAvailability available | busy | holiday
+    AccountStatus       ACTIVE | PENDING_VERIFICATION | SUSPENDED | BANNED
+    OrderRequestStatus  REQUESTED | ACCEPTED | REJECTED | CANCELLED
+    OrderLineStatus     Pending | Confirmed | Printing | Shipped | Delivered
+                        | Rejected
+    PaymentStatus       unpaid | pending | processing | paid
+    PaymentMethod       paymee | d17 | card | cash
+    PrintingMethod      DTF | sublimation | screen-printing | embroidery
+                        | vinyl
+    PayoutStatus        scheduled | requested | processing | paid
+    NotificationType    (see section 13)
+
+GEOGRAPHY
+    TUNISIA_GOVERNORATES — the 24 governorates, one shared list used by every
+    address form: Ariana, Béja, Ben Arous, Bizerte, Gabès, Gafsa, Jendouba,
+    Kairouan, Kasserine, Kébili, Kef, Mahdia, Manouba, Médenine, Monastir,
+    Nabeul, Sfax, Sidi Bouzid, Siliana, Sousse, Tataouine, Tozeur, Tunis,
+    Zaghouan.
+
+CONSTANTS
+    MAX_ARTWORK_BYTES        1 MB, shared by every upload entry point
+    ACCEPTED_ARTWORK_TYPES   image/png, image/jpeg, image/svg+xml, image/webp
+    DEFAULT_PLACEMENT        x 50, y 48, scale 0.42
+    MAX_TAGS                 10
+    PAYOUT_TERM_DAYS         7
+    FULFILLMENT_SCORE_PER_ORDER   5
+    Order reference format   PMD-YYMMDD-<sequence>
+
+
+================================================================================
+16. HOW STATE WORKS TODAY, AND WHERE A BACKEND PLUGS IN
+================================================================================
+
+--------------------------------------------------------------------------------
+16.1 TODAY: ONE SIGNAL STORE, PERSISTED TO THE BROWSER
+--------------------------------------------------------------------------------
+
+All of the above runs inside PlatformStoreService — a single
+signal<PlatformState> holding users, credentials, printers, products,
+offerings, designs, cart items, orders, reviews, payouts, printer payouts,
+notifications, featured content, moderation log, customization draft and
+platform settings.
+
+  - It persists to localStorage on every change, under the versioned key
+    `printymand_platform_state_v7`.
+  - On load, persisted data is merged OVER the seed data by id — persisted
+    entries always win, and seed entries the browser has never seen are
+    appended. So new seed products appear without wiping the user's own work.
+  - `nextId` is reconciled against the highest id in use, so ids cannot be
+    reissued.
+  - Writes can fail (uploaded artwork is inlined as base64 data URLs and
+    blows the ~5 MB quota). The failure is surfaced, not swallowed:
+      "Local storage is full — recent changes are kept for this session only.
+       Remove some uploaded designs to save again."
+
+CREDENTIALS ARE NOT SECURITY. Local passwords are stored as an FNV-1a digest,
+explicitly documented in the code as NOT a security control — it only avoids
+readable passwords in localStorage. Real authentication is a backend concern.
+
+--------------------------------------------------------------------------------
+16.2 THE BRIDGE ALREADY BUILT FOR YOUR BACKEND
+--------------------------------------------------------------------------------
+
+`environment.useRealApi` decides whether HTTP is attempted at all:
+
+    false (dev)   pure local store            backendMode = 'mock'
+    true  (prod)  every mutation mirrors to the API; if a call fails the app
+                  keeps working locally       backendMode = 'hybrid'
+                  when calls succeed          backendMode = 'api'
+
+Two helpers wrap this:
+    tryApi()    awaits the call, returns null when the API is off or failed
+                (telling the caller to fall back to local state)
+    syncApi()   fires the call without blocking the UI
+
+`services/api.service.ts` is already written as the FULL INTENDED REST
+CONTRACT — catalog reads, cart, orders, auth, reviews, the whole order
+lifecycle (submit / accept / reject / cancel / pay / advance line), profiles,
+printer products, designs and moderation, payouts, notifications and admin.
+Base URL /api/v1. Credentials are attached by httpCredentialsInterceptor.
+
+That file is the endpoint list to build against.
+
+--------------------------------------------------------------------------------
+16.3 WHAT THE FRONTEND CANNOT ENFORCE, AND YOUR BACKEND MUST
+--------------------------------------------------------------------------------
+
+    - PRICES MUST BE RECOMPUTED SERVER-SIDE. The client freezes
+      printerAmount / platformFee / designerRoyalty onto each line. A client
+      that sends those values is an attack vector.
+    - SETTLEMENT NEEDS REAL IDEMPOTENCY. Today it is guarded by a
+      read-then-check on existing payout rows; in a database that wants a
+      transaction plus a unique constraint.
+    - CONCURRENCY DOES NOT EXIST HERE. One user, one tab: two printers cannot
+      race, a printer cannot double-accept, ids cannot collide. All of that
+      becomes real server-side.
+    - IDs: the frontend counts integers upward from 10000. The order
+      reference PMD-YYMMDD-<seq> needs a server-side sequence.
+    - EVERY INVARIANT IN SECTION 14 is currently enforced only in the browser.
+
+--------------------------------------------------------------------------------
+16.4 DEMO ACCOUNTS (seed data, password "demo123" for all four)
+--------------------------------------------------------------------------------
+
+    sami@printymand.tn      customer   Sami Ben Ali
+    amira@printymand.tn     designer   Amira Ben Salem (Elite)
+    contact@printpro.tn     printer    PrintPro Tunisia (Premium, Tunis)
+    nadia@printymand.tn     admin      Nadia
+
+The login page offers one-click fill for each.
+
+================================================================================
+END
+================================================================================

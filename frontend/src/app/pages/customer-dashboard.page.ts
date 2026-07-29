@@ -3,6 +3,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { DashboardSidebarComponent, DashboardNavSection } from '../components/dashboard-sidebar.component';
+import type { PaymentMethod } from '../models/types';
 import { TUNISIA_GOVERNORATES } from '../models/tunisia';
 import { isInFlight, orderStatusClass } from '../models/order-status';
 import { AuthService } from '../services/auth.service';
@@ -50,18 +51,61 @@ export class CustomerDashboardPageComponent {
   });
 
   readonly reviewOrderId = signal<number | string | null>(null);
-  readonly reviewRating = signal(5);
-  readonly reviewComment = signal('');
-  readonly reviewPrinterRating = signal(5);
-  readonly reviewPrinterComment = signal('');
   readonly reviewError = signal('');
   readonly reviewOrder = computed(() => {
     const id = this.reviewOrderId();
     return id ? this.store.getOrderById(id) : undefined;
   });
-  hasReview(orderId: number | string, target: 'design' | 'printer'): boolean {
-    return this.reviews().some((r) => r.orderId === orderId && r.target === target);
+
+  /**
+   * Every design and pressroom on the order, not just the first line — an order
+   * carrying two designs must be reviewable for both.
+   */
+  readonly reviewTargets = computed(() => {
+    const id = this.reviewOrderId();
+    return id ? this.store.reviewTargetsForOrder(id) : { designs: [], printers: [] };
+  });
+
+  /** Draft rating/comment per target, keyed `design-<id>` / `printer-<id>`. */
+  private readonly drafts = signal<Record<string, { rating: number; comment: string }>>({});
+
+  private draftKey(target: 'design' | 'printer', id: number): string {
+    return `${target}-${id}`;
   }
+
+  draftFor(target: 'design' | 'printer', id: number): { rating: number; comment: string } {
+    return this.drafts()[this.draftKey(target, id)] ?? { rating: 5, comment: '' };
+  }
+
+  setDraft(target: 'design' | 'printer', id: number, patch: Partial<{ rating: number; comment: string }>): void {
+    const key = this.draftKey(target, id);
+    this.drafts.set({ ...this.drafts(), [key]: { ...this.draftFor(target, id), ...patch } });
+  }
+
+  hasReview(orderId: number | string, target: 'design' | 'printer', targetId: number): boolean {
+    const user = this.user();
+    return !!user && this.store.hasReviewed(orderId, user.id, target, targetId);
+  }
+
+  /** How many designs/pressrooms on this order still need a rating. */
+  pendingReviewCount(orderId: number | string): number {
+    const { designs, printers } = this.store.reviewTargetsForOrder(orderId);
+    return (
+      designs.filter((design) => !this.hasReview(orderId, 'design', design.id)).length +
+      printers.filter((printer) => !this.hasReview(orderId, 'printer', printer.id)).length
+    );
+  }
+
+  /** Nothing left to rate on this order — the modal shows a done state instead. */
+  readonly allReviewed = computed(() => {
+    const id = this.reviewOrderId();
+    if (!id) return false;
+    const { designs, printers } = this.reviewTargets();
+    return (
+      designs.every((design) => this.hasReview(id, 'design', design.id)) &&
+      printers.every((printer) => this.hasReview(id, 'printer', printer.id))
+    );
+  });
 
   readonly addressForm = signal({
     id: undefined as number | undefined,
@@ -78,7 +122,8 @@ export class CustomerDashboardPageComponent {
   readonly paymentForm = signal({
     id: '',
     label: '',
-    provider: 'card' as 'card' | 'd17' | 'cash',
+    // Every method checkout accepts — Paymee was payable but not savable.
+    provider: 'card' as PaymentMethod,
     details: '',
     isDefault: false,
     enabled: true,
@@ -90,10 +135,7 @@ export class CustomerDashboardPageComponent {
 
   openReviewModal(orderId: number | string): void {
     this.reviewOrderId.set(orderId);
-    this.reviewRating.set(5);
-    this.reviewComment.set('');
-    this.reviewPrinterRating.set(5);
-    this.reviewPrinterComment.set('');
+    this.drafts.set({});
     this.reviewError.set('');
   }
 
@@ -101,36 +143,41 @@ export class CustomerDashboardPageComponent {
     this.reviewOrderId.set(null);
   }
 
-  /** Spec: rate BOTH the design and the printer after delivery. */
+  /** Spec: rate EVERY design on the order, and every pressroom that made it. */
   async submitReview(): Promise<void> {
     const user = this.user();
     const order = this.reviewOrder();
     if (!user || !order) return;
-    const firstLine = order.lines[0];
     this.reviewError.set('');
 
-    if (firstLine && !this.hasReview(order.id, 'design')) {
+    const { designs, printers } = this.reviewTargets();
+
+    for (const design of designs) {
+      if (this.hasReview(order.id, 'design', design.id)) continue;
+      const draft = this.draftFor('design', design.id);
       const res = await this.store.submitReview(order.id, user.id, {
         target: 'design',
-        designId: firstLine.designId,
-        rating: this.reviewRating(),
-        comment: this.reviewComment(),
+        designId: design.id,
+        rating: draft.rating,
+        comment: draft.comment,
       });
       if (!res.success) {
-        this.reviewError.set(res.error ?? 'Could not submit the design review.');
+        this.reviewError.set(res.error ?? `Could not submit the review for "${design.title}".`);
         return;
       }
     }
 
-    if (firstLine?.printerId && !this.hasReview(order.id, 'printer')) {
+    for (const printer of printers) {
+      if (this.hasReview(order.id, 'printer', printer.id)) continue;
+      const draft = this.draftFor('printer', printer.id);
       const res = await this.store.submitReview(order.id, user.id, {
         target: 'printer',
-        printerId: firstLine.printerId,
-        rating: this.reviewPrinterRating(),
-        comment: this.reviewPrinterComment(),
+        printerId: printer.id,
+        rating: draft.rating,
+        comment: draft.comment,
       });
       if (!res.success) {
-        this.reviewError.set(res.error ?? 'Could not submit the printer review.');
+        this.reviewError.set(res.error ?? `Could not submit the review for ${printer.businessName}.`);
         return;
       }
     }

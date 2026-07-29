@@ -115,8 +115,10 @@
                   <td class="r amt">{{ order.total }} <small>TND</small></td>
                   <td class="r"><span [class]="statusClass(store.getOrderStatus(order))">{{ store.getOrderStatus(order) }}</span></td>
                   <td class="r">
-                    @if (store.getOrderStatus(order) === 'Delivered' && !(hasReview(order.id, 'design') && hasReview(order.id, 'printer'))) {
-                      <button type="button" class="btn btn-ghost" style="font-size:12px; padding:4px 10px;" (click)="openReviewModal(order.id)">Review</button>
+                    @if (store.getOrderStatus(order) === 'Delivered' && pendingReviewCount(order.id) > 0) {
+                      <button type="button" class="btn btn-ghost" style="font-size:12px; padding:4px 10px;" (click)="openReviewModal(order.id)">
+                        Review @if (pendingReviewCount(order.id) > 1) { ({{ pendingReviewCount(order.id) }}) }
+                      </button>
                     }
                   </td>
                 </tr>
@@ -245,6 +247,7 @@
               <select class="pm-select" [ngModel]="paymentForm().provider" (ngModelChange)="paymentForm.set({...paymentForm(), provider: $event})">
                 <option value="card">Card</option>
                 <option value="d17">D17</option>
+                <option value="paymee">Paymee</option>
                 <option value="cash">Cash on delivery</option>
               </select>
             </label>
@@ -270,35 +273,76 @@
   <div style="position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:60; display:flex; align-items:center; justify-content:center; padding:1rem;" (click)="closeReviewModal()">
     <div style="width:100%; max-width:min(440px, calc(100vw - 2rem)); background:var(--pm-bg); border:1px solid var(--pm-rule-strong); padding:2rem;" (click)="$event.stopPropagation()">
       <h2 style="font-family:var(--pm-font-display); font-weight:700; font-size:28px; letter-spacing:-0.03em; color:var(--pm-ink); margin-bottom:6px;">Rate your order<br /><em style="font-family:var(--pm-font-serif); font-style:italic; color:var(--pm-clay); font-weight:500;">review.</em></h2>
-      <p style="font-family:var(--pm-font-serif); font-style:italic; font-size:13px; color:var(--pm-text-muted); margin-bottom:24px;">Rate both the design and the pressroom who fulfilled it.</p>
-      <div style="display:grid; gap:1rem;">
+      <p style="font-family:var(--pm-font-serif); font-style:italic; font-size:13px; color:var(--pm-text-muted); margin-bottom:24px;">Rate every design on this order, and the pressroom that made it.</p>
+      <div style="display:grid; gap:1rem; max-height:60vh; overflow-y:auto;">
 
-        @if (!hasReview(reviewOrderId()!, 'design')) {
-          <div style="border-top:1px solid var(--pm-rule); padding-top:16px;">
-            <p style="font-family:var(--pm-font-display); font-weight:700; font-size:15px; color:var(--pm-ink); margin-bottom:10px;">Design</p>
-            <label class="pm-field">
-              <span class="pm-label">Rating (1–5)</span>
-              <input class="pm-input" type="number" min="1" max="5" [ngModel]="reviewRating()" (ngModelChange)="reviewRating.set($event)" />
-            </label>
-            <label class="pm-field" style="margin-top:10px;">
-              <span class="pm-label">Comment</span>
-              <textarea class="pm-input" rows="2" [ngModel]="reviewComment()" (ngModelChange)="reviewComment.set($event)" style="resize:vertical;"></textarea>
-            </label>
-          </div>
+        <!-- One block per DESIGN on the order — a multi-design order gets a rating each. -->
+        @for (design of reviewTargets().designs; track design.id) {
+          @if (!hasReview(reviewOrderId()!, 'design', design.id)) {
+            <div style="border-top:1px solid var(--pm-rule); padding-top:16px;">
+              <p style="font-family:var(--pm-font-display); font-weight:700; font-size:15px; color:var(--pm-ink); margin-bottom:10px;">
+                Design · {{ design.title }}
+              </p>
+              <label class="pm-field">
+                <span class="pm-label">Rating (1–5)</span>
+                <input
+                  class="pm-input"
+                  type="number"
+                  min="1"
+                  max="5"
+                  [ngModel]="draftFor('design', design.id).rating"
+                  (ngModelChange)="setDraft('design', design.id, { rating: $event })"
+                />
+              </label>
+              <label class="pm-field" style="margin-top:10px;">
+                <span class="pm-label">Comment</span>
+                <textarea
+                  class="pm-input"
+                  rows="2"
+                  style="resize:vertical;"
+                  [ngModel]="draftFor('design', design.id).comment"
+                  (ngModelChange)="setDraft('design', design.id, { comment: $event })"
+                ></textarea>
+              </label>
+            </div>
+          }
         }
 
-        @if (!hasReview(reviewOrderId()!, 'printer')) {
-          <div style="border-top:1px solid var(--pm-rule); padding-top:16px;">
-            <p style="font-family:var(--pm-font-display); font-weight:700; font-size:15px; color:var(--pm-ink); margin-bottom:10px;">Pressroom</p>
-            <label class="pm-field">
-              <span class="pm-label">Rating (1–5)</span>
-              <input class="pm-input" type="number" min="1" max="5" [ngModel]="reviewPrinterRating()" (ngModelChange)="reviewPrinterRating.set($event)" />
-            </label>
-            <label class="pm-field" style="margin-top:10px;">
-              <span class="pm-label">Comment</span>
-              <textarea class="pm-input" rows="2" [ngModel]="reviewPrinterComment()" (ngModelChange)="reviewPrinterComment.set($event)" style="resize:vertical;"></textarea>
-            </label>
-          </div>
+        @for (printer of reviewTargets().printers; track printer.id) {
+          @if (!hasReview(reviewOrderId()!, 'printer', printer.id)) {
+            <div style="border-top:1px solid var(--pm-rule); padding-top:16px;">
+              <p style="font-family:var(--pm-font-display); font-weight:700; font-size:15px; color:var(--pm-ink); margin-bottom:10px;">
+                Pressroom · {{ printer.businessName }}
+              </p>
+              <label class="pm-field">
+                <span class="pm-label">Rating (1–5)</span>
+                <input
+                  class="pm-input"
+                  type="number"
+                  min="1"
+                  max="5"
+                  [ngModel]="draftFor('printer', printer.id).rating"
+                  (ngModelChange)="setDraft('printer', printer.id, { rating: $event })"
+                />
+              </label>
+              <label class="pm-field" style="margin-top:10px;">
+                <span class="pm-label">Comment</span>
+                <textarea
+                  class="pm-input"
+                  rows="2"
+                  style="resize:vertical;"
+                  [ngModel]="draftFor('printer', printer.id).comment"
+                  (ngModelChange)="setDraft('printer', printer.id, { comment: $event })"
+                ></textarea>
+              </label>
+            </div>
+          }
+        }
+
+        @if (allReviewed()) {
+          <p class="serif-italic" style="font-size:14px; color:var(--pm-text-muted); border-top:1px solid var(--pm-rule); padding-top:16px;">
+            You have already reviewed everything on this order. Thank you.
+          </p>
         }
 
         @if (reviewError()) {
@@ -306,8 +350,10 @@
         }
 
         <div style="display:flex; gap:0.75rem; justify-content:flex-end; padding-top:8px;">
-          <button type="button" class="btn btn-ghost" (click)="closeReviewModal()">Cancel</button>
-          <button type="button" class="btn btn-clay" (click)="submitReview()">Submit</button>
+          <button type="button" class="btn btn-ghost" (click)="closeReviewModal()">{{ allReviewed() ? 'Close' : 'Cancel' }}</button>
+          @if (!allReviewed()) {
+            <button type="button" class="btn btn-clay" (click)="submitReview()">Submit</button>
+          }
         </div>
       </div>
     </div>

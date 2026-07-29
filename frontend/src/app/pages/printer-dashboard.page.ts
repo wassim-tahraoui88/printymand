@@ -183,12 +183,16 @@ export class PrinterDashboardPageComponent {
   }
 
   accept(orderId: number | string): void {
-    const result = this.store.acceptOrderRequest(orderId);
+    const user = this.user();
+    if (!user) return;
+    const result = this.store.acceptOrderRequest(orderId, user.id);
     if (!result.success) this.error.set(result.error ?? 'Could not accept the request.');
   }
 
   reject(orderId: number | string): void {
-    const result = this.store.rejectOrderRequest(orderId);
+    const user = this.user();
+    if (!user) return;
+    const result = this.store.rejectOrderRequest(orderId, user.id);
     if (!result.success) this.error.set(result.error ?? 'Could not reject the request.');
   }
 
@@ -199,6 +203,9 @@ export class PrinterDashboardPageComponent {
   }
 
   advance(orderId: number | string, lineId: number): void {
-    this.store.advanceOrderLineStatus(orderId, lineId);
+    const user = this.user();
+    if (!user) return;
+    const result = this.store.advanceOrderLineStatus(orderId, lineId, user.id);
+    if (!result.success) this.error.set(result.error ?? 'Could not update this item.');
   }
 }
